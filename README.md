@@ -2,7 +2,7 @@
 
 At the top of the file there should be a short introduction and/ or overview that explains **what** the project is. This description should match descriptions added for package managers (Gemspec, package.json, etc.)
 
-The code was used in the following publications (please cite):
+The code in this repository was used in the following publications (please cite):
 
 - Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and Ulf Leser,
 Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited Overlap ,
