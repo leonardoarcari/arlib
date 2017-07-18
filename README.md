@@ -22,7 +22,26 @@ Provide code examples and explanations of how to get the project.
 
 ## Tests
 
-Describe and show how to run the tests with code examples.
+In order to run the program and test the algorithms you must first compile the source code. In order to compile, simply
+
+```sh
+$ make
+```
+
+Then, in order to run the run.exec with the sample file:
+
+```sh
+$ ./run.exec -f sample/sample.gr -k [PATHS] -s [THRESHOLD] -S [SRC] -T [TRG] -a [ALGORITHM]
+```
+The following table shows the possible values for each parameter.
+
+| Parameter | Explanation | Values |
+| ------ | ------ |
+| PATHS | The number of requested result paths k | 0 |
+| THRESHOLD | [test | 0 |
+| SRC | The source query node | [0,\|N\|] |
+| TRG | The target query node | [0,\|N\|] |
+| ALGORITHM | The selected algorithm | op\|mp\|opplus\|svpplus\|esx |
 
 ## License
 

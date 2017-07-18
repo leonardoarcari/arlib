@@ -12,17 +12,6 @@ Copyright (c) 2017 Theodoros Chondrogiannis
 
 using namespace std;
 
-/*
-main function
------
-HOW TO RUN THE BENCHMARK
-./bin/benchmark -f [GRAPH_FILE_PATH]
-				-q [QUERY_FILE_PATH]
-				-k [NUM_OF_RESULTS]
-				-s [SIMILARITY_RATIO]
-				-a [SELECTED_ALGORITHM]
- */
-
 int main(int argc, char **argv) {
     string graphFile = "";
     unsigned int k = 0;
