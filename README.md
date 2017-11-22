@@ -33,6 +33,11 @@ The following table shows the possible values for each parameter.
 | TRG | The target query node | [0,\|N\|] |
 | ALGORITHM | The selected algorithm | op\|mp\|opplus\|svpplus\|esx |
 
+| Command | Description |
+| --- | --- |
+| `git status` | List all *new or modified* files |
+| `git diff` | Show file differences that **haven't been** staged |
+
 ## License
 
 This work is licensed under MIT License.
