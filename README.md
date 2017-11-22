@@ -25,18 +25,13 @@ $ ./run.exec -f sample/sample.gr -k [PATHS] -s [THRESHOLD] -S [SRC] -T [TRG] -a 
 ```
 The following table shows the possible values for each parameter.
 
-| Parameter | Explanation | Values |
-| ------ | ------ |
-| PATHS | The number of requested result paths k | 0 |
-| THRESHOLD | [test | 0 |
-| SRC | The source query node | [0,\|N\|] |
-| TRG | The target query node | [0,\|N\|] |
-| ALGORITHM | The selected algorithm | op\|mp\|opplus\|svpplus\|esx |
-
 | Command | Description |
 | --- | --- |
-| `git status` | List all *new or modified* files |
-| `git diff` | Show file differences that **haven't been** staged |
+| PATHS | The number of requested result paths k | 0 |
+| THRESHOLD | [test | 0 |
+| SRC | The source query node | [0,N] |
+| TRG | The target query node | [0,N] |
+| ALGORITHM | The selected algorithm | op\|mp\|opplus\|svpplus\|esx |
 
 ## License
 
