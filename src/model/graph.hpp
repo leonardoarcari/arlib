@@ -18,6 +18,7 @@ using namespace std;
 typedef unsigned int NodeID;
 typedef pair<NodeID,NodeID> Edge;
 
+// the value 'int' is the edge weight
 typedef unordered_map<NodeID,int> EdgeList;
 
 class RoadNetwork {
@@ -52,6 +53,7 @@ public:
 	
 	bool containsEdge(Edge e);
 	double overlap_ratio(RoadNetwork *rN, Path &path2);
+  friend ostream &operator<<(ostream &os, const Path &path);
 };
 
-#endif  
+#endif
