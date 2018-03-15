@@ -1,0 +1,13 @@
+# IDE
+.idea/
+**/cmake-build-*
+
+# CMake
+build/
+
+# mARGOt
+dse/
+margot_heel_if/
+
+# Other
+activate
