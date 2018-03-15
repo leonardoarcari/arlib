@@ -10,9 +10,16 @@ Copyright (c) 2017 Theodoros Chondrogiannis
 #include "model/graph.hpp"
 #include "algorithms/kspwlo.hpp"
 
+#include "exploration/error_metrics.hpp"
+
+#include <margot.hpp>
+
 using namespace std;
 
 int main(int argc, char **argv) {
+    // Initialize Margot
+    margot::init();
+
     string graphFile = "";
     unsigned int k = 0;
     double theta = -1;
@@ -71,6 +78,7 @@ int main(int argc, char **argv) {
     
     vector<Path> result;
 
+    margot::parameter_space_exploration::start_monitor();
 	if(boost::iequals(algo, "op")) {
     	result = onepass(rN,source,target,k,theta);
     }
@@ -86,12 +94,22 @@ int main(int argc, char **argv) {
     else if(boost::iequals(algo, "esx")) {
     	result = esx(rN,source,target,k,theta);
     }
+
+    float error = margot::k_paths_avg_length(result);
+    margot::parameter_space_exploration::stop_monitor(error);
+    margot::parameter_space_exploration::log();
     
     cout << source << "\t" << target << "\t[" << result[0].length;
     for(unsigned int j = 1;j<result.size();j++) {
     	cout << "," << result[j].length;
     }
     cout << "]" << endl;
+
+    // cout << source << "\t" << target << "\t[" << result[0];
+    // for(unsigned int j = 1;j<result.size();j++) {
+    //     cout << "," << result[j];
+    // }
+    // cout << "]" << endl;
     	
     delete rN;
     return 0;
