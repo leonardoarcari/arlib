@@ -14,7 +14,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # setting common c++ flags
-set(CMAKE_CXX_STANDARD 11)
+# set(CMAKE_CXX_STANDARD 17) can't set. Too old cmake. Crap.
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -Wl,--hash-style=both,--as-needed -pthread -fopenmp -ftemplate-depth=1100" )
 add_compile_options(-g
         -fmessage-length=0
@@ -98,11 +99,15 @@ set(TOOLS_SRC
         src/tools/astar.cpp
         src/tools/dijkstra.cpp
         src/tools/tools.hpp)
+set(EXPLORATION_SRC
+        src/exploration/error_metrics.hpp
+        src/exploration/graph_utils.hpp)
 
 set(SOURCE_FILES
         ${ALGORITHMS_SRC}
         ${MODEL_SRC}
         ${TOOLS_SRC}
+        ${EXPLORATION_SRC}
         src/main.cpp)
 
 add_executable(${APP_NAME} ${SOURCE_FILES})
