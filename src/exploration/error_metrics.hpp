@@ -12,9 +12,9 @@
 namespace margot {
 
 struct ErrorMetrics {
-	float total_distance;
-	float average_distance;
-	float decision_edges; 
+  float total_distance;
+  float average_distance;
+  float decision_edges;
 };
 
 /**
@@ -25,7 +25,7 @@ struct ErrorMetrics {
  * @return     The average length.
  */
 float k_paths_avg_length(const std::vector<Path> &k_paths) {
-  int k = k_paths.size();
+  auto k = k_paths.size();
 
   int sum = std::accumulate(
       k_paths.begin(), k_paths.end(), 0,
@@ -36,66 +36,86 @@ float k_paths_avg_length(const std::vector<Path> &k_paths) {
 
 float totalDistance(RoadNetwork &ag, NodeID source, NodeID target) {
   auto total_distance = 0.0f;
-  std::cerr << "\n\nHEYYYYYY\n\n" <<
-   ag.numNodes << " " << ag.numEdges << " " << ag.adjListOut.size() << "\n";
-
   using index = decltype(ag.adjListOut.size());
+
+  #pragma omp parallel for reduction(+:total_distance)
   for (index i = 0; i < ag.adjListOut.size(); ++i) {
     NodeID u = i;
     auto &outEdges = ag.adjListOut[u];
-    for (auto & [ v, weight ] : outEdges) {
+    for (auto &[v, weight] : outEdges) {
       int d_s_u = dijkstra_path_and_bounds(&ag, source, u).first.length;
       int d_v_t = dijkstra_path_and_bounds(&ag, v, target).first.length;
 
-      float distance = weight / (d_s_u + weight + d_v_t);
+      float distance = weight / static_cast<float>(d_s_u + weight + d_v_t);
       total_distance += distance;
 
-      std::cerr << "d_s_u = " << d_s_u << ", d_v_t = " << d_v_t
-                << ", distance = " << distance
-                << ", total_distance = " << total_distance << "\n";
+      // std::cerr << "s = " << source << ", t = " << target << ", u = " << u
+      //           << ", v = " << v << ", w = " << weight << ", d_s_u = " << d_s_u
+      //           << ", d_v_t = " << d_v_t << ", distance = " << distance
+      //           << ", total_distance = " << total_distance << "\n";
     }
   }
+
+  std::cerr << "Check total_distance: " << total_distance << "\n";
 
   return total_distance;
 }
 
-float averageDistance(RoadNetwork& ag, RoadNetwork& g, NodeID source, NodeID target) {
-	// Sum of weights
-	auto weights_sum = 0;
-	for (auto& edge_list : ag.adjListOut) {
-		for (auto& edge : edge_list) {
-			weights_sum += edge.second;
-		}
-	}
+float averageDistance(RoadNetwork &ag, RoadNetwork &g, NodeID source,
+                      NodeID target) {
+  // Sum of weights
+  auto weights_sum = 0;
+  for (auto &edge_list : ag.adjListOut) {
+    for (auto &edge : edge_list) {
+      weights_sum += edge.second;
+    }
+  }
 
-	auto total_distance = totalDistance(ag, source, target);
-	int d_G_s_t = dijkstra_path_and_bounds(&g, source, target).first.length;
+  auto total_distance = totalDistance(ag, source, target);
+  int d_G_s_t = dijkstra_path_and_bounds(&g, source, target).first.length;
 
-	return weights_sum / (d_G_s_t * total_distance);
+  return weights_sum / (d_G_s_t * total_distance);
 }
 
-float decisionEdges(RoadNetwork& ag, NodeID target) {
-	auto decision_edges = 0;
+float averageDistance(RoadNetwork &ag, RoadNetwork &g, NodeID source,
+                      NodeID target, float total_distance) {
+  // Sum of weights
+  auto weights_sum = 0;
+  for (auto &edge_list : ag.adjListOut) {
+    for (auto &edge : edge_list) {
+      weights_sum += edge.second;
+    }
+  }
 
-	using index = decltype(ag.adjListOut.size());
-	for (index i = 0; i < ag.adjListOut.size(); ++i) {
-		if (i != target) { // Sum over all vertices but the target
-			// out-degree of node i
-			decision_edges += (ag.adjListOut[i].size() - 1);
-		}
-	}
+  int d_G_s_t = dijkstra_path_and_bounds(&g, source, target).first.length;
 
-	return static_cast<float>(decision_edges);
+  return weights_sum / (d_G_s_t * total_distance);
 }
 
-ErrorMetrics compute_errors(vector<Path> &result, RoadNetwork &g, NodeID source, NodeID target) {
-	auto ag = build_AG(result, g);
+float decisionEdges(RoadNetwork &ag, NodeID target) {
+  auto decision_edges = 0;
 
-	auto total_distance = totalDistance(ag, source, target);
-	auto average_distance = averageDistance(ag, g, source, target);
-	auto decision_edges = decisionEdges(ag, target);
+  using index = decltype(ag.adjListOut.size());
+  for (index i = 0; i < ag.adjListOut.size(); ++i) {
+    if (i != target) { // Sum over all vertices but the target
+      // out-degree of node i
+      auto out_degree = ag.adjListOut[i].size();
+      decision_edges += (out_degree == 0 ? 0 : out_degree - 1);
+    }
+  }
 
-	return {total_distance, average_distance, decision_edges};
+  return static_cast<float>(decision_edges);
+}
+
+ErrorMetrics compute_errors(vector<Path> &result, RoadNetwork &g, NodeID source,
+                            NodeID target) {
+  auto ag = build_AG(result, g);
+
+  auto total_distance = totalDistance(ag, source, target);
+  auto average_distance = averageDistance(ag, g, source, target, total_distance);
+  auto decision_edges = decisionEdges(ag, target);
+
+  return {total_distance, average_distance, decision_edges};
 }
 
 auto parse_metric(const string &metric) {
