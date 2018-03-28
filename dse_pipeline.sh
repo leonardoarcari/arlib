@@ -4,10 +4,12 @@
 CONF_NAME="kspwlo.conf"
 APPLICATION_BIN="kspwlo"
 
+# HELP
+HELP="Usage: $0 [op|mp|opplus|esx] [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"
 # Check number of arguments
 if [ $# -ne 2 ]; then
 	echo "Wrong number of parameters: $@. Required 3."
-	echo "Usage: $0 [op|mp|opplus|esx] [exec_time|avg_length]"
+	echo $HELP
 	exit -1
 fi
 
@@ -27,19 +29,25 @@ elif [ $OPT == "esx" ]; then
 	shift
 else
 	echo "Unknown parameter \"$OPT\"."
-	echo "Usage: $0 [op|mp|opplus|esx] [exec_time|avg_length]"
+	echo $HELP
 	exit -1
 fi
 
 # Parse METRIC to plot
 METRIC_OPT=$1
 if [ $METRIC_OPT == "exec_time" ]; then
-	METRIC="exec_time"
+	METRIC=$METRIC_OPT
 elif [ $METRIC_OPT == "avg_length" ]; then
-	METRIC="avg_length"
+	METRIC=$METRIC_OPT
+elif [ $METRIC_OPT == "avg_total_distance" ]; then
+	METRIC=$METRIC_OPT
+elif [ $METRIC_OPT == "avg_average_distance" ]; then
+	METRIC=$METRIC_OPT
+elif [ $METRIC_OPT == "avg_decision_edges" ]; then
+	METRIC=$METRIC_OPT
 else
 	echo "Unknown metric \"$METRIC_OPT\"."
-	echo "Usage: $0 [op|mp|opplus|esx] [exec_time|avg_length]"
+	echo $HELP
 	exit -1
 fi
 

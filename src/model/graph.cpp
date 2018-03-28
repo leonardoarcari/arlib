@@ -4,6 +4,8 @@ Copyright (c) 2017 Theodoros Chondrogiannis
 
 #include "graph.hpp"
 
+#include <iostream>
+
 RoadNetwork::RoadNetwork(const char *filename) {
 
   FILE *fp;
@@ -35,7 +37,7 @@ RoadNetwork::~RoadNetwork() {
 
 bool operator==(const Edge &le, const Edge &re) {
   return (le.first == re.first && le.second == re.second) ||
-         (le.second == re.first && le.first == re.second);
+      (le.second == re.first && le.first == re.second);
 }
 
 bool Path::containsEdge(Edge e) {
@@ -67,4 +69,14 @@ ostream &operator<<(ostream &os, const Path &path) {
   os << "(n_nodes: " << path.nodes.size() << " n_edges: " << path.edges.size()
      << " length: " << path.length << ')';
   return os;
+}
+
+vector<Edge> Path::getEdges() const {
+  auto edges = vector<Edge>(nodes.size() - 1);
+
+  for(decltype(nodes.size()) i = 0; i < nodes.size() - 1; ++i) {
+    edges.emplace_back(nodes[i], nodes[i+1]);
+  }
+
+  return edges;
 }
