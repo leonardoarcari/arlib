@@ -1,5 +1,5 @@
 # check the minimum version
-cmake_minimum_required( VERSION 2.8.12 )
+cmake_minimum_required( VERSION 3.10 )
 
 # the project name
 project( kspwlo )
@@ -14,8 +14,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # setting common c++ flags
-# set(CMAKE_CXX_STANDARD 17) can't set. Too old cmake. Crap.
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_STANDARD 17)
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -Wl,--hash-style=both,--as-needed -pthread -fopenmp -ftemplate-depth=1100" )
 add_compile_options(-g
         -fmessage-length=0
@@ -59,10 +58,22 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/margot_heel_if/cmake"
 # find the required packages
 find_package(MARGOT_HEEL)
 
-
 # add the required include directories
 include_directories(${MARGOT_HEEL_INCLUDES})
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+# Boost graph
+find_package(Boost REQUIRED COMPONENTS graph)
+
+###############################################
+##                CATCH V2                   ##
+###############################################
+# Prepare "Catch" library for other executables
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/catch)
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+
 
 ###############################################
 ##             CONFIG FILES                  ##
@@ -103,15 +114,33 @@ set(EXPLORATION_SRC
         src/exploration/error_metrics.hpp
         src/exploration/graph_utils.hpp)
 
+set(INCLUDES 
+        include/graph_types.hpp
+        include/graph_utils.hpp)
+
 set(SOURCE_FILES
         ${ALGORITHMS_SRC}
         ${MODEL_SRC}
         ${TOOLS_SRC}
         ${EXPLORATION_SRC}
+        ${INCLUDES}
         src/main.cpp)
 
 add_executable(${APP_NAME} ${SOURCE_FILES})
 target_link_libraries(${APP_NAME} ${MARGOT_HEEL_LIBRARIES})
+target_link_libraries(${APP_NAME} Boost::graph)
+
+# Testing
+# Make test executable
+set(TEST_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp)
+add_executable(tests ${TEST_SOURCES})
+target_link_libraries(tests Catch)
+target_link_libraries(tests Boost::graph)
+
+enable_testing(true)
+add_test(NAME tests COMMAND tests)
 
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
