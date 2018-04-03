@@ -1,9 +1,13 @@
 #ifndef BOOST_GRAPH_UTILS_H
 #define BOOST_GRAPH_UTILS_H
 
+#include <experimental/filesystem>
+#include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "graph_types.hpp"
@@ -24,7 +28,6 @@ PropertyGraph read_graph_from_string(const std::string &graph) {
   // Get number of nodes and edges
   std::getline(ss, line);
   auto line_s = std::stringstream{line};
-  using v_size_type = typename graph_traits<kspwlo::Graph>::vertices_size_type;
   int nb_nodes, nb_edges;
   line_s >> nb_nodes >> nb_edges;
 
@@ -50,8 +53,26 @@ PropertyGraph read_graph_from_string(const std::string &graph) {
 }
 
 template <typename PropertyGraph>
-PropertyGraph read_graph_from_file(const std::string &path) {
-  return PropertyGraph{};
+std::optional<PropertyGraph>
+read_graph_from_file(const std::string_view &path) {
+  namespace fs = std::experimental::filesystem;
+  auto fs_path = fs::path(path);
+
+  if (!fs::is_regular_file(fs_path)) {
+    std::cerr << fs_path << " is not a regular file.\n";
+    return {};
+  }
+
+  if (fs::is_empty(fs_path)) {
+    std::cerr << fs_path << " is empty.\n";
+    return {};
+  }
+
+  auto buffer = std::stringstream{};
+  auto input = std::ifstream{fs_path.string()};
+  buffer << input.rdbuf();
+
+  return {read_graph_from_string<PropertyGraph>(buffer.str())};
 }
 
 template <typename PropertyGraph>
