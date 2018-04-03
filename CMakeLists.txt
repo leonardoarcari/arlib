@@ -128,7 +128,7 @@ set(SOURCE_FILES
 
 add_executable(${APP_NAME} ${SOURCE_FILES})
 target_link_libraries(${APP_NAME} ${MARGOT_HEEL_LIBRARIES})
-target_link_libraries(${APP_NAME} Boost::graph)
+target_link_libraries(${APP_NAME} Boost::graph stdc++fs)
 
 # Testing
 # Make test executable
@@ -137,7 +137,7 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp)
 add_executable(tests ${TEST_SOURCES})
 target_link_libraries(tests Catch)
-target_link_libraries(tests Boost::graph)
+target_link_libraries(tests Boost::graph stdc++fs)
 
 enable_testing(true)
 add_test(NAME tests COMMAND tests)
