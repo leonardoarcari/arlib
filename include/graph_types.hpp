@@ -6,7 +6,7 @@
 
 namespace kspwlo {
 using Graph = boost::adjacency_list<boost::vecS, boost::vecS,
-                                    boost::directedS, boost::no_property,
+                                    boost::bidirectionalS, boost::no_property,
                                     boost::property<boost::edge_weight_t, int>>;
 using Vertex = boost::graph_traits<Graph>::vertex_descriptor;
 using Edge = std::pair<int, int>;

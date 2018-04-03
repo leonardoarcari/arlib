@@ -70,6 +70,9 @@ vector<Path> onepass_plus(RoadNetwork *rN, NodeID source, NodeID target,
     /* DEBUG */
     visitsNo[curLabel->node_id]++;
 
+    // Perform lazy update of similarity vector, since new paths might
+    // have been added to P_LO from the time this Label was pushed into
+    // priority queue.
     if (curLabel->overlapForK < count - 1) {
       check = true;
 
