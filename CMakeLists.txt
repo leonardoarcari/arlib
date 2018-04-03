@@ -116,7 +116,8 @@ set(EXPLORATION_SRC
 
 set(INCLUDES 
         include/graph_types.hpp
-        include/graph_utils.hpp)
+        include/graph_utils.hpp
+        include/onepass_plus.hpp)
 
 set(SOURCE_FILES
         ${ALGORITHMS_SRC}
@@ -124,6 +125,7 @@ set(SOURCE_FILES
         ${TOOLS_SRC}
         ${EXPLORATION_SRC}
         ${INCLUDES}
+        src/graph_utils.cpp
         src/main.cpp)
 
 add_executable(${APP_NAME} ${SOURCE_FILES})
@@ -134,8 +136,12 @@ target_link_libraries(${APP_NAME} Boost::graph stdc++fs)
 # Make test executable
 set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/graph_utils.cpp
+        ${INCLUDES})
 add_executable(tests ${TEST_SOURCES})
+target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test)
 target_link_libraries(tests Catch)
 target_link_libraries(tests Boost::graph stdc++fs)
 
