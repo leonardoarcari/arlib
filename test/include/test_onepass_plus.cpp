@@ -16,13 +16,13 @@
 #include <string_view>
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
-  using kspwlo::OnePassLabel;
-  auto s = std::make_shared<OnePassLabel<int, int>>(0, 0, 0, 0);
-  auto n1 = std::make_shared<OnePassLabel<int, int>>(1, 1, 1, s, 1);
-  auto n2 = std::make_shared<OnePassLabel<int, int>>(2, 2, 2, n1, 1);
-  auto n3 = std::make_shared<OnePassLabel<int, int>>(3, 3, 2, n2, 1);
+  using Label = kspwlo::OnePassLabel<kspwlo::Graph>;
+  auto s = std::make_shared<Label>(0, 0, 0, 0, 0);
+  auto n1 = std::make_shared<Label>(1, 1, 1, s, 1, 1);
+  auto n2 = std::make_shared<Label>(2, 2, 2, n1, 2, 1);
+  auto n3 = std::make_shared<Label>(3, 3, 2, n2, 3, 1);
 
-  auto path = n3->getPath<kspwlo::Graph>();
+  auto path = n3->getPath();
   REQUIRE(boost::num_vertices(path) == 4);
 }
 
@@ -32,8 +32,7 @@ TEST_CASE("Computing distance from target", "[distance_from_target]") {
 
   kspwlo::Vertex target = 6;
   auto weight = get(edge_weight, G);
-  using size_type = typename property_traits<decltype(weight)>::value_type;
-  auto distance = kspwlo::distance_from_target<size_type>(G, target);
+  auto distance = kspwlo::distance_from_target(G, target);
 
   auto index = get(vertex_index, G);
   REQUIRE(distance[index[1]] == 6);
@@ -50,11 +49,12 @@ TEST_CASE("Computing path from dijkstra_shortest_paths") {
   auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr));
   auto predecessor = std::vector<kspwlo::Vertex>(num_vertices(G), 0);
   auto vertex_id = get(vertex_index, G);
-  dijkstra_shortest_paths(G, vertex_id[0],
-                          predecessor_map(make_iterator_property_map(
-                              std::begin(predecessor), vertex_id, vertex_id[0])));
-  
-  auto path = build_graph_from_dijkstra(G, predecessor, 0, 6);
+  dijkstra_shortest_paths(
+      G, vertex_id[0],
+      predecessor_map(make_iterator_property_map(std::begin(predecessor),
+                                                 vertex_id, vertex_id[0])));
+
+  auto path = build_path_from_dijkstra(G, predecessor, 0, 6).graph;
 
   REQUIRE(num_edges(path) == 3);
 
