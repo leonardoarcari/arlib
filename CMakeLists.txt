@@ -113,6 +113,8 @@ set(TOOLS_SRC
 set(EXPLORATION_SRC
         src/exploration/error_metrics.hpp
         src/exploration/graph_utils.hpp)
+set(IMPL_SRC
+        src/impl/onepass_plus_impl.hpp)
 
 set(INCLUDES 
         include/graph_types.hpp
@@ -124,6 +126,7 @@ set(SOURCE_FILES
         ${MODEL_SRC}
         ${TOOLS_SRC}
         ${EXPLORATION_SRC}
+        ${IMPL_SRC}
         ${INCLUDES}
         src/graph_utils.cpp
         src/main.cpp)

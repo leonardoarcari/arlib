@@ -7,6 +7,7 @@
 #include "graph_types.hpp"
 #include "graph_utils.hpp"
 #include "onepass_plus.hpp"
+#include "impl/onepass_plus_impl.hpp"
 #include "utils.hpp"
 
 #include "algorithms/kspwlo.hpp"
@@ -18,7 +19,7 @@
 #include <string_view>
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
-  using Label = kspwlo::OnePassLabel<kspwlo::Graph>;
+  using Label = kspwlo_impl::OnePassLabel<kspwlo::Graph>;
   auto s = std::make_shared<Label>(0, 0, 0, 0, 0);
   auto n1 = std::make_shared<Label>(1, 1, 1, s, 1, 1);
   auto n2 = std::make_shared<Label>(2, 2, 2, n1, 2, 1);
@@ -37,8 +38,7 @@ TEST_CASE("Computing distance from target", "[distance_from_target]") {
   auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr));
 
   kspwlo::Vertex target = 6;
-  auto weight = get(edge_weight, G);
-  auto distance = kspwlo::distance_from_target(G, target);
+  auto distance = kspwlo_impl::distance_from_target(G, target);
 
   auto index = get(vertex_index, G);
   REQUIRE(distance[index[1]] == 6);
@@ -60,7 +60,7 @@ TEST_CASE("Computing path from dijkstra_shortest_paths") {
       predecessor_map(make_iterator_property_map(std::begin(predecessor),
                                                  vertex_id, vertex_id[0])));
 
-  auto path = build_path_from_dijkstra(G, predecessor, 0, 6).graph;
+  auto path = kspwlo_impl::build_path_from_dijkstra(G, predecessor, 0, 6).graph;
 
   REQUIRE(num_edges(path) == 3);
 
@@ -76,11 +76,12 @@ TEST_CASE("Computing path from dijkstra_shortest_paths") {
 TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
           "[boost::graph]") {
   auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
-  auto res = boost::onepass_plus(G, 0, 6, 3, 0.5);
+  kspwlo::Vertex s = 0, t = 6;
+  auto res = boost::onepass_plus(G, s, t, 3, 0.5);
 
   // Create a new tmp file out of graph_gr
   namespace fs = std::experimental::filesystem;
-  auto path = fs::temp_directory_path() / "graph_gr_file.gr";
+  auto path = fs::temp_directory_path() / std::string("graph_gr_file.gr");
   auto of = std::ofstream(path.string());
   of << graph_gr;
   of.close();

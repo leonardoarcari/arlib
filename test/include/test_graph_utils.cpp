@@ -61,8 +61,6 @@ TEST_CASE("Boost::Graph can be built from .gr strings", "[boost::graph]") {
 
     auto Vs = std::vector<Vertex>{vertices(G).first, vertices(G).second};
 
-    auto v_end = std::end(Vs);
-
     // Only 7 vertices are in the graph structure
     REQUIRE(num_vertices(G) == 7);
 
@@ -86,7 +84,7 @@ TEST_CASE("Boost::Graph can be built from .gr strings", "[boost::graph]") {
 TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
   // Create a new tmp file out of graph_gr
   namespace fs = std::experimental::filesystem;
-  auto path = fs::temp_directory_path() / "graph_gr_file.gr";
+  auto path = fs::temp_directory_path() / std::string{"graph_gr_file.gr"};
   auto of = std::ofstream(path.string());
   of << graph_gr;
   of.close();
@@ -103,8 +101,6 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
     using Vertex = graph_traits<kspwlo::Graph>::vertex_descriptor;
 
     auto Vs = std::vector<Vertex>{vertices(G).first, vertices(G).second};
-
-    auto v_end = std::end(Vs);
 
     // Only 7 vertices are in the graph structure
     REQUIRE(num_vertices(G) == 7);
