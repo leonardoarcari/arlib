@@ -33,7 +33,7 @@ template <typename Edge> std::vector<Edge> build_test_edges() {
 }
 
 std::vector<int> build_test_weights() {
-  return std::vector<int>{6, 3, 4, 6, 5, 2, 3, 5, 3, 1, 2, 2};
+  return std::vector<int>{6, 3, 4, 6, 5, 2, 3, 5, 3, 1, 3, 2};
 }
 
 template <typename PropertyGraph, typename Edge>

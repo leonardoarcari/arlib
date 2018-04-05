@@ -25,8 +25,8 @@ constexpr std::string_view graph_gr = "d\n"
                                       "5 3 3 0\n"
                                       "4 5 1 0\n"
                                       "5 4 1 0\n"
-                                      "4 6 2 0\n"
-                                      "6 4 2 0\n"
+                                      "4 6 3 0\n"
+                                      "6 4 3 0\n"
                                       "5 6 2 0\n"
                                       "6 5 2 0\n";
 
