@@ -9,6 +9,8 @@
 #include "onepass_plus.hpp"
 #include "utils.hpp"
 
+#include "algorithms/kspwlo.hpp"
+
 #include <algorithm>
 #include <experimental/filesystem>
 #include <fstream>
@@ -24,6 +26,10 @@ TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
 
   auto path = n3->getPath();
   REQUIRE(boost::num_vertices(path) == 4);
+
+  REQUIRE(edge(0, 1, path).second);
+  REQUIRE(edge(1, 2, path).second);
+  REQUIRE(edge(2, 3, path).second);
 }
 
 TEST_CASE("Computing distance from target", "[distance_from_target]") {
@@ -36,9 +42,9 @@ TEST_CASE("Computing distance from target", "[distance_from_target]") {
 
   auto index = get(vertex_index, G);
   REQUIRE(distance[index[1]] == 6);
-  REQUIRE(distance[index[2]] == 7);
+  REQUIRE(distance[index[2]] == 8);
   REQUIRE(distance[index[3]] == 5);
-  REQUIRE(distance[index[4]] == 2);
+  REQUIRE(distance[index[4]] == 3);
   REQUIRE(distance[index[5]] == 2);
   REQUIRE(distance[index[6]] == 0);
 }
@@ -69,9 +75,35 @@ TEST_CASE("Computing path from dijkstra_shortest_paths") {
 
 TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
           "[boost::graph]") {
-  using namespace boost;
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
+  auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
+  auto res = boost::onepass_plus(G, 0, 6, 3, 0.5);
 
-  auto res = onepass_plus(G, 0, 6, 3, 0.5);
-  REQUIRE(res.empty());
+  // Create a new tmp file out of graph_gr
+  namespace fs = std::experimental::filesystem;
+  auto path = fs::temp_directory_path() / "graph_gr_file.gr";
+  auto of = std::ofstream(path.string());
+  of << graph_gr;
+  of.close();
+
+  auto G_regr = std::make_unique<RoadNetwork>(path.c_str());
+  auto res_regression = onepass_plus(G_regr.get(), 0, 6, 3, 0.5);
+
+  std::cout << "boost::graph result:\n";
+  for (auto &resPath : res) {
+    auto &p = resPath.graph;
+    for (auto it = edges(p).first; it != edges(p).second; ++it) {
+      std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
+    } std::cout << "\n";
+  }
+
+  std::cout << "regression result:\n";
+  for (auto &regPath : res_regression) {
+    auto edges = regPath.getEdges();
+
+    for (auto edge : edges) {
+      std::cout << "(" << edge.first << ", " << edge.second << ") ";
+    } std::cout << "\n";
+  }
+
+  REQUIRE(res.size() == res_regression.size());
 }

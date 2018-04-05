@@ -139,6 +139,10 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/algorithms/onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/model/graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/dijkstra.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/algorithms/skyline.cpp
         ${INCLUDES})
 add_executable(tests ${TEST_SOURCES})
 target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test)
