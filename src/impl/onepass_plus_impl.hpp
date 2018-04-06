@@ -20,6 +20,31 @@
 #include <vector>
 
 namespace kspwlo_impl {
+
+//===----------------------------------------------------------------------===//
+//                    OnePass+ algorithm support classes
+//===----------------------------------------------------------------------===//
+
+/**
+ * @brief A label for a node in the graph to keep track of its exploration
+ *        state.
+ *
+ * A label tracks the path from the source to the node @c n it's attached, the
+ * similarity of the path <tt>p(s -> n)</tt> wrt to the alternative paths
+ * computed so far and the time step the similarities were updated (i.e. the
+ * number of alternative paths against which the similarities are currently
+ * computed)
+ *
+ * Labels can either be @c head labels if they are attached to source node, or
+ * have a predecessor label, i.e. they are attached to a node @c n such that
+ * there exist a label attached to a node @c n' and an edge <tt>(n', n)</tt> in
+ * Graph.
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam Vertex A vertex of Graph.
+ * @tparam Length The value type of an edge weight of Graph.
+ */
 template <typename Graph,
           typename Length =
               typename boost::property_traits<typename boost::property_map<
@@ -37,23 +62,67 @@ private:
   int checked_at_step;
 
 public:
+  /**
+   * @brief size_type trait of similarity vector
+   */
   using similarity_map_size_type = typename decltype(similarity_map)::size_type;
+
+  /**
+   * @brief iterator trait of similarity vector
+   */
   using similarity_map_iterator_type =
       typename decltype(similarity_map)::iterator;
+
+  /**
+   * @brief Length
+   */
   using length_type = Length;
+
+  /**
+   * @brief Vertex
+   */
   using vertex_type = Vertex;
 
+  /**
+   * @brief Construct a new OnePass Label object with a predecessor label.
+   *
+   * @param node Node to attach this label to.
+   * @param length Distance of this node from source following the path from
+   *        this label to the source's one.
+   * @param lower_bound AStar heuristic of the distance of @p node from target.
+   * @param previous Predecessor label.
+   * @param k Number of k alternative paths to compute.
+   * @param checked_at_step The current time step (i.e. the number of
+   *        alternative paths currently computed)
+   */
   OnePassLabel(Vertex node, length_type length, length_type lower_bound,
                const std::shared_ptr<OnePassLabel> &previous, int k,
                int checked_at_step)
       : node{node}, length{length},
         lower_bound{lower_bound}, previous{previous},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
+
+  /**
+   * @brief Construct a new OnePass Label object with no predecessor (i.e. a @c
+   * head label)
+   *
+   * @param node Node to attach this label to.
+   * @param length Distance of this node from source following the path from
+   *        this label to the source's one.
+   * @param lower_bound AStar heuristic of the distance of @p node from target.
+   * @param k Number of k alternative paths to compute.
+   * @param checked_at_step The current time step (i.e. the number of
+   *        alternative paths currently computed)
+   */
   OnePassLabel(Vertex node, length_type length, length_type lower_bound, int k,
                int checked_at_step)
       : node{node}, length{length}, lower_bound{lower_bound}, previous{},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
+  /**
+   * @return a Graph computed from the attached node back to source following
+   *         the predecessor labels.
+   */
   Graph get_path() {
     auto edge_set = std::vector<kspwlo::Edge>{};
     auto nodes = std::unordered_set<Vertex>{};
@@ -81,29 +150,92 @@ public:
     return g;
   }
 
+  /**
+   * @param kth The kth alternative path index.
+   * @return A reference to the similarity of path <tt>p(source, n)</tt> wrt to
+   *         @p kth alternative path.
+   */
   double &get_similarity_with(int kth) { return similarity_map.at(kth); }
+
+  /**
+   * @param kth The kth alternative path index.
+   * @return A const-reference to the similarity of path <tt>p(source, n)</tt>
+   *         wrt to @p kth alternative path.
+   */
   const double &get_similarity_with(int kth) const {
     return similarity_map.at(kth);
   }
 
-  similarity_map_size_type get_num_paths() const { return similarity_map.size(); }
+  /**
+   * @return the number of alternative paths for which there exists a similarity
+   *         measure for, for this label.
+   */
+  similarity_map_size_type get_num_paths() const {
+    return similarity_map.size();
+  }
+
+  /**
+   * @return a copy of the similarity vector wrt the alternative paths.
+   */
   std::vector<double> get_similarity_map() const {
     return std::vector<double>(std::begin(similarity_map),
                                std::end(similarity_map));
   }
+
+  /**
+   * @brief Copies the similarity values from [@p first, @p last) iterators into
+   *        label's similarity vector.
+   *
+   * @param first begin iterator.
+   * @param last past-to-end iterator.
+   */
   void set_similarities(similarity_map_iterator_type first,
-                          similarity_map_iterator_type last) {
+                        similarity_map_iterator_type last) {
     std::copy(first, last, std::begin(similarity_map));
   }
 
+  /**
+   * @return the node this label is attached to.
+   */
   Vertex get_node() const { return node; }
+
+  /**
+   * @return the distance of this node from source following the path from
+   *         this label to the source's one.
+   */
   length_type get_length() const { return length; }
+
+  /**
+   * @return AStar heuristic of the distance of the node from target.
+   */
   length_type get_lower_bound() const { return lower_bound; }
+
+  /**
+   * @return Number of k alternative paths to compute.
+   */
   int num_paths_k() const { return k; }
+
+  /**
+   * @return the time step the similarities were updated (i.e. the
+   *         number of alternative paths against which the similarities are
+   *         currently computed).
+   */
   int last_check() const { return checked_at_step; }
+
+  /**
+   * @param currentStep the current time step.
+   * @return true if @c last_check() < @p currentStep.
+   * @return false otherwise.
+   */
   bool is_outdated(int currentStep) const {
     return checked_at_step < currentStep;
   }
+
+  /**
+   * @brief Set the time step of similarities update.
+   *
+   * @param step the time step.
+   */
   void set_last_check(int step) {
     assert(step > 0);
     checked_at_step = step;
@@ -218,6 +350,10 @@ struct OnePassPlusASComparator {
   }
 };
 
+//===----------------------------------------------------------------------===//
+//                      OnePass+ algorithm routines
+//===----------------------------------------------------------------------===//
+
 template <
     typename Graph,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
@@ -238,9 +374,8 @@ template <typename Graph, typename PredecessorMap, typename Vertex,
           typename length_type =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph, length_type>
-build_path_from_dijkstra(Graph &G, const PredecessorMap &p, Vertex s,
-                         Vertex t) {
+kspwlo::Path<Graph> build_path_from_dijkstra(Graph &G, const PredecessorMap &p,
+                                             Vertex s, Vertex t) {
   using namespace boost;
   auto G_weight = get(edge_weight, G);
   auto path = Graph{};
@@ -267,8 +402,7 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph, Length> compute_shortest_path(Graph &G, Vertex s,
-                                                  Vertex t) {
+kspwlo::Path<Graph> compute_shortest_path(Graph &G, Vertex s, Vertex t) {
   using namespace boost;
   auto sp_distances = std::vector<Length>(num_vertices(G));
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
@@ -319,7 +453,8 @@ bool update_label_similarity(Label &label, Graph &G, const EdgesMap &resEdges,
 
           // Check Lemma 1. The similarity between the candidate path and
           // all the other k-shortest-paths must be less then theta
-          if (label.get_similarity_with(index) / resPaths[step].length > theta) {
+          if (label.get_similarity_with(index) / resPaths[step].length >
+              theta) {
             below_sim_threshold = false;
             break;
           }
@@ -341,7 +476,9 @@ std::shared_ptr<Label> expand_path(const std::shared_ptr<Label> &label,
                                  label->num_paths_k(), step);
 }
 
-template <typename Graph, typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor> bool is_acyclic(Graph &G) {
+template <typename Graph, typename Vertex = typename boost::graph_traits<
+                              Graph>::vertex_descriptor>
+bool is_acyclic(Graph &G) {
   auto top_ordering = std::vector<Vertex>{};
   try {
     boost::topological_sort(G, std::back_inserter(top_ordering));
