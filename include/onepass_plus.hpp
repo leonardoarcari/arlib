@@ -17,12 +17,30 @@
 #include <vector>
 
 namespace boost {
+/**
+ * @brief An implementation of OnePass+ k-shortest path with limited overlap for
+ *        Boost::Graph.
+ *
+ * This implementation refers to the following publication:
+ * Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and Ulf Leser,
+ * Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited
+ * Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology
+ * (EDBT) (2017)
+ *
+ * @tparam PropertyGraph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam Vertex A vertex of PropertyGraph.
+ * @param G The graph.
+ * @param s The source node.
+ * @param t The target node.
+ * @param k The number of alternative paths to compute.
+ * @param theta The similarity threshold.
+ * 
+ * @return A list of at maximum @p k alternative paths. 
+ */
 template <typename PropertyGraph,
           typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor,
-          typename length_type =
-              typename boost::property_traits<typename boost::property_map<
-                  PropertyGraph, boost::edge_weight_t>::type>::value_type>
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
 std::vector<kspwlo::Path<PropertyGraph>>
 onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // P_LO set of k paths
@@ -172,13 +190,13 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
           std::cout << "]\n";
 
           c_label->set_similarities(std::begin(c_similarity_map),
-                                      std::end(c_similarity_map));
+                                    std::end(c_similarity_map));
           std::cout << "Candidate path: " << *c_label << '\n'
                     << "below_sim_threshold = " << below_sim_threshold << "\n";
 
           if (below_sim_threshold) {
             c_label->set_similarities(std::begin(c_similarity_map),
-                                        std::end(c_similarity_map));
+                                      std::end(c_similarity_map));
             c_label->get_path();
             Q.push(c_label);
             created_labels.push_back(c_label);
