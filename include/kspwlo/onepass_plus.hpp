@@ -5,15 +5,14 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "graph_types.hpp"
-#include "impl/onepass_plus_impl.hpp"
+#include "kspwlo/graph_types.hpp"
+#include "kspwlo/impl/onepass_plus_impl.hpp"
 
 #include <cassert>
 #include <iostream>
 #include <memory>
-#include <optional>
 #include <queue>
-#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 namespace boost {

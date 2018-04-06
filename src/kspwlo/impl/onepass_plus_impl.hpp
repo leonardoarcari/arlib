@@ -10,7 +10,7 @@
 
 #include <boost/graph/reverse_graph.hpp>
 
-#include "graph_types.hpp"
+#include "kspwlo/graph_types.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -141,13 +141,7 @@ public:
       prev = prev->previous.lock();
     }
 
-    auto g = Graph(std::begin(edge_set), std::end(edge_set), nodes.size());
-    std::cout << "getGraph(): ";
-    for (auto it = edges(g).first; it != edges(g).second; ++it) {
-      std::cout << "(" << source(*it, g) << ", " << target(*it, g) << ") ";
-    }
-    std::cout << "\n";
-    return g;
+    return Graph(std::begin(edge_set), std::end(edge_set), nodes.size());
   }
 
   /**
@@ -242,15 +236,10 @@ public:
   }
 
 private:
-  template <typename Graph2,
-            typename length_type2 =
-                typename boost::property_traits<typename boost::property_map<
-                    Graph2, boost::edge_weight_t>::type>::value_type,
-            typename Vertex2 =
-                typename boost::graph_traits<Graph2>::vertex_descriptor>
+  template <typename Graph2>
   friend std::ostream &
   operator<<(std::ostream &os,
-             const OnePassLabel<Graph2, length_type2, Vertex2> &label) {
+             const OnePassLabel<Graph2> &label) {
     os << "(node = " << label.node << ", length = " << label.length
        << ", lower_bound = " << label.lower_bound << ", k = " << label.k
        << ", checked_at_step = " << label.checked_at_step

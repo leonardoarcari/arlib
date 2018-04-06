@@ -4,10 +4,10 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "graph_types.hpp"
-#include "graph_utils.hpp"
-#include "onepass_plus.hpp"
-#include "impl/onepass_plus_impl.hpp"
+#include "kspwlo/graph_types.hpp"
+#include "kspwlo/graph_utils.hpp"
+#include "kspwlo/onepass_plus.hpp"
+#include "kspwlo/impl/onepass_plus_impl.hpp"
 #include "utils.hpp"
 
 #include "algorithms/kspwlo.hpp"

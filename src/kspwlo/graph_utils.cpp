@@ -1,4 +1,4 @@
-#include "graph_utils.hpp"
+#include "kspwlo/graph_utils.hpp"
 
 namespace boost {
 template <> std::string dump_edges_weight(const kspwlo::Graph &G) {

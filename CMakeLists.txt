@@ -114,12 +114,12 @@ set(EXPLORATION_SRC
         src/exploration/error_metrics.hpp
         src/exploration/graph_utils.hpp)
 set(IMPL_SRC
-        src/impl/onepass_plus_impl.hpp)
+        src/kspwlo/impl/onepass_plus_impl.hpp)
 
 set(INCLUDES 
-        include/graph_types.hpp
-        include/graph_utils.hpp
-        include/onepass_plus.hpp)
+        include/kspwlo/graph_types.hpp
+        include/kspwlo/graph_utils.hpp
+        include/kspwlo/onepass_plus.hpp)
 
 set(SOURCE_FILES
         ${ALGORITHMS_SRC}
@@ -128,7 +128,7 @@ set(SOURCE_FILES
         ${EXPLORATION_SRC}
         ${IMPL_SRC}
         ${INCLUDES}
-        src/graph_utils.cpp
+        src/kspwlo/graph_utils.cpp
         src/main.cpp)
 
 add_executable(${APP_NAME} ${SOURCE_FILES})
@@ -141,7 +141,7 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/algorithms/onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/model/graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/dijkstra.cpp

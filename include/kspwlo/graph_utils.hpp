@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-#include "graph_types.hpp"
+#include "kspwlo/graph_types.hpp"
 
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
