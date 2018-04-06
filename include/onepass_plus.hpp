@@ -1,16 +1,12 @@
 #ifndef BOOST_ONEPASS_PLUS_HPP
 #define BOOST_ONEPASS_PLUS_HPP
 
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/graph/exception.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
-#include <boost/graph/reverse_graph.hpp>
-#include <boost/graph/topological_sort.hpp>
 
-#include "impl/onepass_plus_impl.hpp"
 #include "graph_types.hpp"
+#include "impl/onepass_plus_impl.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -43,9 +39,9 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // Min-priority queue
   using Label = kspwlo_impl::OnePassLabel<PropertyGraph>;
   using LabelPtr = std::shared_ptr<Label>;
-  auto Q =
-      std::priority_queue<LabelPtr, std::vector<LabelPtr>,
-                          kspwlo_impl::OnePassPlusASComparator<PropertyGraph>>{};
+  auto Q = std::priority_queue<
+      LabelPtr, std::vector<LabelPtr>,
+      kspwlo_impl::OnePassPlusASComparator<PropertyGraph>>{};
   auto created_labels = std::vector<LabelPtr>{};
 
   // Skyline for dominance checkind (Lemma 2)
@@ -55,14 +51,7 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   auto lower_bounds = kspwlo_impl::distance_from_target(G, t);
 
   // Compute shortest path from s to t
-  auto sp_distances = std::vector<length_type>(num_vertices(G));
-  auto predecessor = std::vector<Vertex>(num_vertices(G), s);
-  auto vertex_id = get(vertex_index, G);
-  dijkstra_shortest_paths(G, s,
-                          distance_map(&sp_distances[0])
-                              .predecessor_map(make_iterator_property_map(
-                                  std::begin(predecessor), vertex_id, s)));
-  auto sp_path = kspwlo_impl::build_path_from_dijkstra(G, predecessor, s, t);
+  auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
   auto &sp = sp_path.graph;
 
   // P_LO <-- {shortest path p_0(s, t)};
@@ -77,8 +66,7 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // For each edge in the candidate path, we check if it's already in any of the
   // resPaths. If not, we add it to resEdges. If yes, we keep track of which
   // path includes it.
-  using kspwlo_impl::track_res_edges;
-  track_res_edges(sp, G, resEdges, paths_count);
+  kspwlo_impl::update_res_edges(sp, G, resEdges, paths_count);
 
   std::cout << "resEdges = {";
   for (auto resEdge : resEdges) {
@@ -107,35 +95,11 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
     // Perform lazy update of the similairty vector of 'label', since new paths
     // might have been added to P_LO from the time this 'label' was pushed into
     // priority queue.
-    if (label->checkedAtStep() < static_cast<int>(paths_count - 1)) {
-      bool below_sim_threshold = true;
-      auto tmpPath = label->getPath();
-      for (auto ei = edges(tmpPath).first; ei != edges(tmpPath).second; ++ei) {
-        auto edge_in_g =
-            edge(source(*ei, tmpPath), target(*ei, tmpPath), G).first;
-        auto search = resEdges.find(edge_in_g);
-        // if tmpPath share an edge with any k-th shortest path, update the
-        // overlapping factor
-        if (search != std::end(resEdges)) {
-          for (auto index : search->second) {
-            if (static_cast<int>(index) > label->checkedAtStep() &&
-                index <= paths_count) {
-              label->getSimilarityWith(index) += weight[edge_in_g];
+    if (label->is_outdated(paths_count - 1)) {
+      bool below_sim_threshold = kspwlo_impl::update_label_similarity(
+          *label, G, resEdges, resPaths, weight, theta, paths_count - 1);
 
-              // Check Lemma 1. The similarity between the candidate path and
-              // all the other k-shortest-paths must be less then theta
-              if (label->getSimilarityWith(index) /
-                      resPaths[paths_count - 1].length >
-                  theta) {
-                below_sim_threshold = false;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      label->setCheckedAtStep(paths_count - 1); // Update last check time step
+      label->set_last_check(paths_count - 1); // Update last check time step
       std::cout << "updated label = " << *label << "\n";
       if (!below_sim_threshold) {
         continue; // Skip candidate path
@@ -143,9 +107,9 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
     }
 
     // If we found the target node
-    if (label->getNode() == t) {
+    if (label->get_node() == t) {
       // Build the new k-th shortest path
-      auto resPath = kspwlo::Path(label->getPath(), label->getLength());
+      auto resPath = kspwlo::Path(label->get_path(), label->get_length());
       auto &tmpPath = resPath.graph;
       resPaths.push_back(resPath);
       ++paths_count;
@@ -159,7 +123,7 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
       // For each edge in the candidate path see if it's already in any of the
       // P_LO paths. If not, add it to the resEdges. If so, keep track of which
       // path includes it
-      track_res_edges(tmpPath, G, resEdges, paths_count);
+      kspwlo_impl::update_res_edges(tmpPath, G, resEdges, paths_count);
 
       std::cout << "resEdges = {";
       for (auto resEdge : resEdges) {
@@ -176,66 +140,48 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
       }
 
       skyline.insert(label);
-      auto node_n = label->getNode();
+      auto node_n = label->get_node();
       // For each outgoing edge
       for (auto adj_it = adjacent_vertices(node_n, G).first;
            adj_it != adjacent_vertices(node_n, G).second; ++adj_it) {
-        // Check for acyclicity
-        bool containsLoop = false;
-        auto c_edge = edge(node_n, *adj_it, G).first; // Assume edge exists
+        // Expand path
+        auto c_edge = edge(node_n, *adj_it, G).first;
+        auto c_label =
+            kspwlo_impl::expand_path(label, *adj_it, lower_bounds[*adj_it],
+                                     weight[c_edge], paths_count - 1);
+        auto c_path = c_label->get_path();
+
         std::cout << "Exploring edge: " << c_edge << "\n";
         std::cout << "Candidate edge: (" << source(c_edge, G) << ", "
                   << target(c_edge, G) << ", " << weight[c_edge] << ")\n";
-        auto tmpLength = label->getLength() + weight[c_edge];
-        auto tmpLowerBound = tmpLength + lower_bounds[*adj_it];
-        auto tmpLabel = std::make_shared<Label>(
-            *adj_it, tmpLength, tmpLowerBound, label, k, paths_count - 1);
-        auto tmpPath = tmpLabel->getPath();
-        auto top_ordering = std::vector<Vertex>{};
-        try {
-          topological_sort(tmpPath, std::back_inserter(top_ordering));
-        } catch (not_a_dag e) {
-          // If not acyclic, continue
-          containsLoop = true;
-        }
 
-        if (!containsLoop) {
-          auto tmpSimilarityMap = label->getSimilarityMap();
+        // Check for acyclicity
+        bool acyclic = kspwlo_impl::is_acyclic(c_path);
+
+        if (acyclic) {
+          auto c_similarity_map = label->get_similarity_map();
+
           // Check Lemma 1 for similarity thresholding
-          bool below_sim_threshold = true;
-          auto search = resEdges.find(c_edge);
-          if (search != std::end(resEdges)) {
-            std::cout << "Found c_edge " << c_edge << "\n";
-            auto &res_paths_with_c_edge = search->second;
-            for (auto index : res_paths_with_c_edge) {
-              tmpSimilarityMap[index] += weight[c_edge];
-              auto similarity =
-                  tmpSimilarityMap[index] / resPaths[index].length;
-              std::cout << "Similarity = " << similarity << "\n";
-              if (similarity > theta) {
-                below_sim_threshold = false;
-                break;
-              }
-            }
-          }
+          bool below_sim_threshold = kspwlo_impl::is_below_sim_threshold(
+              c_edge, c_similarity_map, theta, resEdges, resPaths, weight);
 
           std::cout << "Similarities: [ ";
-          for (auto sim : tmpSimilarityMap) {
+          for (auto sim : c_similarity_map) {
             std::cout << sim << " ";
           }
           std::cout << "]\n";
 
-          tmpLabel->importSimilarities(std::begin(tmpSimilarityMap),
-                                       std::end(tmpSimilarityMap));
-          std::cout << "Candidate path: " << *tmpLabel << '\n'
+          c_label->set_similarities(std::begin(c_similarity_map),
+                                      std::end(c_similarity_map));
+          std::cout << "Candidate path: " << *c_label << '\n'
                     << "below_sim_threshold = " << below_sim_threshold << "\n";
 
           if (below_sim_threshold) {
-            tmpLabel->importSimilarities(std::begin(tmpSimilarityMap),
-                                         std::end(tmpSimilarityMap));
-            tmpLabel->getPath();
-            Q.push(tmpLabel);
-            created_labels.push_back(tmpLabel);
+            c_label->set_similarities(std::begin(c_similarity_map),
+                                        std::end(c_similarity_map));
+            c_label->get_path();
+            Q.push(c_label);
+            created_labels.push_back(c_label);
           }
         }
       }

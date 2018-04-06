@@ -25,7 +25,7 @@ TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
   auto n2 = std::make_shared<Label>(2, 2, 2, n1, 2, 1);
   auto n3 = std::make_shared<Label>(3, 3, 2, n2, 3, 1);
 
-  auto path = n3->getPath();
+  auto path = n3->get_path();
   REQUIRE(boost::num_vertices(path) == 4);
 
   REQUIRE(edge(0, 1, path).second);

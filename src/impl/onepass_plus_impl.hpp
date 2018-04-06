@@ -1,20 +1,27 @@
 #ifndef ONEPASS_PLUS_IMPL_HPP
 #define ONEPASS_PLUS_IMPL_HPP
 
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/exception.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/graph/topological_sort.hpp>
+
+#include <boost/graph/reverse_graph.hpp>
 
 #include "graph_types.hpp"
 
 #include <cassert>
+#include <iostream>
 #include <memory>
+#include <queue>
 #include <unordered_set>
 #include <vector>
 
 namespace kspwlo_impl {
 template <typename Graph,
-          typename length_type =
+          typename Length =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type,
           typename Vertex =
@@ -22,8 +29,8 @@ template <typename Graph,
 class OnePassLabel {
 private:
   Vertex node;
-  length_type length;
-  length_type lower_bound;
+  Length length;
+  Length lower_bound;
   std::weak_ptr<OnePassLabel> previous;
   std::vector<double> similarity_map;
   int k;
@@ -33,9 +40,11 @@ public:
   using similarity_map_size_type = typename decltype(similarity_map)::size_type;
   using similarity_map_iterator_type =
       typename decltype(similarity_map)::iterator;
+  using length_type = Length;
+  using vertex_type = Vertex;
 
   OnePassLabel(Vertex node, length_type length, length_type lower_bound,
-               std::shared_ptr<OnePassLabel> &previous, int k,
+               const std::shared_ptr<OnePassLabel> &previous, int k,
                int checked_at_step)
       : node{node}, length{length},
         lower_bound{lower_bound}, previous{previous},
@@ -45,7 +54,7 @@ public:
       : node{node}, length{length}, lower_bound{lower_bound}, previous{},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
-  Graph getPath() {
+  Graph get_path() {
     auto edge_set = std::vector<kspwlo::Edge>{};
     auto nodes = std::unordered_set<Vertex>{};
 
@@ -72,27 +81,30 @@ public:
     return g;
   }
 
-  double &getSimilarityWith(int kth) { return similarity_map.at(kth); }
-  const double &getSimilarityWith(int kth) const {
+  double &get_similarity_with(int kth) { return similarity_map.at(kth); }
+  const double &get_similarity_with(int kth) const {
     return similarity_map.at(kth);
   }
 
-  similarity_map_size_type getNumPaths() const { return similarity_map.size(); }
-  std::vector<double> getSimilarityMap() const {
+  similarity_map_size_type get_num_paths() const { return similarity_map.size(); }
+  std::vector<double> get_similarity_map() const {
     return std::vector<double>(std::begin(similarity_map),
                                std::end(similarity_map));
   }
-  void importSimilarities(similarity_map_iterator_type first,
+  void set_similarities(similarity_map_iterator_type first,
                           similarity_map_iterator_type last) {
     std::copy(first, last, std::begin(similarity_map));
   }
 
-  Vertex getNode() const { return node; }
-  length_type getLength() const { return length; }
-  length_type getLowerBound() const { return lower_bound; }
-  int numPathsK() const { return k; }
-  int checkedAtStep() const { return checked_at_step; }
-  void setCheckedAtStep(int step) {
+  Vertex get_node() const { return node; }
+  length_type get_length() const { return length; }
+  length_type get_lower_bound() const { return lower_bound; }
+  int num_paths_k() const { return k; }
+  int last_check() const { return checked_at_step; }
+  bool is_outdated(int currentStep) const {
+    return checked_at_step < currentStep;
+  }
+  void set_last_check(int step) {
     assert(step > 0);
     checked_at_step = step;
   }
@@ -132,7 +144,7 @@ public:
   using LabelPtr = std::weak_ptr<Label>;
 
   void insert(std::shared_ptr<Label> &label) {
-    auto node_n = label->getNode();
+    auto node_n = label->get_node();
     // If node_n is new
     if (!contains(node_n)) {
       // Initialize the labels for node n with 'label'
@@ -150,7 +162,7 @@ public:
 
   bool dominates(const Label &label) {
 
-    auto node_n = label.getNode();
+    auto node_n = label.get_node();
     // If node_n is not in the skyline, then we have no labels to check
     if (!contains(node_n)) {
       return false;
@@ -163,8 +175,8 @@ public:
       if (auto tmpLabel = label_p.lock()) {
         bool skyline_dominates_label = true;
 
-        for (int i = 0; i < static_cast<int>(label.getNumPaths()); ++i) {
-          if (label.getSimilarityWith(i) < tmpLabel->getSimilarityWith(i)) {
+        for (int i = 0; i < static_cast<int>(label.get_num_paths()); ++i) {
+          if (label.get_similarity_with(i) < tmpLabel->get_similarity_with(i)) {
             skyline_dominates_label = false;
             break;
           }
@@ -202,7 +214,7 @@ struct OnePassPlusASComparator {
   using LabelPtr = std::shared_ptr<OnePassLabel<Graph>>;
 
   bool operator()(LabelPtr lhs, LabelPtr rhs) {
-    return lhs->getLowerBound() > rhs->getLowerBound();
+    return lhs->get_lower_bound() > rhs->get_lower_bound();
   }
 };
 
@@ -249,10 +261,29 @@ build_path_from_dijkstra(Graph &G, const PredecessorMap &p, Vertex s,
   return {path, length};
 }
 
+template <
+    typename Graph,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Length =
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+kspwlo::Path<Graph, Length> compute_shortest_path(Graph &G, Vertex s,
+                                                  Vertex t) {
+  using namespace boost;
+  auto sp_distances = std::vector<Length>(num_vertices(G));
+  auto predecessor = std::vector<Vertex>(num_vertices(G), s);
+  auto vertex_id = get(vertex_index, G);
+  dijkstra_shortest_paths(G, s,
+                          distance_map(&sp_distances[0])
+                              .predecessor_map(make_iterator_property_map(
+                                  std::begin(predecessor), vertex_id, s)));
+  return build_path_from_dijkstra(G, predecessor, s, t);
+}
+
 template <typename Graph, typename EdgeMap,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void track_res_edges(Graph &candidate, Graph &graph, EdgeMap &resEdges,
-                     resPathIndex paths_count) {
+void update_res_edges(Graph &candidate, Graph &graph, EdgeMap &resEdges,
+                      resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto ei = edges(candidate).first; ei != edges(candidate).second; ++ei) {
     auto edge_in_g =
@@ -266,6 +297,83 @@ void track_res_edges(Graph &candidate, Graph &graph, EdgeMap &resEdges,
     }
   }
 }
+
+template <typename Label, typename Graph, typename EdgesMap, typename PathsMap,
+          typename WeightMap>
+bool update_label_similarity(Label &label, Graph &G, const EdgesMap &resEdges,
+                             const PathsMap &resPaths, WeightMap &weight,
+                             double theta, int step) {
+  using namespace boost;
+  bool below_sim_threshold = true;
+  auto tmpPath = label.get_path();
+  for (auto ei = edges(tmpPath).first; ei != edges(tmpPath).second; ++ei) {
+    auto edge_in_g = edge(source(*ei, tmpPath), target(*ei, tmpPath), G).first;
+    auto search = resEdges.find(edge_in_g);
+    // if tmpPath share an edge with any k-th shortest path, update the
+    // overlapping factor
+    if (search != std::end(resEdges)) {
+      for (auto index : search->second) {
+        if (static_cast<int>(index) > label.last_check() &&
+            static_cast<int>(index) < step) {
+          label.get_similarity_with(index) += weight[edge_in_g];
+
+          // Check Lemma 1. The similarity between the candidate path and
+          // all the other k-shortest-paths must be less then theta
+          if (label.get_similarity_with(index) / resPaths[step].length > theta) {
+            below_sim_threshold = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return below_sim_threshold;
+}
+
+template <typename Label, typename Vertex = typename Label::Vertex,
+          typename length_type = typename Label::length_type>
+std::shared_ptr<Label> expand_path(const std::shared_ptr<Label> &label,
+                                   Vertex node, length_type node_lower_bound,
+                                   length_type edge_weight, int step) {
+  auto tmpLength = label->get_length() + edge_weight;
+  auto tmpLowerBound = tmpLength + node_lower_bound;
+  return std::make_shared<Label>(node, tmpLength, tmpLowerBound, label,
+                                 label->num_paths_k(), step);
+}
+
+template <typename Graph, typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor> bool is_acyclic(Graph &G) {
+  auto top_ordering = std::vector<Vertex>{};
+  try {
+    boost::topological_sort(G, std::back_inserter(top_ordering));
+  } catch (boost::not_a_dag e) {
+    // If not acyclic, continue
+    return false;
+  }
+  return true;
+}
+
+template <typename EdgesMap, typename PathsList, typename WeightMap,
+          typename Edge = typename EdgesMap::key_type>
+bool is_below_sim_threshold(const Edge &c_edge,
+                            std::vector<double> &similarity_map, double theta,
+                            const EdgesMap &resEdges, const PathsList &resPaths,
+                            const WeightMap &weight) {
+  auto search = resEdges.find(c_edge);
+  if (search != std::end(resEdges)) {
+    std::cout << "Found c_edge " << c_edge << "\n";
+    auto &res_paths_with_c_edge = search->second;
+    for (auto index : res_paths_with_c_edge) {
+      similarity_map[index] += weight[c_edge];
+      auto similarity = similarity_map[index] / resPaths[index].length;
+      std::cout << "Similarity = " << similarity << "\n";
+      if (similarity > theta) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 } // namespace kspwlo_impl
 
 #endif
