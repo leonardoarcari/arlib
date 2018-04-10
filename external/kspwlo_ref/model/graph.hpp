@@ -31,7 +31,7 @@ public:
   RoadNetwork(const char *filename);
   int getEdgeWeight(NodeID lnode, NodeID rnode);
   void print();
-  RoadNetwork() {};
+  RoadNetwork(){};
   ~RoadNetwork();
 
   EdgeList ougoingEdgesOf(NodeID);

@@ -1,7 +1,7 @@
 <application name="multipass_exploration" out_file="parameter_space_exploration.log" block="parameter_space_exploration">
 
 	<!-- Input parameters -->
-	<flag value="-f /media/leonardoarcari/Data/Home/Development/master_thesis/kspwlo/src/sample/citta_studi.gr"/>
+	<flag value="-f /media/leonardoarcari/Data/Home/Development/master_thesis/kspwlo_dse/graphs/citta_studi.gr"/>
 	<flag value="-S 0"/>
 	<flag value="-D 20"/>
 	<flag value="-a mp"/>

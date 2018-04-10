@@ -2,6 +2,7 @@
 .idea/
 **/cmake-build-*
 .vscode/
+kspwlo_dse_workspace.code-workspace
 
 # CMake
 build/

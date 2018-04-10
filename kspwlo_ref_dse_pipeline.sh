@@ -2,7 +2,7 @@
 
 # Per application definitions
 CONF_NAME="kspwlo.conf"
-APPLICATION_BIN="kspwlo"
+APPLICATION_BIN="kspwlo_ref"
 
 # HELP
 HELP="Usage: $0 [op|mp|opplus|esx] [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"

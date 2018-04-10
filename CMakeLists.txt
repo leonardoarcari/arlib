@@ -1,5 +1,5 @@
 # check the minimum version
-cmake_minimum_required( VERSION 2.8.12 )
+cmake_minimum_required( VERSION 3.10 )
 
 # the project name
 project( kspwlo )
@@ -14,8 +14,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # setting common c++ flags
-# set(CMAKE_CXX_STANDARD 17) can't set. Too old cmake. Crap.
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_STANDARD 17)
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -Wl,--hash-style=both,--as-needed -pthread -fopenmp -ftemplate-depth=1100" )
 add_compile_options(-g
         -fmessage-length=0
@@ -59,10 +58,23 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/margot_heel_if/cmake"
 # find the required packages
 find_package(MARGOT_HEEL)
 
-
 # add the required include directories
 include_directories(${MARGOT_HEEL_INCLUDES})
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
+
+# Boost graph
+find_package(Boost REQUIRED COMPONENTS graph)
+
+###############################################
+##                CATCH V2                   ##
+###############################################
+# Prepare "Catch" library for other executables
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/catch)
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+
 
 ###############################################
 ##             CONFIG FILES                  ##
@@ -81,37 +93,53 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS 1)
 ###############################################
 
 # Set the application name
-set( APP_NAME "kspwlo")
+set( APP_NAME "kspwlo_ref")
 
 # Executable 
-set(ALGORITHMS_SRC
-        src/algorithms/esx.cpp
-        src/algorithms/kspwlo.hpp
-        src/algorithms/multipass.cpp
-        src/algorithms/onepass.cpp
-        src/algorithms/onepass_plus.cpp
-        src/algorithms/skyline.cpp
-        src/algorithms/svp_plus.cpp)
-set(MODEL_SRC
-        src/model/graph.cpp
-        src/model/graph.hpp)
-set(TOOLS_SRC
-        src/tools/astar.cpp
-        src/tools/dijkstra.cpp
-        src/tools/tools.hpp)
-set(EXPLORATION_SRC
-        src/exploration/error_metrics.hpp
-        src/exploration/graph_utils.hpp)
+set(KSPWLO_REF_ALGORITHMS_SRC
+        external/kspwlo_ref/algorithms/esx.cpp
+        external/kspwlo_ref/algorithms/kspwlo.hpp
+        external/kspwlo_ref/algorithms/multipass.cpp
+        external/kspwlo_ref/algorithms/onepass.cpp
+        external/kspwlo_ref/algorithms/onepass_plus.cpp
+        external/kspwlo_ref/algorithms/skyline.cpp
+        external/kspwlo_ref/algorithms/svp_plus.cpp)
+set(KSPWLO_REF_MODEL_SRC
+        external/kspwlo_ref/model/graph.cpp
+        external/kspwlo_ref/model/graph.hpp)
+set(KSPWLO_REF_TOOLS_SRC
+        external/kspwlo_ref/tools/astar.cpp
+        external/kspwlo_ref/tools/dijkstra.cpp
+        external/kspwlo_ref/tools/tools.hpp)
 
-set(SOURCE_FILES
-        ${ALGORITHMS_SRC}
-        ${MODEL_SRC}
-        ${TOOLS_SRC}
-        ${EXPLORATION_SRC}
-        src/main.cpp)
+set(KSPWLO_REF_SOURCE_FILES
+        ${KSPWLO_REF_ALGORITHMS_SRC}
+        ${KSPWLO_REF_MODEL_SRC}
+        ${KSPWLO_REF_TOOLS_SRC}
+        ${KSPWLO_REF_EXPLORATION_SRC}
+        external/kspwlo_ref/main.cpp)
 
-add_executable(${APP_NAME} ${SOURCE_FILES})
+add_executable(${APP_NAME} ${KSPWLO_REF_SOURCE_FILES})
 target_link_libraries(${APP_NAME} ${MARGOT_HEEL_LIBRARIES})
+
+# Testing
+# Make test executable
+set(TEST_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/model/graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/dijkstra.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp)
+add_executable(tests ${TEST_SOURCES})
+target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test)
+target_link_libraries(tests Catch)
+target_link_libraries(tests Boost::graph stdc++fs)
+
+enable_testing(true)
+add_test(NAME tests COMMAND tests)
 
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)

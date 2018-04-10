@@ -7,7 +7,7 @@
 
 #include "../model/graph.hpp"
 #include "../tools/tools.hpp"
-#include "exploration/graph_utils.hpp"
+#include "kspwlo_ref/exploration/graph_utils.hpp"
 
 namespace margot {
 
@@ -41,7 +41,7 @@ float totalDistance(RoadNetwork &ag, NodeID source, NodeID target) {
   #pragma omp parallel for reduction(+:total_distance)
   for (index i = 0; i < ag.adjListOut.size(); ++i) {
     NodeID u = i;
-    auto &outEdges = ag.adjListOut[u];
+    auto& outEdges = ag.adjListOut[u];
     for (auto &[v, weight] : outEdges) {
       int d_s_u = dijkstra_path_and_bounds(&ag, source, u).first.length;
       int d_v_t = dijkstra_path_and_bounds(&ag, v, target).first.length;
