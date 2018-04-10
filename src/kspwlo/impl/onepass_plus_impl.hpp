@@ -251,10 +251,20 @@ private:
   }
 };
 
+/**
+ * @brief A conventient container for labels dominance checking.
+ *
+ * When a new label @c l' for a node @c n is created we must check it against
+ * Lemma 2: Let @c P_LO the set of computed alternative paths so far. If all the
+ * labels already existing for node @c n have a similarity with @c P_LO that is
+ * less than the similarity of @c l' with @c P_LO, then @c l' is dominated and
+ * should be pruned.
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam Vertex A vertex of Graph.
+ */
 template <typename Graph,
-          typename length_type =
-              typename boost::property_traits<typename boost::property_map<
-                  Graph, boost::edge_weight_t>::type>::value_type,
           typename Vertex =
               typename boost::graph_traits<Graph>::vertex_descriptor>
 class SkylineContainer {
@@ -262,6 +272,12 @@ public:
   using Label = OnePassLabel<Graph>;
   using LabelPtr = std::weak_ptr<Label>;
 
+  /**
+   * @brief Inserts a label into the skyline. Before insertion, you should check
+   * if the skyline already dominates @p label. See dominates().
+   *
+   * @param label A label to add to the skyline.
+   */
   void insert(std::shared_ptr<Label> &label) {
     auto node_n = label->get_node();
     // If node_n is new
@@ -275,10 +291,23 @@ public:
     }
   }
 
+  /**
+   * @param node A node of the graph.
+   * @return true if the skyline contains @p node.
+   * @return false otherwise.
+   */
   bool contains(Vertex node) {
     return container.find(node) != std::end(container);
   }
 
+  /**
+   * @brief Check if the skyline dominates @p label. Refer to SkylineContainer
+   * description for a more clear explanation.
+   *
+   * @param label A label to check if it's dominated by the skyline.
+   * @return true if the skyline dominates @p label.
+   * @return false otherwise.
+   */
   bool dominates(const Label &label) {
 
     auto node_n = label.get_node();
@@ -310,6 +339,9 @@ public:
     return false;
   }
 
+  /**
+   * @return the number of labels stored in the skyline.
+   */
   int num_labels() {
     int nb_labels = 0;
 
@@ -325,11 +357,16 @@ private:
       container;
 };
 
-template <typename Graph,
-          typename length_type =
-              typename boost::property_traits<typename boost::property_map<
-                  Graph, boost::edge_weight_t>::type>::value_type>
-struct OnePassPlusASComparator {
+/**
+ * @brief A Comparator functor to compare two labels in an A* fashion.
+ *
+ * A lower bound for the distance of the label from the target is used to decide
+ * the ordering. The label with the lowest lower bound is the smallest.
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ */
+template <typename Graph> struct OnePassPlusASComparator {
   using LabelPtr = std::shared_ptr<OnePassLabel<Graph>>;
 
   bool operator()(LabelPtr lhs, LabelPtr rhs) {
