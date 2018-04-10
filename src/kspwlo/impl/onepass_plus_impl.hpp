@@ -486,12 +486,10 @@ bool is_below_sim_threshold(const Edge &c_edge,
                             const WeightMap &weight) {
   auto search = resEdges.find(c_edge);
   if (search != std::end(resEdges)) {
-    std::cout << "Found c_edge " << c_edge << "\n";
     auto &res_paths_with_c_edge = search->second;
     for (auto index : res_paths_with_c_edge) {
       similarity_map[index] += weight[c_edge];
       auto similarity = similarity_map[index] / resPaths[index].length;
-      std::cout << "Similarity = " << similarity << "\n";
       if (similarity > theta) {
         return false;
       }

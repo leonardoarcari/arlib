@@ -85,16 +85,6 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // path includes it.
   kspwlo_impl::update_res_edges(sp, G, resEdges, paths_count);
 
-  std::cout << "resEdges = {";
-  for (auto resEdge : resEdges) {
-    std::cout << resEdge.first << " : [ ";
-    for (auto index : resEdge.second) {
-      std::cout << index << " ";
-    }
-    std::cout << "], ";
-  }
-  std::cout << "}\n";
-
   // Initialize min-priority queue Q with <s, empty_set>
   auto init_label =
       std::make_shared<Label>(s, 0, lower_bounds[s], k, paths_count - 1);
@@ -107,8 +97,6 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
     auto label = Q.top();
     Q.pop();
 
-    std::cout << "label = " << *label << "\n";
-
     // Perform lazy update of the similairty vector of 'label', since new paths
     // might have been added to P_LO from the time this 'label' was pushed into
     // priority queue.
@@ -117,7 +105,6 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
           *label, G, resEdges, resPaths, weight, theta, paths_count - 1);
 
       label->set_last_check(paths_count - 1); // Update last check time step
-      std::cout << "updated label = " << *label << "\n";
       if (!below_sim_threshold) {
         continue; // Skip candidate path
       }
@@ -131,8 +118,6 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
       resPaths.push_back(resPath);
       ++paths_count;
 
-      std::cout << "Adding path from label: " << *label << "\n";
-
       if (static_cast<int>(paths_count) == k) { // we found k paths. End.
         break;
       }
@@ -142,15 +127,6 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
       // path includes it
       kspwlo_impl::update_res_edges(tmpPath, G, resEdges, paths_count);
 
-      std::cout << "resEdges = {";
-      for (auto resEdge : resEdges) {
-        std::cout << resEdge.first << " : [ ";
-        for (auto index : resEdge.second) {
-          std::cout << index << " ";
-        }
-        std::cout << "], ";
-      }
-      std::cout << "}\n";
     } else { // Expand Search
       if (skyline.dominates(*label)) {
         continue; // Prune path by Lemma 2
@@ -168,10 +144,6 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
                                      weight[c_edge], paths_count - 1);
         auto c_path = c_label->get_path();
 
-        std::cout << "Exploring edge: " << c_edge << "\n";
-        std::cout << "Candidate edge: (" << source(c_edge, G) << ", "
-                  << target(c_edge, G) << ", " << weight[c_edge] << ")\n";
-
         // Check for acyclicity
         bool acyclic = kspwlo_impl::is_acyclic(c_path);
 
@@ -182,21 +154,9 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
           bool below_sim_threshold = kspwlo_impl::is_below_sim_threshold(
               c_edge, c_similarity_map, theta, resEdges, resPaths, weight);
 
-          std::cout << "Similarities: [ ";
-          for (auto sim : c_similarity_map) {
-            std::cout << sim << " ";
-          }
-          std::cout << "]\n";
-
-          c_label->set_similarities(std::begin(c_similarity_map),
-                                    std::end(c_similarity_map));
-          std::cout << "Candidate path: " << *c_label << '\n'
-                    << "below_sim_threshold = " << below_sim_threshold << "\n";
-
           if (below_sim_threshold) {
             c_label->set_similarities(std::begin(c_similarity_map),
                                       std::end(c_similarity_map));
-            c_label->get_path();
             Q.push(c_label);
             created_labels.push_back(c_label);
           }
