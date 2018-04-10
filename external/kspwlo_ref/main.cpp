@@ -8,10 +8,10 @@ Copyright (c) 2017 Theodoros Chondrogiannis
 #include <fstream>
 #include <iostream>
 
-#include "algorithms/kspwlo.hpp"
-#include "model/graph.hpp"
+#include "kspwlo_ref/algorithms/kspwlo.hpp"
+#include "kspwlo_ref/model/graph.hpp"
 
-#include "exploration/error_metrics.hpp"
+#include "kspwlo_ref/exploration/error_metrics.hpp"
 
 #include <margot.hpp>
 

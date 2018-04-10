@@ -6,17 +6,25 @@
 
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
-#include "kspwlo/onepass_plus.hpp"
 #include "kspwlo/impl/onepass_plus_impl.hpp"
+#include "kspwlo/onepass_plus.hpp"
 #include "utils.hpp"
 
-#include "algorithms/kspwlo.hpp"
+#include "kspwlo_ref/algorithms/kspwlo.hpp"
+#include "kspwlo_ref/exploration/graph_utils.hpp"
 
 #include <algorithm>
 #include <experimental/filesystem>
 #include <fstream>
 #include <memory>
 #include <string_view>
+
+template <typename Graph>
+bool one_regression_path_have_edges(std::vector<Path> &, Graph &);
+
+//===----------------------------------------------------------------------===//
+//                                Test cases
+//===----------------------------------------------------------------------===//
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
   using Label = kspwlo_impl::OnePassLabel<kspwlo::Graph>;
@@ -94,17 +102,63 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
     auto &p = resPath.graph;
     for (auto it = edges(p).first; it != edges(p).second; ++it) {
       std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
-    } std::cout << "\n";
+    }
+    std::cout << "\n";
   }
 
   std::cout << "regression result:\n";
   for (auto &regPath : res_regression) {
     auto edges = regPath.getEdges();
+    // Cleaning loops coming from dijkstra algorithm (for no reason)
+    remove_self_loops(edges.begin(), edges.end());
 
     for (auto edge : edges) {
       std::cout << "(" << edge.first << ", " << edge.second << ") ";
-    } std::cout << "\n";
+    }
+    std::cout << "\n";
   }
 
+  // Same number of paths are computed
   REQUIRE(res.size() == res_regression.size());
+
+  // For each k-spwlo check if its edges are in a solution of the regression
+  // test
+  for (auto &resPath : res) {
+    auto &p = resPath.graph;
+    REQUIRE(one_regression_path_have_edges(res_regression, p));
+  }
+}
+
+//===----------------------------------------------------------------------===//
+//                      Utility functions for testing
+//===----------------------------------------------------------------------===//
+
+template <typename Graph>
+bool one_regression_path_have_edges(std::vector<Path> &res_regression,
+                                    Graph &G) {
+  using boost::edges;
+  using boost::source;
+  using boost::target;
+  auto first = edges(G).first;
+  auto last = edges(G).second;
+
+  bool has_them = false;
+  for (auto &regr_path : res_regression) {
+    int edges_count = 0;
+    int nb_edges_regr_path_has = 0;
+    for (auto it = first; it != last; ++it) {
+      ++edges_count;
+      NodeID u = source(*it, G);
+      NodeID v = target(*it, G);
+
+      if (regr_path.containsEdge(std::make_pair(u, v))) {
+        ++nb_edges_regr_path_has;
+      }
+    }
+    if (edges_count == nb_edges_regr_path_has) {
+      has_them = true;
+      break;
+    }
+  }
+  return has_them;
 }

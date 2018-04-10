@@ -7,7 +7,7 @@
 
 #include "../model/graph.hpp"
 #include "../tools/tools.hpp"
-#include "exploration/graph_utils.hpp"
+#include "kspwlo_ref/exploration/graph_utils.hpp"
 
 namespace margot {
 

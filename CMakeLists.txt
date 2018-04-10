@@ -62,6 +62,7 @@ find_package(MARGOT_HEEL)
 include_directories(${MARGOT_HEEL_INCLUDES})
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
 
 # Boost graph
 find_package(Boost REQUIRED COMPONENTS graph)
@@ -92,48 +93,34 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS 1)
 ###############################################
 
 # Set the application name
-set( APP_NAME "kspwlo")
+set( APP_NAME "kspwlo_ref")
 
 # Executable 
-set(ALGORITHMS_SRC
-        src/algorithms/esx.cpp
-        src/algorithms/kspwlo.hpp
-        src/algorithms/multipass.cpp
-        src/algorithms/onepass.cpp
-        src/algorithms/onepass_plus.cpp
-        src/algorithms/skyline.cpp
-        src/algorithms/svp_plus.cpp)
-set(MODEL_SRC
-        src/model/graph.cpp
-        src/model/graph.hpp)
-set(TOOLS_SRC
-        src/tools/astar.cpp
-        src/tools/dijkstra.cpp
-        src/tools/tools.hpp)
-set(EXPLORATION_SRC
-        src/exploration/error_metrics.hpp
-        src/exploration/graph_utils.hpp)
-set(IMPL_SRC
-        src/kspwlo/impl/onepass_plus_impl.hpp)
+set(KSPWLO_REF_ALGORITHMS_SRC
+        external/kspwlo_ref/algorithms/esx.cpp
+        external/kspwlo_ref/algorithms/kspwlo.hpp
+        external/kspwlo_ref/algorithms/multipass.cpp
+        external/kspwlo_ref/algorithms/onepass.cpp
+        external/kspwlo_ref/algorithms/onepass_plus.cpp
+        external/kspwlo_ref/algorithms/skyline.cpp
+        external/kspwlo_ref/algorithms/svp_plus.cpp)
+set(KSPWLO_REF_MODEL_SRC
+        external/kspwlo_ref/model/graph.cpp
+        external/kspwlo_ref/model/graph.hpp)
+set(KSPWLO_REF_TOOLS_SRC
+        external/kspwlo_ref/tools/astar.cpp
+        external/kspwlo_ref/tools/dijkstra.cpp
+        external/kspwlo_ref/tools/tools.hpp)
 
-set(INCLUDES 
-        include/kspwlo/graph_types.hpp
-        include/kspwlo/graph_utils.hpp
-        include/kspwlo/onepass_plus.hpp)
+set(KSPWLO_REF_SOURCE_FILES
+        ${KSPWLO_REF_ALGORITHMS_SRC}
+        ${KSPWLO_REF_MODEL_SRC}
+        ${KSPWLO_REF_TOOLS_SRC}
+        ${KSPWLO_REF_EXPLORATION_SRC}
+        external/kspwlo_ref/main.cpp)
 
-set(SOURCE_FILES
-        ${ALGORITHMS_SRC}
-        ${MODEL_SRC}
-        ${TOOLS_SRC}
-        ${EXPLORATION_SRC}
-        ${IMPL_SRC}
-        ${INCLUDES}
-        src/kspwlo/graph_utils.cpp
-        src/main.cpp)
-
-add_executable(${APP_NAME} ${SOURCE_FILES})
+add_executable(${APP_NAME} ${KSPWLO_REF_SOURCE_FILES})
 target_link_libraries(${APP_NAME} ${MARGOT_HEEL_LIBRARIES})
-target_link_libraries(${APP_NAME} Boost::graph stdc++fs)
 
 # Testing
 # Make test executable
@@ -142,11 +129,10 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/algorithms/onepass_plus.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/model/graph.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/dijkstra.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/algorithms/skyline.cpp
-        ${INCLUDES})
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/model/graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/dijkstra.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp)
 add_executable(tests ${TEST_SOURCES})
 target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test)
 target_link_libraries(tests Catch)
