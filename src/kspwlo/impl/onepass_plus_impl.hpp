@@ -127,7 +127,6 @@ public:
     auto edge_set = std::vector<kspwlo::Edge>{};
     auto nodes = std::unordered_set<Vertex>{};
 
-    bool source_found = false;
     auto v = node;
     auto prev = previous.lock();
     while (prev) {
@@ -237,9 +236,8 @@ public:
 
 private:
   template <typename Graph2>
-  friend std::ostream &
-  operator<<(std::ostream &os,
-             const OnePassLabel<Graph2> &label) {
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const OnePassLabel<Graph2> &label) {
     os << "(node = " << label.node << ", length = " << label.length
        << ", lower_bound = " << label.lower_bound << ", k = " << label.k
        << ", checked_at_step = " << label.checked_at_step

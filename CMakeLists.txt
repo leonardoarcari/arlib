@@ -65,7 +65,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
 
 # Boost graph
-find_package(Boost REQUIRED COMPONENTS graph)
+find_package(Boost REQUIRED COMPONENTS graph program_options)
 
 ###############################################
 ##                CATCH V2                   ##
@@ -93,7 +93,7 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS 1)
 ###############################################
 
 # Set the application name
-set( APP_NAME "kspwlo_ref")
+set( KSPWLO_REF "kspwlo_ref")
 
 # Executable 
 set(KSPWLO_REF_ALGORITHMS_SRC
@@ -119,8 +119,19 @@ set(KSPWLO_REF_SOURCE_FILES
         ${KSPWLO_REF_EXPLORATION_SRC}
         external/kspwlo_ref/main.cpp)
 
-add_executable(${APP_NAME} ${KSPWLO_REF_SOURCE_FILES})
-target_link_libraries(${APP_NAME} ${MARGOT_HEEL_LIBRARIES})
+add_executable(${KSPWLO_REF} ${KSPWLO_REF_SOURCE_FILES})
+target_link_libraries(${KSPWLO_REF} ${MARGOT_HEEL_LIBRARIES})
+
+# OnePass+ algorithm executable
+set(ONEPASS_PLUS "onepass_plus")
+
+set(OP_PLUS_SRC
+        dse_apps/onepass_plus.cpp)
+add_executable(${ONEPASS_PLUS} ${OP_PLUS_SRC})
+target_link_libraries(${ONEPASS_PLUS} ${MARGOT_HEEL_LIBRARIES})
+target_link_libraries(${ONEPASS_PLUS} stdc++fs)
+target_link_libraries(${ONEPASS_PLUS} Boost::graph Boost::program_options)
+
 
 # Testing
 # Make test executable
