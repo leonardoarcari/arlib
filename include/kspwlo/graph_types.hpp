@@ -2,6 +2,7 @@
 #define GRAPH_TYPES_H
 
 #include <boost/graph/adjacency_list.hpp>
+#include <iostream>
 #include <utility>
 
 namespace kspwlo {
@@ -16,10 +17,14 @@ template <typename Graph,
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
 struct Path {
-  Path(Graph graph, length_type length) : graph(graph), length{length} {};
+  Path(Graph &g, length_type length) : graph(g), length{length} {};
+  Path(Graph &&g, length_type length) : graph{}, length{length} {
+    // Swap data from graph to move from (g) to this->graph
+    this->graph.swap(g);
+  }
   Graph graph;
   length_type length;
 };
-}
+} // namespace kspwlo
 
 #endif

@@ -382,7 +382,7 @@ kspwlo::Path<Graph> build_path_from_dijkstra(Graph &G, const PredecessorMap &p,
     current = u;
   }
 
-  return {path, length};
+  return {std::move(path), length};
 }
 
 template <
