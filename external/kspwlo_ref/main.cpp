@@ -91,14 +91,20 @@ int main(int argc, char **argv) {
   } else if (boost::iequals(algo, "esx")) {
     result = esx(rN, source, target, k, theta);
   }
+  margot::parameter_space_exploration::stop_monitor();
 
   auto errors = margot::compute_errors(result, *rN, source, target);
-  
+
   float total_distance = errors.total_distance;
   float average_distance = errors.average_distance;
   float decision_edges = errors.decision_edges;
 
-  margot::parameter_space_exploration::stop_monitor(total_distance, average_distance, decision_edges);
+  margot::parameter_space_exploration::monitor::total_distance_monitor.push(
+      total_distance);
+  margot::parameter_space_exploration::monitor::average_distance_monitor.push(
+      average_distance);
+  margot::parameter_space_exploration::monitor::decision_edges_monitor.push(
+      decision_edges);
   margot::parameter_space_exploration::log();
 
   cout << source << "\t" << target << "\t[" << result[0].length;
@@ -106,12 +112,6 @@ int main(int argc, char **argv) {
     cout << "," << result[j].length;
   }
   cout << "]" << endl;
-
-  // cout << source << "\t" << target << "\t[" << result[0];
-  // for(unsigned int j = 1;j<result.size();j++) {
-  //     cout << "," << result[j];
-  // }
-  // cout << "]" << endl;
 
   delete rN;
   return 0;

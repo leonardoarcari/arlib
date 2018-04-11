@@ -4,7 +4,7 @@
 	<flag value="-f /media/leonardoarcari/Data/Home/Development/master_thesis/kspwlo_dse/graphs/citta_studi.gr"/>
 	<flag value="-S 0"/>
 	<flag value="-D 20"/>
-	<flag value="-a mp"/>
+	<flag value="-a op"/>
 
 	<!-- Application knobs -->
 	<parameter name="k_paths"				start_value="1"			stop_value="5"						flag="-k"	type="int"/>
@@ -12,5 +12,7 @@
 
 	<!-- Metric of interest -->
 	<metric name="exec_time"    field="EXECUTION_TIME_average" />
-	<metric name="avg_length"	field="MY_ERROR_MONITOR_average" />
+	<metric name="avg_total_distance"	field="TOTAL_DISTANCE_MONITOR_average" />
+	<metric name="avg_average_distance"	field="AVERAGE_DISTANCE_MONITOR_average" />
+	<metric name="avg_decision_edges"	field="DECISION_EDGES_MONITOR_average" />
 </application>

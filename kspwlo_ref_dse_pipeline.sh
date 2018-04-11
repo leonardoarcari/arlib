@@ -8,7 +8,7 @@ APPLICATION_BIN="kspwlo_ref"
 HELP="Usage: $0 [op|mp|opplus|esx] [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"
 # Check number of arguments
 if [ $# -ne 2 ]; then
-	echo "Wrong number of parameters: $@. Required 3."
+	echo "Wrong number of parameters: $@. Required 2."
 	echo $HELP
 	exit -1
 fi
@@ -57,12 +57,12 @@ APPLICATION_ROOT=$WORKING_DIR
 MARGOT_ROOT=$WORKING_DIR/../core2/
 
 # check if we already have a dse workspace to resume
-if [ -d $APPLICATION_ROOT/dse/$WORKSPACE ]; then
+if [ -d $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE ]; then
 	echo "We already have a DSE workspace!"
 	echo "Resuming the DSE!"
 
 	# resume the DSE
-	make -C $APPLICATION_ROOT/dse/$WORKSPACE || (echo "DSE interrupted! (you can resume it later)" && exit -1)
+	make -C $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE || (echo "DSE interrupted! (you can resume it later)" && exit -1)
 
 else
 	echo "Creating a DSE workspace!"
@@ -71,13 +71,13 @@ else
 	/bin/bash $APPLICATION_ROOT/build_exploration.sh || exit -1
 
 	# Generate the workspace
-	python3 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli generate_dse --workspace $APPLICATION_ROOT/dse/$WORKSPACE --executable $APPLICATION_ROOT/build/$APPLICATION_BIN $APPLICATION_ROOT/dse_apps/${WORKSPACE}.xml && echo "OP list succesfully created!"
+	python3 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli generate_dse --workspace $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE --executable $APPLICATION_ROOT/build/$APPLICATION_BIN $APPLICATION_ROOT/dse_apps/${APPLICATION_BIN}/${WORKSPACE}.xml && echo "OP list succesfully created!"
 
 	# Resume the DSE
-	make -C $APPLICATION_ROOT/dse/$WORKSPACE || (echo "DSE interrupted! (you can resume it later)" && exit -1)
+	make -C $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE || (echo "DSE interrupted! (you can resume it later)" && exit -1)
 fi
 
 # Now plot data with GNU Plot
-python2.7 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli plotOPs --x_field k_paths --y_field similarity_threshold --c_field $METRIC $APPLICATION_ROOT/dse/$WORKSPACE/oplist.conf > $APPLICATION_ROOT/dse/$WORKSPACE/${WORKSPACE}_gnuplot_script && echo "GNUPLOT script succesfully created!"
+python2.7 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli plotOPs --x_field k_paths --y_field similarity_threshold --c_field $METRIC $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/oplist.conf > $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/${WORKSPACE}_gnuplot_script && echo "GNUPLOT script succesfully created!"
 
-(gnuplot < $APPLICATION_ROOT/dse/$WORKSPACE/${WORKSPACE}_gnuplot_script > $APPLICATION_ROOT/dse/$WORKSPACE/${WORKSPACE}_${METRIC}_gnuplot.pdf) || exit -1
+(gnuplot < $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/${WORKSPACE}_gnuplot_script > $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/${WORKSPACE}_${METRIC}_gnuplot.pdf) || exit -1
