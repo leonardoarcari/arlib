@@ -69,7 +69,7 @@ public:
     	reverse=revparam;
     }
     bool operator() (const Label* lhs, const Label* rhs) const     {
-        return (lhs->lowerBound>rhs->lowerBound);
+        return (lhs->lowerBound > rhs->lowerBound);
     }
 };
 

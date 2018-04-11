@@ -29,6 +29,8 @@ RoadNetwork build_AG(const std::vector<Path> &paths, RoadNetwork &g) {
 
   ag.adjListInc = std::vector<EdgeList>(g.numNodes);
   ag.adjListOut = std::vector<EdgeList>(g.numNodes);
+  ag.numNodes = g.numNodes;
+  ag.numEdges = 0;
 
   for (auto &path : paths) {
     auto path_edges = path.getEdges();
@@ -48,7 +50,6 @@ RoadNetwork build_AG(const std::vector<Path> &paths, RoadNetwork &g) {
       ag.adjListOut[lnode].insert(std::make_pair(rnode, w));
       ag.adjListInc[rnode].insert(std::make_pair(lnode, w));
 
-      ag.numNodes += 1;
       ag.numEdges += 2;
     }
   }

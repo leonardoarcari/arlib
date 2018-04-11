@@ -31,8 +31,8 @@ int RoadNetwork::getEdgeWeight(NodeID lnode, NodeID rnode) {
 }
 
 RoadNetwork::~RoadNetwork() {
-  this->adjListOut.clear();
-  this->adjListInc.clear();
+  // this->adjListOut.clear();
+  // this->adjListInc.clear();
 }
 
 bool operator==(const Edge &le, const Edge &re) {
