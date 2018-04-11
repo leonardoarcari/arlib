@@ -11,5 +11,9 @@ build/
 dse/
 margot_heel_if/
 
+# Doxygen
+**/html
+**/latex
+
 # Other
 activate

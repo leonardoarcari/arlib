@@ -15,7 +15,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 # setting common c++ flags
 set(CMAKE_CXX_STANDARD 17)
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -Wl,--hash-style=both,--as-needed -pthread -fopenmp -ftemplate-depth=1100" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -Wl,--hash-style=both,--as-needed -fopenmp -ftemplate-depth=1100" )
 add_compile_options(-g
         -fmessage-length=0
         -c
@@ -126,7 +126,7 @@ target_link_libraries(${KSPWLO_REF} ${MARGOT_HEEL_LIBRARIES})
 set(ONEPASS_PLUS "onepass_plus")
 
 set(OP_PLUS_SRC
-        dse_apps/onepass_plus.cpp)
+        dse_apps/onepass_plus/driver_onepass_plus.cpp)
 add_executable(${ONEPASS_PLUS} ${OP_PLUS_SRC})
 target_link_libraries(${ONEPASS_PLUS} ${MARGOT_HEEL_LIBRARIES})
 target_link_libraries(${ONEPASS_PLUS} stdc++fs)
@@ -161,4 +161,7 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 install( TARGETS ${APP_NAME} DESTINATION bin )
+
+# Documentation
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 
