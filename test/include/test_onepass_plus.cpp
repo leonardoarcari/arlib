@@ -27,18 +27,21 @@ bool one_regression_path_have_edges(std::vector<Path> &, Graph &);
 //===----------------------------------------------------------------------===//
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
+  using kspwlo::Edge;
   using Label = kspwlo_impl::OnePassLabel<kspwlo::Graph>;
-  auto s = std::make_shared<Label>(0, 0, 0, 0, 0);
-  auto n1 = std::make_shared<Label>(1, 1, 1, s, 1, 1);
-  auto n2 = std::make_shared<Label>(2, 2, 2, n1, 2, 1);
-  auto n3 = std::make_shared<Label>(3, 3, 2, n2, 3, 1);
+  auto s = std::make_unique<Label>(0, 0, 0, 0, 0);
+  auto n1 = std::make_unique<Label>(1, 1, 1, s.get(), 1, 1);
+  auto n2 = std::make_unique<Label>(2, 2, 2, n1.get(), 2, 1);
+  auto n3 = std::make_unique<Label>(3, 3, 2, n2.get(), 3, 1);
 
   auto path = n3->get_path();
-  REQUIRE(boost::num_vertices(path) == 4);
 
-  REQUIRE(edge(0, 1, path).second);
-  REQUIRE(edge(1, 2, path).second);
-  REQUIRE(edge(2, 3, path).second);
+  REQUIRE(std::find(std::begin(path), std::end(path), Edge{0, 1}) !=
+          std::end(path));
+  REQUIRE(std::find(std::begin(path), std::end(path), Edge{1, 2}) !=
+          std::end(path));
+  REQUIRE(std::find(std::begin(path), std::end(path), Edge{2, 3}) !=
+          std::end(path));
 }
 
 TEST_CASE("Computing distance from target", "[distance_from_target]") {

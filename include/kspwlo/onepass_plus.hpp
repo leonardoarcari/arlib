@@ -15,11 +15,15 @@
 #include <unordered_map>
 #include <vector>
 
+/**
+ * @brief Algorithms and utilities for Boost::Graph
+ */
 namespace boost {
 /**
  * @brief An implementation of OnePass+ k-shortest path with limited overlap for
  *        Boost::Graph.
  *
+ * @callgraph
  * This implementation refers to the following publication:
  * Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and Ulf Leser,
  * Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited
@@ -34,8 +38,8 @@ namespace boost {
  * @param t The target node.
  * @param k The number of alternative paths to compute.
  * @param theta The similarity threshold.
- * 
- * @return A list of at maximum @p k alternative paths. 
+ *
+ * @return A list of at maximum @p k alternative paths.
  */
 template <typename PropertyGraph,
           typename Vertex =
@@ -43,8 +47,12 @@ template <typename PropertyGraph,
 std::vector<kspwlo::Path<PropertyGraph>>
 onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // P_LO set of k paths
+  using Length = typename boost::property_traits<typename boost::property_map<
+      PropertyGraph, boost::edge_weight_t>::type>::value_type;
   auto weight = get(edge_weight, G);
   auto resPaths = std::vector<kspwlo::Path<PropertyGraph>>{};
+  auto resPathsEdges = std::vector<std::vector<kspwlo::Edge>>{};
+  auto resPathsLengths = std::vector<Length>{};
 
   // resEdges keeps track of the edges that make the paths in resPaths and which
   // path includes it.
@@ -55,9 +63,9 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
 
   // Min-priority queue
   using Label = kspwlo_impl::OnePassLabel<PropertyGraph>;
-  using LabelPtr = std::shared_ptr<Label>;
+  using LabelPtr = std::unique_ptr<Label>;
   auto Q = std::priority_queue<
-      LabelPtr, std::vector<LabelPtr>,
+      Label *, std::vector<Label *>,
       kspwlo_impl::OnePassPlusASComparator<PropertyGraph>>{};
   auto created_labels = std::vector<LabelPtr>{};
 
@@ -87,9 +95,9 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
 
   // Initialize min-priority queue Q with <s, empty_set>
   auto init_label =
-      std::make_shared<Label>(s, 0, lower_bounds[s], k, paths_count - 1);
-  Q.push(init_label);
-  created_labels.push_back(init_label);
+      std::make_unique<Label>(s, 0, lower_bounds[s], k, paths_count - 1);
+  Q.push(init_label.get());
+  created_labels.push_back(std::move(init_label));
 
   // While Q is not empty
   while (!Q.empty()) {
@@ -113,12 +121,19 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
     // If we found the target node
     if (label->get_node() == t) {
       // Build the new k-th shortest path
-      auto resPath = kspwlo::Path(label->get_path(), label->get_length());
-      auto &tmpPath = resPath.graph;
-      resPaths.push_back(resPath);
+      resPathsEdges.push_back(label->get_path());
+      resPathsLengths.push_back(label->get_length());
+
+      auto &tmpPath = resPathsEdges.back();
       ++paths_count;
 
       if (static_cast<int>(paths_count) == k) { // we found k paths. End.
+        // Add computed alternatives to resPaths
+        using index = decltype(resPathsEdges.size());
+        for (index i = 0; i < resPathsEdges.size(); ++i) {
+          resPaths.emplace_back(build_graph_from_edges(resPathsEdges[i], G),
+                                resPathsLengths[i]);
+        }
         break;
       }
 
@@ -142,10 +157,9 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
         auto c_label =
             kspwlo_impl::expand_path(label, *adj_it, lower_bounds[*adj_it],
                                      weight[c_edge], paths_count - 1);
-        auto c_path = c_label->get_path();
 
         // Check for acyclicity
-        bool acyclic = kspwlo_impl::is_acyclic(c_path);
+        bool acyclic = label->is_path_acyclic(*adj_it);
 
         if (acyclic) {
           auto c_similarity_map = label->get_similarity_map();
@@ -157,14 +171,22 @@ onepass_plus(PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
           if (below_sim_threshold) {
             c_label->set_similarities(std::begin(c_similarity_map),
                                       std::end(c_similarity_map));
-            Q.push(c_label);
-            created_labels.push_back(c_label);
+            Q.push(c_label.get());
+            created_labels.push_back(std::move(c_label));
           }
         }
       }
     }
   }
 
+  if (static_cast<int>(paths_count) != k) {
+    // Add computed alternatives to resPaths
+    using index = decltype(resPathsEdges.size());
+    for (index i = 0; i < resPathsEdges.size(); ++i) {
+      resPaths.emplace_back(build_graph_from_edges(resPathsEdges[i], G),
+                            resPathsLengths[i]);
+    }
+  }
   return resPaths;
 }
 } // namespace boost

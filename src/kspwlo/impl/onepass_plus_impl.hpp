@@ -19,6 +19,9 @@
 #include <unordered_set>
 #include <vector>
 
+/**
+ * @brief Implementations details of kSPwLO algorithms
+ */
 namespace kspwlo_impl {
 
 //===----------------------------------------------------------------------===//
@@ -56,7 +59,7 @@ private:
   Vertex node;
   Length length;
   Length lower_bound;
-  std::weak_ptr<OnePassLabel> previous;
+  OnePassLabel *previous;
   std::vector<double> similarity_map;
   int k;
   int checked_at_step;
@@ -96,8 +99,7 @@ public:
    *        alternative paths currently computed)
    */
   OnePassLabel(Vertex node, length_type length, length_type lower_bound,
-               const std::shared_ptr<OnePassLabel> &previous, int k,
-               int checked_at_step)
+               OnePassLabel *previous, int k, int checked_at_step)
       : node{node}, length{length},
         lower_bound{lower_bound}, previous{previous},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
@@ -116,31 +118,37 @@ public:
    */
   OnePassLabel(Vertex node, length_type length, length_type lower_bound, int k,
                int checked_at_step)
-      : node{node}, length{length}, lower_bound{lower_bound}, previous{},
+      : node{node}, length{length}, lower_bound{lower_bound}, previous{nullptr},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
-  /**
-   * @return a Graph computed from the attached node back to source following
-   *         the predecessor labels.
-   */
-  Graph get_path() {
+  std::vector<kspwlo::Edge> get_path() {
     auto edge_set = std::vector<kspwlo::Edge>{};
-    auto nodes = std::unordered_set<Vertex>{};
 
     auto v = node;
-    auto prev = previous.lock();
-    while (prev) {
+    auto prev = previous;
+    while (prev != nullptr) {
       auto u = prev->node;
       edge_set.emplace_back(u, v);
-      nodes.insert(u);
-      nodes.insert(v);
 
       // Shift label pointer back
       v = u;
-      prev = prev->previous.lock();
+      prev = prev->previous;
     }
 
-    return Graph(std::begin(edge_set), std::end(edge_set), nodes.size());
+    return edge_set;
+  }
+
+  bool is_path_acyclic(Vertex begin) {
+    bool is_acyclic = true;
+    auto current = this;
+    while (current != nullptr) {
+      if (current->node == begin) {
+        is_acyclic = false;
+        break;
+      }
+      current = current->previous;
+    }
+    return is_acyclic;
   }
 
   /**
@@ -270,7 +278,7 @@ template <typename Graph,
 class SkylineContainer {
 public:
   using Label = OnePassLabel<Graph>;
-  using LabelPtr = std::weak_ptr<Label>;
+  using LabelPtr = Label *;
 
   /**
    * @brief Inserts a label into the skyline. Before insertion, you should check
@@ -278,16 +286,16 @@ public:
    *
    * @param label A label to add to the skyline.
    */
-  void insert(std::shared_ptr<Label> &label) {
+  void insert(Label *label) {
     auto node_n = label->get_node();
     // If node_n is new
     if (!contains(node_n)) {
       // Initialize the labels for node n with 'label'
-      auto labels_for_n = std::vector<LabelPtr>{LabelPtr{label}};
+      auto labels_for_n = std::vector<LabelPtr>{label};
       container.insert(std::make_pair(node_n, labels_for_n));
     } else {
       // If not, just add the label to node_n's list of labels
-      container[node_n].push_back(LabelPtr{label});
+      container[node_n].push_back(label);
     }
   }
 
@@ -320,20 +328,21 @@ public:
     // check if label.sim(p') is less than at least one of the labels in the
     // skyline. If so, the skyline does NOT dominates 'label'.
     for (auto label_p : container[node_n]) {
-      if (auto tmpLabel = label_p.lock()) {
-        bool skyline_dominates_label = true;
+      // if (auto tmpLabel = label_p.lock()) {
+      LabelPtr tmpLabel = label_p;
+      bool skyline_dominates_label = true;
 
-        for (int i = 0; i < static_cast<int>(label.get_num_paths()); ++i) {
-          if (label.get_similarity_with(i) < tmpLabel->get_similarity_with(i)) {
-            skyline_dominates_label = false;
-            break;
-          }
-        }
-
-        if (skyline_dominates_label) {
-          return true;
+      for (int i = 0; i < static_cast<int>(label.get_num_paths()); ++i) {
+        if (label.get_similarity_with(i) < tmpLabel->get_similarity_with(i)) {
+          skyline_dominates_label = false;
+          break;
         }
       }
+
+      if (skyline_dominates_label) {
+        return true;
+      }
+      //}
     }
 
     return false;
@@ -367,7 +376,7 @@ private:
  *         property with tag boost::edge_weight_t.
  */
 template <typename Graph> struct OnePassPlusASComparator {
-  using LabelPtr = std::shared_ptr<OnePassLabel<Graph>>;
+  using LabelPtr = OnePassLabel<Graph> *;
 
   bool operator()(LabelPtr lhs, LabelPtr rhs) {
     return lhs->get_lower_bound() > rhs->get_lower_bound();
@@ -400,24 +409,22 @@ template <typename Graph, typename PredecessorMap, typename Vertex,
                   Graph, boost::edge_weight_t>::type>::value_type>
 kspwlo::Path<Graph> build_path_from_dijkstra(Graph &G, const PredecessorMap &p,
                                              Vertex s, Vertex t) {
-  using namespace boost;
-  auto G_weight = get(edge_weight, G);
-  auto path = Graph{};
-  auto path_weight = get(edge_weight, path);
   length_type length = 0;
+  auto weight = boost::get(boost::edge_weight, G);
+  auto edge_list = std::vector<kspwlo::Edge>{};
 
   auto current = t;
   while (current != s) {
     auto u = p[current];
-    auto w = G_weight[edge(u, current, G).first];
-    add_edge(u, current, path);
-    path_weight[edge(u, current, path).first] = w;
+    edge_list.emplace_back(u, current);
 
-    length += w;
+    auto edge_in_G = boost::edge(u, current, G).first;
+
+    length += weight[edge_in_G];
     current = u;
   }
 
-  return {std::move(path), length};
+  return {build_graph_from_edges(edge_list, G), length};
 }
 
 template <
@@ -456,6 +463,23 @@ void update_res_edges(Graph &candidate, Graph &graph, EdgeMap &resEdges,
   }
 }
 
+template <typename Graph, typename EdgeMap,
+          typename resPathIndex = typename EdgeMap::mapped_type::size_type>
+void update_res_edges(const std::vector<kspwlo::Edge> &candidate, Graph &graph,
+                      EdgeMap &resEdges, resPathIndex paths_count) {
+  using mapped_type = typename EdgeMap::mapped_type;
+  for (auto &e : candidate) {
+    auto edge_in_g = edge(e.first, e.second, graph).first;
+
+    auto search = resEdges.find(edge_in_g);
+    if (search != std::end(resEdges)) { // edge found
+      search->second.push_back(paths_count - 1);
+    } else { // new edge, add it to resEdges
+      resEdges.insert(std::make_pair(edge_in_g, mapped_type{paths_count - 1}));
+    }
+  }
+}
+
 template <typename Label, typename Graph, typename EdgesMap, typename PathsMap,
           typename WeightMap>
 bool update_label_similarity(Label &label, Graph &G, const EdgesMap &resEdges,
@@ -464,8 +488,8 @@ bool update_label_similarity(Label &label, Graph &G, const EdgesMap &resEdges,
   using namespace boost;
   bool below_sim_threshold = true;
   auto tmpPath = label.get_path();
-  for (auto ei = edges(tmpPath).first; ei != edges(tmpPath).second; ++ei) {
-    auto edge_in_g = edge(source(*ei, tmpPath), target(*ei, tmpPath), G).first;
+  for (auto &e : tmpPath) {
+    auto edge_in_g = edge(e.first, e.second, G).first;
     auto search = resEdges.find(edge_in_g);
     // if tmpPath share an edge with any k-th shortest path, update the
     // overlapping factor
@@ -491,26 +515,13 @@ bool update_label_similarity(Label &label, Graph &G, const EdgesMap &resEdges,
 
 template <typename Label, typename Vertex = typename Label::Vertex,
           typename length_type = typename Label::length_type>
-std::shared_ptr<Label> expand_path(const std::shared_ptr<Label> &label,
-                                   Vertex node, length_type node_lower_bound,
+std::unique_ptr<Label> expand_path(Label *label, Vertex node,
+                                   length_type node_lower_bound,
                                    length_type edge_weight, int step) {
   auto tmpLength = label->get_length() + edge_weight;
   auto tmpLowerBound = tmpLength + node_lower_bound;
-  return std::make_shared<Label>(node, tmpLength, tmpLowerBound, label,
+  return std::make_unique<Label>(node, tmpLength, tmpLowerBound, label,
                                  label->num_paths_k(), step);
-}
-
-template <typename Graph, typename Vertex = typename boost::graph_traits<
-                              Graph>::vertex_descriptor>
-bool is_acyclic(Graph &G) {
-  auto top_ordering = std::vector<Vertex>{};
-  try {
-    boost::topological_sort(G, std::back_inserter(top_ordering));
-  } catch (boost::not_a_dag e) {
-    // If not acyclic, continue
-    return false;
-  }
-  return true;
 }
 
 template <typename EdgesMap, typename PathsList, typename WeightMap,

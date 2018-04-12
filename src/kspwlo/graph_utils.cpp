@@ -1,7 +1,7 @@
 #include "kspwlo/graph_utils.hpp"
 
 namespace boost {
-template <> std::string dump_edges_weight(const kspwlo::Graph &G) {
+std::string dump_edges_weight(const kspwlo::Graph &G) {
   auto ss = std::stringstream{};
   auto weight = get(edge_weight, G);
 

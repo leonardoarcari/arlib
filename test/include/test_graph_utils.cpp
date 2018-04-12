@@ -6,6 +6,7 @@
 
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
+#include "kspwlo/onepass_plus.hpp"
 
 #include "utils.hpp"
 
@@ -109,7 +110,8 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
     require_vertices_in_graph(std::begin(Vs), std::end(Vs));
   }
 
-  SECTION("Reading existing gr file builds a graph with edges with correct weights") {
+  SECTION("Reading existing gr file builds a graph with edges with correct "
+          "weights") {
     // File must exist
     REQUIRE(G_opt);
     auto G = *G_opt;
@@ -126,9 +128,46 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
 
   SECTION("Reading not-existing gr file returns empty optional") {
     // File must not exist
-    auto non_existing_path = fs::path("/xyz/bla/bla/come/on/cant/be/existing.gr");
+    auto non_existing_path =
+        fs::path("/xyz/bla/bla/come/on/cant/be/existing.gr");
     G_opt = read_graph_from_file<kspwlo::Graph>(non_existing_path.string());
 
     REQUIRE(!G_opt);
   }
+}
+
+TEST_CASE("Building an AG from k alternative paths doesn't lose info",
+          "[boost::graph]") {
+  using namespace boost;
+  // Build the graph
+  auto G = read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
+  auto weight = get(edge_weight, G);
+
+  // Run kSPwLO
+  kspwlo::Vertex s = 0, t = 6;
+  auto res_paths = onepass_plus(G, s, t, 3, 0.5);
+
+  // Build ground truth data
+  auto test_edges = std::vector<kspwlo::Edge>();
+  auto test_weights = std::vector<kspwlo::Length>();
+
+  for (auto &path : res_paths) {
+    auto &path_g = path.graph;
+    for (auto it = edges(path_g).first; it != edges(path_g).second; ++it) {
+      auto u = source(*it, G);
+      auto v = target(*it, G);
+
+      auto e = edge(u, v, G).first; // Assume it exists
+      auto w = weight[e];
+
+      test_edges.emplace_back(u, v);
+      test_weights.push_back(w);
+    }
+  }
+
+  // Now build the AG
+  auto ag = build_AG(res_paths, G);
+
+  // Check if all the edges are there with the right weights
+  require_correct_weights(test_edges, test_weights, ag);
 }
