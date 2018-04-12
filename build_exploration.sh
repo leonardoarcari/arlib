@@ -9,7 +9,7 @@ APPLICATION_ROOT=$WORKING_DIR
 MARGOT_ROOT=$WORKING_DIR/../core2/
 
 # Build flags
-CLANG="-DCMAKE_CXX_COMPILER=clang++"
+CLANG="-DCMAKE_CXX_COMPILER=g++"
 
 # First reset margot heel if
 rm -rf $APPLICATION_ROOT/margot_heel_if/build
