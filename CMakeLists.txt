@@ -14,10 +14,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # setting common c++ flags
-set(CMAKE_CXX_STANDARD 17)
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -Wl,--hash-style=both,--as-needed -fopenmp -ftemplate-depth=1100" )
-add_compile_options(-g
-        -fmessage-length=0
+set(CMAKE_CXX_STANDARD 17 )
+
+add_compile_options(-fmessage-length=0
         -c
         -Wall
         -Wextra
@@ -120,7 +119,13 @@ set(KSPWLO_REF_SOURCE_FILES
         external/kspwlo_ref/main.cpp)
 
 add_executable(${KSPWLO_REF} ${KSPWLO_REF_SOURCE_FILES})
+
+find_package(OpenMP)
+if (OPENMP_FOUND)
+        target_compile_options(${KSPWLO_REF} PUBLIC -fopenmp)
+endif(OPENMP_FOUND)
 target_link_libraries(${KSPWLO_REF} ${MARGOT_HEEL_LIBRARIES})
+target_link_libraries(${KSPWLO_REF} omp)
 
 # OnePass+ algorithm executable
 set(ONEPASS_PLUS "onepass_plus")
@@ -128,6 +133,14 @@ set(ONEPASS_PLUS "onepass_plus")
 set(OP_PLUS_SRC
         dse_apps/onepass_plus/driver_onepass_plus.cpp)
 add_executable(${ONEPASS_PLUS} ${OP_PLUS_SRC})
+
+# Compiling
+option(PERF_PROFILING "Enable compilation flags for Linux Perf profiling" OFF)
+if(PERF_PROFILING)
+        target_compile_options(${ONEPASS_PLUS} PUBLIC "-g" "-fno-omit-frame-pointer")
+endif(PERF_PROFILING)
+
+# Linking
 target_link_libraries(${ONEPASS_PLUS} ${MARGOT_HEEL_LIBRARIES})
 target_link_libraries(${ONEPASS_PLUS} stdc++fs)
 target_link_libraries(${ONEPASS_PLUS} Boost::graph Boost::program_options)

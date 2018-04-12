@@ -7,9 +7,14 @@ kspwlo_dse_workspace.code-workspace
 # CMake
 build/
 
+# Linux Perf
+perf-build/
+perf.data*
+
 # mARGOt
 dse/
 margot_heel_if/
+parameter_space_exploration*
 
 # Doxygen
 **/html
