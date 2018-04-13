@@ -1,7 +1,9 @@
-#ifndef KSPWLO_IMPL_HPP
-#define KSPWLO_IMPL_HPP
+#ifndef BOOST_EDGE_SUBSET_EXCLUSION_IMPL_HPP
+#define BOOST_EDGE_SUBSET_EXCLUSION_IMPL_HPP
 
 #include <boost/graph/astar_search.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
@@ -9,6 +11,7 @@
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/impl/kspwlo_impl.hpp"
 
+#include <limits>
 #include <utility>
 
 namespace kspwlo_impl {
@@ -25,21 +28,22 @@ template <typename Edge> struct EdgePriorityComparator {
 
 template <typename DeletedEdgeMap> class edge_deleted_filter {
 public:
-  explicit edge_deleted_filter(const DeletedEdgeMap &deleted_edge_map)
-      : deleted_edge_map{deleted_edge_map} {};
+  edge_deleted_filter() : deleted_edge_map{nullptr} {}
+  edge_deleted_filter(DeletedEdgeMap &deleted_edge_map)
+      : deleted_edge_map{std::addressof(deleted_edge_map)} {};
 
   template <typename Edge> bool operator()(const Edge &e) const {
-    return deleted_edge_map.find(e) == std::end(deleted_edge_map);
+    return deleted_edge_map->find(e) == std::end(*deleted_edge_map);
   }
 
 private:
-  const DeletedEdgeMap &deleted_edge_map;
+  DeletedEdgeMap *deleted_edge_map;
 };
 
-template <typename Graph, CostType>
+template <typename Graph, typename CostType>
 class distance_heuristic : public boost::astar_heuristic<Graph, CostType> {
 public:
-  using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+  using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
 
   distance_heuristic(Graph &G, Vertex t) {
     lower_bounds = kspwlo_impl::distance_from_target(G, t);
@@ -50,15 +54,44 @@ public:
 private:
   std::vector<CostType> lower_bounds;
 };
+
 //===----------------------------------------------------------------------===//
 //                          ESX algorithm routines
 //===----------------------------------------------------------------------===//
+template <typename CostType, typename Vertex, typename DistMap>
+bool exists_path_to(Vertex v, const DistMap &dist) {
+  auto inf = std::numeric_limits<CostType>::max();
+  return dist[v] != inf;
+}
+
+template <typename Graph, typename PredMap,
+          typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, Graph &G,
+                                 const PredMap &predecessor) {
+  auto e_s = boost::source(e, G);
+  auto e_t = boost::target(e, G);
+  
+  auto v = t;
+  auto u = predecessor[v];
+  while (u != s) {
+    if (u == e_s && v == e_t) {
+      return true;
+    }
+    v = u;
+    u = predecessor[v];
+  }
+  return false;
+}
+
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-          typename Edge = typename graph_traits<Graph>::edge_descriptor>
-int compute_priority(Graph &G, const Edge &e, AStarHeuristic &heuristic,
-                     const DeletedEdgeMap &deleted_edge_map) {
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
+                     DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+  using Length = typename property_traits<
+      typename property_map<Graph, edge_weight_t>::type>::value_type;
   int priority = 0;
   auto sources = std::vector<Vertex>{};
   auto targets = std::vector<Vertex>{};
@@ -70,8 +103,9 @@ int compute_priority(Graph &G, const Edge &e, AStarHeuristic &heuristic,
   // != b
   for (auto in_it = in_edges(a, G).first; in_it != in_edges(a, G).second;
        ++in_it) {
-    if (*in_it != b) {
-      sources.push_back(*in_it);
+    auto n_i = source(*in_it, G);
+    if (n_i != b) {
+      sources.push_back(n_i);
     }
   }
 
@@ -79,16 +113,36 @@ int compute_priority(Graph &G, const Edge &e, AStarHeuristic &heuristic,
   // != a
   for (auto out_it = out_edges(b, G).first; out_it != out_edges(b, G).second;
        ++out_it) {
-    if (*out_it != a) {
-      targets.push_back(*out_it);
+    auto n_j = target(*out_it, G);
+    if (n_j != a) {
+      targets.push_back(n_j);
     }
   }
+
+  // Get a graph with deleted edges filtered out
+  auto filter = edge_deleted_filter{deleted_edge_map};
+  auto filtered_G = filtered_graph(G, filter);
 
   for (auto s_i : sources) {
     for (auto t_i : targets) {
       // Compute the shortest path from s_i to t_i
+      auto dist = std::vector<Length>(num_vertices(G));
+      auto predecessor = std::vector<Vertex>(num_vertices(G), s_i);
+      auto vertex_id = get(vertex_index, filtered_G);
+
+      std::cout << "Priority for path: " << s_i << " -> " << t_i << "\n";
+      astar_search(
+          filtered_G, s_i, heuristic,
+          distance_map(&dist[0]).predecessor_map(make_iterator_property_map(
+              std::begin(predecessor), vertex_id, s_i)));
+      if (exists_path_to<Length>(t_i, dist) &&
+          shortest_path_contains_edge(s_i, t_i, e, filtered_G, predecessor)) {
+        ++priority;
+      }
     }
   }
+
+  return priority;
 }
 } // namespace kspwlo_impl
 #endif
