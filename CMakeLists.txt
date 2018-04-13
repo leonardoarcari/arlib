@@ -152,6 +152,7 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_esx.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/model/graph.cpp

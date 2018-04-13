@@ -73,6 +73,6 @@ kspwlo::Path<Graph> compute_shortest_path(Graph &G, Vertex s, Vertex t) {
                                   std::begin(predecessor), vertex_id, s)));
   return build_path_from_dijkstra(G, predecessor, s, t);
 }
-}
+} // namespace kspwlo_impl
 
 #endif
