@@ -64,14 +64,15 @@ bool exists_path_to(Vertex v, const DistMap &dist) {
   return dist[v] != inf;
 }
 
-template <typename Graph, typename PredMap,
-          typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+template <
+    typename Graph, typename PredMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
 bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, Graph &G,
                                  const PredMap &predecessor) {
   auto e_s = boost::source(e, G);
   auto e_t = boost::target(e, G);
-  
+
   auto v = t;
   auto u = predecessor[v];
   while (u != s) {
@@ -82,6 +83,57 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, Graph &G,
     u = predecessor[v];
   }
   return false;
+}
+
+template <typename Vertex, typename PredecessorMap>
+std::vector<kspwlo::Edge>
+build_edge_list_from_dijkstra(Vertex s, Vertex t, const PredecessorMap &p) {
+  auto edge_list = std::vector<kspwlo::Edge>{};
+
+  auto current = t;
+  while (current != s) {
+    auto u = p[current];
+    edge_list.emplace_back(u, current);
+    current = u;
+  }
+
+  return edge_list;
+}
+
+template <
+    typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+std::optional<std::vector<kspwlo::Edge>>
+compute_astar_shortest_path(Graph &G, Vertex s, Vertex t,
+                            const AStarHeuristic &heuristic,
+                            DeletedEdgeMap &deleted_edge_map) {
+  using namespace boost;
+  using Length = typename property_traits<
+      typename property_map<Graph, edge_weight_t>::type>::value_type;
+
+  // Get a graph with deleted edges filtered out
+  auto filter = edge_deleted_filter{deleted_edge_map};
+  auto filtered_G = filtered_graph(G, filter);
+
+  auto dist = std::vector<Length>(num_vertices(G));
+  auto predecessor = std::vector<Vertex>(num_vertices(G), s);
+  auto vertex_id = get(vertex_index, filtered_G);
+
+  astar_search(
+      filtered_G, s, heuristic,
+      distance_map(&dist[0]).predecessor_map(
+          make_iterator_property_map(std::begin(predecessor), vertex_id, s)));
+
+  using Length = typename property_traits<
+      typename property_map<Graph, edge_weight_t>::type>::value_type;
+  // If path from s to t is not null return it
+  if (exists_path_to<Length>(t, dist)) {
+    auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+    return std::make_optional(edge_list);
+  } else {
+    // Return empty optional
+    return std::optional<std::vector<kspwlo::Edge>>{};
+  }
 }
 
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
@@ -130,7 +182,6 @@ int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
       auto predecessor = std::vector<Vertex>(num_vertices(G), s_i);
       auto vertex_id = get(vertex_index, filtered_G);
 
-      std::cout << "Priority for path: " << s_i << " -> " << t_i << "\n";
       astar_search(
           filtered_G, s_i, heuristic,
           distance_map(&dist[0]).predecessor_map(make_iterator_property_map(
@@ -143,6 +194,36 @@ int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
   }
 
   return priority;
+}
+
+template <
+    typename Graph,
+    typename Length = typename boost::property_traits<
+        typename boost::property_map<Graph, boost::edge_weight_t>::type>::value_type>
+Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
+                                 Graph &G) {
+  using namespace boost;
+  Length length = 0;
+  auto weight = get(edge_weight, G);
+
+  for (const auto & [ u, v ] : candidate) {
+    auto egde_in_G = edge(u, v, G);
+    bool edge_is_shared = egde_in_G.second;
+    if (edge_is_shared) {
+      length += weight[egde_in_G.first];
+    }
+  }
+
+  return length;
+}
+
+template <typename Graph>
+double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
+                          const kspwlo::Path<Graph> &alt_path) {
+  double shared_length =
+      static_cast<double>(compute_length_from_edges(candidate, alt_path.graph));
+
+  return shared_length / alt_path.length;
 }
 } // namespace kspwlo_impl
 #endif
