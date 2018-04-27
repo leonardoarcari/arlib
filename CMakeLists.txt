@@ -16,24 +16,13 @@ endif(NOT CMAKE_BUILD_TYPE)
 # setting common c++ flags
 set(CMAKE_CXX_STANDARD 17 )
 
-add_compile_options(-fmessage-length=0
-        -c
-        -Wall
+add_compile_options(-Wall
         -Wextra
         -pedantic
-        -Wredundant-decls
-        -Wdisabled-optimization
-        -Wctor-dtor-privacy
-        -Wnon-virtual-dtor
-        -Woverloaded-virtual
-        -Wsign-promo
-        -Wold-style-cast
-        -Werror=return-type
-        -DLINUX
-        -Ofast)
+        -ansi)
 
 # setting debug flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g3 -O0 -ftemplate-depth=1100")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Og -ftemplate-depth=1100")
 
 # setting release with debug info flags
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -march=native -mtune=native -g3 -O2 -ftemplate-depth=1100")
@@ -109,7 +98,8 @@ set(KSPWLO_REF_MODEL_SRC
 set(KSPWLO_REF_TOOLS_SRC
         external/kspwlo_ref/tools/astar.cpp
         external/kspwlo_ref/tools/dijkstra.cpp
-        external/kspwlo_ref/tools/tools.hpp)
+        external/kspwlo_ref/tools/tools.hpp
+        external/kspwlo_ref/exploration/graph_utils.cpp)
 
 set(KSPWLO_REF_SOURCE_FILES
         ${KSPWLO_REF_ALGORITHMS_SRC}
@@ -154,10 +144,13 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_esx.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/esx.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/model/graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/dijkstra.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/astar.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/exploration/graph_utils.cpp)
 add_executable(tests ${TEST_SOURCES})
 target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test)
 target_link_libraries(tests Catch)
