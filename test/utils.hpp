@@ -1,7 +1,48 @@
 #ifndef TEST_UTILS_HPP
 #define TEST_UTILS_HPP
 
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/properties.hpp>
+
+#include "kspwlo_ref/algorithms/kspwlo.hpp"
+
 #include <string_view>
+#include <vector>
+
+//===----------------------------------------------------------------------===//
+//                      Utility functions for testing
+//===----------------------------------------------------------------------===//
+
+template <typename Graph>
+bool one_regression_path_have_edges(std::vector<Path> &res_regression,
+                                    Graph &G) {
+  using boost::edges;
+  using boost::source;
+  using boost::target;
+  auto first = edges(G).first;
+  auto last = edges(G).second;
+
+  bool has_them = false;
+  for (auto &regr_path : res_regression) {
+    int edges_count = 0;
+    int nb_edges_regr_path_has = 0;
+    for (auto it = first; it != last; ++it) {
+      ++edges_count;
+      NodeID u = source(*it, G);
+      NodeID v = target(*it, G);
+
+      if (regr_path.containsEdge(std::make_pair(u, v))) {
+        ++nb_edges_regr_path_has;
+      }
+    }
+    if (edges_count == nb_edges_regr_path_has) {
+      has_them = true;
+      break;
+    }
+  }
+  return has_them;
+}
 
 constexpr std::string_view graph_gr = "d\n"
                                       "7 24\n"

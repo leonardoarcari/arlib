@@ -100,6 +100,9 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
   auto G_regr = std::make_unique<RoadNetwork>(path.c_str());
   auto res_regression = onepass_plus(G_regr.get(), 0, 6, 3, 0.5);
 
+  using boost::edges;
+  using boost::source;
+  using boost::target;
   std::cout << "boost::graph result:\n";
   for (auto &resPath : res) {
     auto &p = resPath.graph;
@@ -111,11 +114,11 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
 
   std::cout << "regression result:\n";
   for (auto &regPath : res_regression) {
-    auto edges = regPath.getEdges();
+    auto es = regPath.getEdges();
     // Cleaning loops coming from dijkstra algorithm (for no reason)
-    remove_self_loops(edges.begin(), edges.end());
+    remove_self_loops(es.begin(), es.end());
 
-    for (auto edge : edges) {
+    for (auto edge : es) {
       std::cout << "(" << edge.first << ", " << edge.second << ") ";
     }
     std::cout << "\n";
@@ -130,38 +133,4 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
     auto &p = resPath.graph;
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
-}
-
-//===----------------------------------------------------------------------===//
-//                      Utility functions for testing
-//===----------------------------------------------------------------------===//
-
-template <typename Graph>
-bool one_regression_path_have_edges(std::vector<Path> &res_regression,
-                                    Graph &G) {
-  using boost::edges;
-  using boost::source;
-  using boost::target;
-  auto first = edges(G).first;
-  auto last = edges(G).second;
-
-  bool has_them = false;
-  for (auto &regr_path : res_regression) {
-    int edges_count = 0;
-    int nb_edges_regr_path_has = 0;
-    for (auto it = first; it != last; ++it) {
-      ++edges_count;
-      NodeID u = source(*it, G);
-      NodeID v = target(*it, G);
-
-      if (regr_path.containsEdge(std::make_pair(u, v))) {
-        ++nb_edges_regr_path_has;
-      }
-    }
-    if (edges_count == nb_edges_regr_path_has) {
-      has_them = true;
-      break;
-    }
-  }
-  return has_them;
 }
