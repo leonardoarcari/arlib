@@ -359,7 +359,7 @@ public:
 
 private:
   std::unordered_map<Vertex, std::vector<LabelPtr>, boost::hash<Vertex>>
-      container;
+      container{};
 };
 
 /**
