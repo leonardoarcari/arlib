@@ -196,22 +196,27 @@ int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
   return priority;
 }
 
-template <
-    typename Graph,
-    typename Length = typename boost::property_traits<
-        typename boost::property_map<Graph, boost::edge_weight_t>::type>::value_type>
+template <typename Graph,
+          typename Length =
+              typename boost::property_traits<typename boost::property_map<
+                  Graph, boost::edge_weight_t>::type>::value_type>
 Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
-                                 Graph &G) {
+                                 const Graph &G) {
   using namespace boost;
   Length length = 0;
   auto weight = get(edge_weight, G);
 
   for (const auto & [ u, v ] : candidate) {
+    // std::cout << "  Searching (" << u << ", " << v << ")... ";
     auto egde_in_G = edge(u, v, G);
     bool edge_is_shared = egde_in_G.second;
+    // std::cout << "Found: " << std::boolalpha << edge_is_shared << " w/
+    // weight=";
     if (edge_is_shared) {
+      // std::cout << weight[egde_in_G.first];
       length += weight[egde_in_G.first];
     }
+    std::cout << "\n";
   }
 
   return length;

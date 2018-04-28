@@ -125,17 +125,25 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
       if (edge_priorities[p_max_idx].empty()) {
         overlaps[p_max_idx] = 0;
       } else {
+        // std::cout << "Computing similarity:\n  Path @ " << p_max_idx << "\n  (";
+        // for (const auto & [u, v] : *p_tmp) {
+        //   std::cout << "(" << u << ", " << v << ") ";
+        // } std::cout << ")\n";
         overlaps[p_max_idx] =
             kspwlo_impl::compute_similarity(*p_tmp, resPaths[p_max_idx]);
       }
 
       // Checking if the resulting path is valid
       bool candidate_is_valid = true;
+      //std::cout << "Checking validity...\n";
+      //int count = 0;
       for (const auto &alt_path : resPaths) {
+        //std::cout << "  alt_path no. " << count << "\n";
         if (kspwlo_impl::compute_similarity(*p_tmp, alt_path) > theta) {
           candidate_is_valid = false;
           break;
         }
+        //++count;
       }
 
       if (candidate_is_valid) {
