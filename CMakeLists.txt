@@ -117,23 +117,23 @@ endif(OPENMP_FOUND)
 target_link_libraries(${KSPWLO_REF} ${MARGOT_HEEL_LIBRARIES})
 target_link_libraries(${KSPWLO_REF} omp)
 
-# OnePass+ algorithm executable
-set(ONEPASS_PLUS "onepass_plus")
+# kSPwLO algorithm executable
+set(KSPWLO "kspwlo")
 
 set(OP_PLUS_SRC
-        dse_apps/onepass_plus/driver_onepass_plus.cpp)
-add_executable(${ONEPASS_PLUS} ${OP_PLUS_SRC})
+        dse_apps/driver.cpp)
+add_executable(${KSPWLO} ${OP_PLUS_SRC})
 
 # Compiling
 option(PERF_PROFILING "Enable compilation flags for Linux Perf profiling" OFF)
 if(PERF_PROFILING)
-        target_compile_options(${ONEPASS_PLUS} PUBLIC "-g" "-fno-omit-frame-pointer")
+        target_compile_options(${KSPWLO} PUBLIC "-g" "-fno-omit-frame-pointer")
 endif(PERF_PROFILING)
 
 # Linking
-target_link_libraries(${ONEPASS_PLUS} ${MARGOT_HEEL_LIBRARIES})
-target_link_libraries(${ONEPASS_PLUS} stdc++fs)
-target_link_libraries(${ONEPASS_PLUS} Boost::graph Boost::program_options)
+target_link_libraries(${KSPWLO} ${MARGOT_HEEL_LIBRARIES})
+target_link_libraries(${KSPWLO} stdc++fs)
+target_link_libraries(${KSPWLO} Boost::graph Boost::program_options)
 
 
 # Testing

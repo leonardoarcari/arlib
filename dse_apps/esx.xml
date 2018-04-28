@@ -1,9 +1,10 @@
-<application name="onepass_plus_exploration" out_file="parameter_space_exploration.log" block="parameter_space_exploration">
+<application name="esx_exploration" out_file="parameter_space_exploration.log" block="parameter_space_exploration">
 
 	<!-- Input parameters -->
 	<flag value="-f /media/leonardoarcari/Data/Home/Development/master_thesis/kspwlo_dse/graphs/citta_studi.gr"/>
 	<flag value="-S 0"/>
 	<flag value="-D 20"/>
+	<flag value="-a esx"/>
 
 	<!-- Application knobs -->
 	<parameter name="k_paths"				start_value="1"			stop_value="5"						flag="-k"	type="int"/>
