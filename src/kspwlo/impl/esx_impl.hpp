@@ -55,8 +55,6 @@ private:
   std::vector<CostType> lower_bounds;
 };
 
-struct target_found {};
-
 template <typename Vertex>
 class astar_target_visitor : public boost::default_astar_visitor {
 public:
@@ -156,8 +154,6 @@ int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
                      DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
-  using Length = typename property_traits<
-      typename property_map<Graph, edge_weight_t>::type>::value_type;
   int priority = 0;
   auto sources = std::vector<Vertex>{};
   auto targets = std::vector<Vertex>{};
