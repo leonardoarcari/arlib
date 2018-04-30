@@ -55,6 +55,22 @@ private:
   std::vector<CostType> lower_bounds;
 };
 
+struct target_found {};
+
+template <typename Vertex>
+class astar_target_visitor : public boost::default_astar_visitor {
+public:
+  explicit astar_target_visitor(Vertex t) : t{t} {}
+  template <typename Graph> void examine_vertex(Vertex u, Graph &) {
+    if (u == t) {
+      throw target_found{};
+    }
+  }
+
+private:
+  Vertex t;
+};
+
 //===----------------------------------------------------------------------===//
 //                          ESX algorithm routines
 //===----------------------------------------------------------------------===//
@@ -104,9 +120,9 @@ template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
 std::optional<std::vector<kspwlo::Edge>>
-compute_astar_shortest_path(Graph &G, Vertex s, Vertex t,
-                            const AStarHeuristic &heuristic,
-                            DeletedEdgeMap &deleted_edge_map) {
+astar_shortest_path(Graph &G, Vertex s, Vertex t,
+                    const AStarHeuristic &heuristic,
+                    DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Length = typename property_traits<
       typename property_map<Graph, edge_weight_t>::type>::value_type;
@@ -119,21 +135,19 @@ compute_astar_shortest_path(Graph &G, Vertex s, Vertex t,
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, filtered_G);
 
-  astar_search(
-      filtered_G, s, heuristic,
-      distance_map(&dist[0]).predecessor_map(
-          make_iterator_property_map(std::begin(predecessor), vertex_id, s)));
-
-  using Length = typename property_traits<
-      typename property_map<Graph, edge_weight_t>::type>::value_type;
-  // If path from s to t is not null return it
-  if (exists_path_to<Length>(t, dist)) {
+  try {
+    astar_search(filtered_G, s, heuristic,
+                 distance_map(&dist[0])
+                     .predecessor_map(make_iterator_property_map(
+                         std::begin(predecessor), vertex_id, s))
+                     .visitor(astar_target_visitor{t}));
+  } catch (target_found tf) {
     auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
     return std::make_optional(edge_list);
-  } else {
-    // Return empty optional
-    return std::optional<std::vector<kspwlo::Edge>>{};
   }
+  // In case t could not be found from astar_search and target_found is not
+  // thrown, return empty optional
+  return std::optional<std::vector<kspwlo::Edge>>{};
 }
 
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
@@ -178,17 +192,19 @@ int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
   for (auto s_i : sources) {
     for (auto t_i : targets) {
       // Compute the shortest path from s_i to t_i
-      auto dist = std::vector<Length>(num_vertices(G));
       auto predecessor = std::vector<Vertex>(num_vertices(G), s_i);
       auto vertex_id = get(vertex_index, filtered_G);
 
-      astar_search(
-          filtered_G, s_i, heuristic,
-          distance_map(&dist[0]).predecessor_map(make_iterator_property_map(
-              std::begin(predecessor), vertex_id, s_i)));
-      if (exists_path_to<Length>(t_i, dist) &&
-          shortest_path_contains_edge(s_i, t_i, e, filtered_G, predecessor)) {
-        ++priority;
+      try {
+        astar_search(
+            filtered_G, s_i, heuristic,
+            predecessor_map(make_iterator_property_map(std::begin(predecessor),
+                                                       vertex_id, s_i))
+                .visitor(astar_target_visitor{t_i}));
+      } catch (target_found tf) {
+        if (shortest_path_contains_edge(s_i, t_i, e, filtered_G, predecessor)) {
+          ++priority;
+        }
       }
     }
   }
@@ -207,16 +223,12 @@ Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
   auto weight = get(edge_weight, G);
 
   for (const auto & [ u, v ] : candidate) {
-    // std::cout << "  Searching (" << u << ", " << v << ")... ";
     auto egde_in_G = edge(u, v, G);
     bool edge_is_shared = egde_in_G.second;
-    // std::cout << "Found: " << std::boolalpha << edge_is_shared << " w/
-    // weight=";
+
     if (edge_is_shared) {
-      // std::cout << weight[egde_in_G.first];
       length += weight[egde_in_G.first];
     }
-    std::cout << "\n";
   }
 
   return length;
