@@ -54,14 +54,8 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
   auto heuristic = kspwlo_impl::distance_heuristic<PropertyGraph, Length>(G, t);
 
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
-  for (auto it = edges(sp).first; it != edges(sp).second; ++it) {
-    auto u = source(*it, sp);
-    auto v = target(*it, sp);
-    auto edge_in_G = edge(u, v, G).first;
-    auto prio_e_i =
-        kspwlo_impl::compute_priority(G, edge_in_G, heuristic, deleted_edges);
-    edge_priorities[0].push(std::make_pair(edge_in_G, prio_e_i));
-  }
+  kspwlo_impl::init_edge_priorities(sp, edge_priorities, 0, G, heuristic,
+                                    deleted_edges);
 
   auto overlaps = std::vector<double>(k, 0.0);
   using PathIndex = typename decltype(overlaps)::size_type;
@@ -79,12 +73,9 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
       overlap_ratio = *max_it;
 
       // Check if finding a result is feasible
-      auto valid_overlapping =
-          std::find_if(std::begin(overlaps), std::end(overlaps),
-                       [](const auto &v) { return v > 0; });
-      if (valid_overlapping == std::end(overlaps)) {
-        still_feasible = false;
-        break;
+      still_feasible = kspwlo_impl::check_feasibility(overlaps);
+      if (!still_feasible) {
+        break; // Stop the algorithm
       }
 
       // Get e_tmp with higher priority from H_{p_max_idx}
@@ -104,8 +95,8 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
       }
 
       // Compute p_tmp shortest path
-      auto p_tmp = kspwlo_impl::astar_shortest_path(G, s, t, heuristic,
-                                                            deleted_edges);
+      auto p_tmp =
+          kspwlo_impl::astar_shortest_path(G, s, t, heuristic, deleted_edges);
 
       // If astar shortest path did not find a path
       if (!p_tmp) {
@@ -130,14 +121,8 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
       }
 
       // Checking if the resulting path is valid
-      bool candidate_is_valid = true;
-      for (const auto &alt_path : resPaths) {
-        if (kspwlo_impl::compute_similarity(*p_tmp, alt_path) > theta) {
-          candidate_is_valid = false;
-          break;
-        }
-      }
-
+      bool candidate_is_valid =
+          kspwlo_impl::check_candidate_validity(*p_tmp, resPaths, theta);
       if (candidate_is_valid) {
         // Add p_tmp to P_LO
         resPaths.emplace_back(
@@ -148,12 +133,10 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
         PathIndex p_c_idx = resPaths.size() - 1;
         overlaps[p_c_idx] = 1.0;
 
-        for (const auto & [ u, v ] : *p_tmp) {
-          auto edge_in_G = edge(u, v, G).first;
-          auto prio_e_i = kspwlo_impl::compute_priority(G, edge_in_G, heuristic,
-                                                        deleted_edges);
-          edge_priorities[p_c_idx].push(std::make_pair(edge_in_G, prio_e_i));
-        }
+        // Initialize max-heap H_i with the priority of each edge of new
+        // alternative path
+        kspwlo_impl::init_edge_priorities(*p_tmp, edge_priorities, p_c_idx, G,
+                                          heuristic, deleted_edges);
         break; // From inner while loop
       }
     }

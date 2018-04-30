@@ -14,6 +14,10 @@
 #include <vector>
 
 namespace kspwlo_impl {
+//===----------------------------------------------------------------------===//
+//                      kSPwLO algorithms support classes
+//===----------------------------------------------------------------------===//
+
 struct target_found {};
 struct target_not_found : public std::logic_error {
   explicit target_not_found(const std::string &what_arg)

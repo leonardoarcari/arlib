@@ -29,7 +29,7 @@ template <typename Edge> struct EdgePriorityComparator {
 template <typename DeletedEdgeMap> class edge_deleted_filter {
 public:
   edge_deleted_filter() : deleted_edge_map{nullptr} {}
-  edge_deleted_filter(DeletedEdgeMap &deleted_edge_map)
+  edge_deleted_filter(const DeletedEdgeMap &deleted_edge_map)
       : deleted_edge_map{std::addressof(deleted_edge_map)} {};
 
   template <typename Edge> bool operator()(const Edge &e) const {
@@ -37,7 +37,7 @@ public:
   }
 
 private:
-  DeletedEdgeMap *deleted_edge_map;
+  const DeletedEdgeMap *deleted_edge_map;
 };
 
 template <typename Graph, typename CostType>
@@ -151,7 +151,7 @@ astar_shortest_path(Graph &G, Vertex s, Vertex t,
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
           typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
 int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
-                     DeletedEdgeMap &deleted_edge_map) {
+                     const DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
   int priority = 0;
@@ -237,6 +237,65 @@ double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
       static_cast<double>(compute_length_from_edges(candidate, alt_path.graph));
 
   return shared_length / alt_path.length;
+}
+
+template <typename Graph, typename PrioritiesVector, typename AStarHeuristic,
+          typename EdgeMap,
+          typename Index = typename PrioritiesVector::size_type>
+void init_edge_priorities(const Graph &alternative,
+                          PrioritiesVector &edge_priorities, Index alt_index,
+                          const Graph &G, const AStarHeuristic &heuristic,
+                          const EdgeMap &deleted_edges) {
+  using namespace boost;
+  for (auto it = edges(alternative).first; it != edges(alternative).second;
+       ++it) {
+    // Get a reference to (u, v) in G
+    auto u = source(*it, alternative);
+    auto v = target(*it, alternative);
+    auto edge_in_G = edge(u, v, G);
+    assert(edge_in_G.second); // (u, v) must exist in G
+    auto prio_e_i =
+        compute_priority(G, edge_in_G.first, heuristic, deleted_edges);
+    edge_priorities[alt_index].push(std::make_pair(edge_in_G.first, prio_e_i));
+  }
+}
+
+template <typename PrioritiesVector, typename Graph, typename AStarHeuristic,
+          typename EdgeMap,
+          typename Index = typename PrioritiesVector::size_type>
+void init_edge_priorities(const std::vector<kspwlo::Edge> &alternative,
+                          PrioritiesVector &edge_priorities, Index alt_index,
+                          const Graph &G, const AStarHeuristic &heuristic,
+                          const EdgeMap &deleted_edges) {
+  for (const auto & [ u, v ] : alternative) {
+    auto edge_in_G = edge(u, v, G).first;
+    auto prio_e_i = compute_priority(G, edge_in_G, heuristic, deleted_edges);
+    edge_priorities[alt_index].push(std::make_pair(edge_in_G, prio_e_i));
+  }
+}
+
+bool check_feasibility(const std::vector<double> &overlaps) {
+  auto valid_overlapping =
+      std::find_if(std::begin(overlaps), std::end(overlaps),
+                   [](const auto &v) { return v > 0; });
+  if (valid_overlapping == std::end(overlaps)) {
+    return false;
+  }
+  return true;
+}
+
+template <typename Graph>
+bool check_candidate_validity(
+    const std::vector<kspwlo::Edge> &candidate,
+    const std::vector<kspwlo::Path<Graph>> &alternatives, double theta) {
+  bool candidate_is_valid = true;
+  for (const auto &alt_path : alternatives) {
+    if (compute_similarity(candidate, alt_path) > theta) {
+      candidate_is_valid = false;
+      break;
+    }
+  }
+  return candidate_is_valid;
 }
 } // namespace kspwlo_impl
 #endif
