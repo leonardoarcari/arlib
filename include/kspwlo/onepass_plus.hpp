@@ -23,7 +23,6 @@ namespace boost {
  * @brief An implementation of OnePass+ k-shortest path with limited overlap for
  *        Boost::Graph.
  *
- * @callgraph
  * This implementation refers to the following publication:
  * Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and Ulf Leser,
  * Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited

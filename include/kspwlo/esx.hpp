@@ -13,7 +13,31 @@
 #include <unordered_set>
 #include <vector>
 
+/**
+ * @brief Algorithms and utilities for Boost::Graph
+ */
 namespace boost {
+/**
+ * @brief An implementation of ESX k-shortest path with limited overlap for
+ *        Boost::Graph.
+ *
+ * This implementation refers to the following publication:
+ * Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and Ulf Leser,
+ * Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited
+ * Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology
+ * (EDBT) (2017)
+ *
+ * @tparam PropertyGraph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam Vertex A vertex of PropertyGraph.
+ * @param G The graph.
+ * @param s The source node.
+ * @param t The target node.
+ * @param k The number of alternative paths to compute.
+ * @param theta The similarity threshold.
+ *
+ * @return A list of at maximum @p k alternative paths.
+ */
 template <typename PropertyGraph,
           typename Vertex =
               typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
