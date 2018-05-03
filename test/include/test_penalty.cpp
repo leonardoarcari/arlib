@@ -29,8 +29,9 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   auto p = 0.1;
   auto r = 0.1;
   auto bound_limit = 10;
+  auto max_nb_steps = 100000;
 
-  auto res_paths = penalty_ag(G, s, t, k, theta, p, r, bound_limit);
+  auto res_paths = penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
 
   REQUIRE(res_paths.size() == 3);
 

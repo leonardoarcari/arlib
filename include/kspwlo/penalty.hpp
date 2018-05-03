@@ -6,6 +6,7 @@
 #include <boost/graph/properties.hpp>
 
 #include "kspwlo/graph_types.hpp"
+#include "kspwlo/impl/penalty_impl.hpp"
 
 #include <queue>
 #include <unordered_map>
@@ -19,9 +20,9 @@ namespace boost {
 
 template <typename Graph, typename Vertex = typename boost::graph_traits<
                               Graph>::vertex_descriptor>
-std::vector<kspwlo::Path<Graph>> penalty_ag(Graph &G, Vertex s, Vertex t,
-                                            int k, double theta, double p, double r,
-                                            double bound_limit) {
+std::vector<kspwlo::Path<Graph>>
+penalty_ag(Graph &G, Vertex s, Vertex t, int k, double theta, double p,
+           double r, int max_nb_updates, int max_nb_steps) {
   // P_LO set of k paths
   using Length = typename property_traits<
       typename property_map<Graph, edge_weight_t>::type>::value_type;
@@ -56,21 +57,23 @@ std::vector<kspwlo::Path<Graph>> penalty_ag(Graph &G, Vertex s, Vertex t,
 
   // Penalize sp edges
   kspwlo_impl::penalize_candidate_path(*sp, G, s, t, p, r, weight, distance_s,
-                                       distance_t, penalty_bounds, bound_limit);
+                                       distance_t, penalty_bounds,
+                                       max_nb_updates);
 
   int step = 0;
   using Index = std::size_t;
-  while (resPaths.size() < static_cast<Index>(k) && step < 50) {
+  while (resPaths.size() < static_cast<Index>(k) && step < max_nb_steps) {
     auto p_tmp = kspwlo_impl::dijkstra_shortest_path(G, s, t, weight);
-    std::cout << "p_tmp = [ ";
-    for (auto [u, v] : *p_tmp) {
-      std::cout << "(" << u << ", " << v << ") ";
-    } std::cout << "]\n";
+    // std::cout << "p_tmp = [ ";
+    // for (auto[u, v] : *p_tmp) {
+    //   std::cout << "(" << u << ", " << v << ") ";
+    // }
+    // std::cout << "]\n";
 
     // Penalize p_tmp edges
     kspwlo_impl::penalize_candidate_path(*p_tmp, G, s, t, p, r, weight,
                                          distance_s, distance_t, penalty_bounds,
-                                         bound_limit);
+                                         max_nb_updates);
     ++step;
 
     // If p_tmp is sufficiently dissimilar to other alternative paths, accept it
