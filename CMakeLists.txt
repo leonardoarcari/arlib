@@ -120,9 +120,10 @@ target_link_libraries(${KSPWLO_REF} omp)
 # kSPwLO algorithm executable
 set(KSPWLO "kspwlo")
 
-set(OP_PLUS_SRC
-        dse_apps/driver.cpp)
-add_executable(${KSPWLO} ${OP_PLUS_SRC})
+set(KSPWLO_SRC
+        dse_apps/driver.cpp
+        src/kspwlo/impl/esx_impl.cpp)
+add_executable(${KSPWLO} ${KSPWLO_SRC})
 
 # Compiling
 option(PERF_PROFILING "Enable compilation flags for Linux Perf profiling" OFF)
@@ -143,7 +144,9 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_esx.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_penalty.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/impl/esx_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/esx.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/onepass_plus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp
