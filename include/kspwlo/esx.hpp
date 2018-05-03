@@ -8,7 +8,6 @@
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/impl/esx_impl.hpp"
 
-#include <iostream>
 #include <queue>
 #include <unordered_set>
 #include <vector>

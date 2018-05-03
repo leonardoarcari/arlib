@@ -206,32 +206,6 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, Graph &G,
 }
 
 /**
- * @brief Builds a vector of kspwlo::Edge out of a PredecessorMap computed by a
- * shortest path algorithm from @p s to @p t
- *
- * @tparam Vertex
- * @tparam PredecessorMap
- * @param s The source vertex
- * @param t The target vertex
- * @param p The PredecessorMap
- * @return A vector of the shortest path edges from @p s to @p t.
- */
-template <typename Vertex, typename PredecessorMap>
-std::vector<kspwlo::Edge>
-build_edge_list_from_dijkstra(Vertex s, Vertex t, const PredecessorMap &p) {
-  auto edge_list = std::vector<kspwlo::Edge>{};
-
-  auto current = t;
-  while (current != s) {
-    auto u = p[current];
-    edge_list.emplace_back(u, current);
-    current = u;
-  }
-
-  return edge_list;
-}
-
-/**
  * @brief Compute a shortest path between two vertices on a filtered graph using
  * an A* approach, provided the set of edges to filter and the heuristic.
  *
@@ -255,21 +229,17 @@ astar_shortest_path(Graph &G, Vertex s, Vertex t,
                     const AStarHeuristic &heuristic,
                     DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
-  using Length = typename property_traits<
-      typename property_map<Graph, edge_weight_t>::type>::value_type;
 
   // Get a graph with deleted edges filtered out
   auto filter = edge_deleted_filter{deleted_edge_map};
   auto filtered_G = filtered_graph(G, filter);
 
-  auto dist = std::vector<Length>(num_vertices(G));
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, filtered_G);
 
   try {
     astar_search(filtered_G, s, heuristic,
-                 distance_map(&dist[0])
-                     .predecessor_map(make_iterator_property_map(
+                 predecessor_map(make_iterator_property_map(
                          std::begin(predecessor), vertex_id, s))
                      .visitor(astar_target_visitor{t}));
   } catch (target_found tf) {
@@ -364,64 +334,6 @@ int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
 }
 
 /**
- * @brief Computes the length of the path in @p candidate using weights from @p
- * G
- *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
- * @param candidate The candidate path
- * @param G The graph
- * @return The length of @p candidate, i.e. @f$\sum_{e \in candidate} weight(e,
- *         G)@f$
- */
-template <typename Graph,
-          typename Length =
-              typename boost::property_traits<typename boost::property_map<
-                  Graph, boost::edge_weight_t>::type>::value_type>
-Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
-                                 const Graph &G) {
-  using namespace boost;
-  Length length = 0;
-  auto weight = get(edge_weight, G);
-
-  for (const auto & [ u, v ] : candidate) {
-    auto egde_in_G = edge(u, v, G);
-    bool edge_is_shared = egde_in_G.second;
-
-    if (edge_is_shared) {
-      length += weight[egde_in_G.first];
-    }
-  }
-
-  return length;
-}
-
-/**
- * @brief Evaluates the similarity of a candidate path with respect to some
- * alterative path.
- *
- * This measure of similarity is the one from the reference paper, that is: let
- * @c p' be the candidate path and @c p some alternative path, then
- * @f[
- *   Sim(p', p) = \frac{\sum_{\left(n_x,n_y\right) \in p'\cap p} w_xy}{l(p)}
- * @f]
- *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
- * @param candidate The candidate path @c p'
- * @param alt_path The alternative path @c p
- * @return The similarity between @c p' and @c p
- */
-template <typename Graph>
-double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
-                          const kspwlo::Path<Graph> &alt_path) {
-  double shared_length =
-      static_cast<double>(compute_length_from_edges(candidate, alt_path.graph));
-
-  return shared_length / alt_path.length;
-}
-
-/**
  * @brief Computes the edge priorities of an alternative path.
  *
  * @pre @p edge_priorities is a vector of std::priority_queue of size al least
@@ -510,15 +422,7 @@ void init_edge_priorities(const std::vector<kspwlo::Edge> &alternative,
  * @return true if a solution can still be found.
  * @return false otherwise.
  */
-bool check_feasibility(const std::vector<double> &overlaps) {
-  auto valid_overlapping =
-      std::find_if(std::begin(overlaps), std::end(overlaps),
-                   [](const auto &v) { return v > 0; });
-  if (valid_overlapping == std::end(overlaps)) {
-    return false;
-  }
-  return true;
-}
+bool check_feasibility(const std::vector<double> &overlaps);
 
 /**
  * @brief Checks whether a candidate path satisfies the condition to add it the
