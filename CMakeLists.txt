@@ -16,24 +16,13 @@ endif(NOT CMAKE_BUILD_TYPE)
 # setting common c++ flags
 set(CMAKE_CXX_STANDARD 17 )
 
-add_compile_options(-fmessage-length=0
-        -c
-        -Wall
+add_compile_options(-Wall
         -Wextra
         -pedantic
-        -Wredundant-decls
-        -Wdisabled-optimization
-        -Wctor-dtor-privacy
-        -Wnon-virtual-dtor
-        -Woverloaded-virtual
-        -Wsign-promo
-        -Wold-style-cast
-        -Werror=return-type
-        -DLINUX
-        -Ofast)
+        -ansi)
 
 # setting debug flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g3 -O0 -ftemplate-depth=1100")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Og -ftemplate-depth=1100")
 
 # setting release with debug info flags
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -march=native -mtune=native -g3 -O2 -ftemplate-depth=1100")
@@ -109,7 +98,8 @@ set(KSPWLO_REF_MODEL_SRC
 set(KSPWLO_REF_TOOLS_SRC
         external/kspwlo_ref/tools/astar.cpp
         external/kspwlo_ref/tools/dijkstra.cpp
-        external/kspwlo_ref/tools/tools.hpp)
+        external/kspwlo_ref/tools/tools.hpp
+        external/kspwlo_ref/exploration/graph_utils.cpp)
 
 set(KSPWLO_REF_SOURCE_FILES
         ${KSPWLO_REF_ALGORITHMS_SRC}
@@ -127,23 +117,24 @@ endif(OPENMP_FOUND)
 target_link_libraries(${KSPWLO_REF} ${MARGOT_HEEL_LIBRARIES})
 target_link_libraries(${KSPWLO_REF} omp)
 
-# OnePass+ algorithm executable
-set(ONEPASS_PLUS "onepass_plus")
+# kSPwLO algorithm executable
+set(KSPWLO "kspwlo")
 
-set(OP_PLUS_SRC
-        dse_apps/onepass_plus/driver_onepass_plus.cpp)
-add_executable(${ONEPASS_PLUS} ${OP_PLUS_SRC})
+set(KSPWLO_SRC
+        dse_apps/driver.cpp
+        src/kspwlo/impl/esx_impl.cpp)
+add_executable(${KSPWLO} ${KSPWLO_SRC})
 
 # Compiling
 option(PERF_PROFILING "Enable compilation flags for Linux Perf profiling" OFF)
 if(PERF_PROFILING)
-        target_compile_options(${ONEPASS_PLUS} PUBLIC "-g" "-fno-omit-frame-pointer")
+        target_compile_options(${KSPWLO} PUBLIC "-g" "-fno-omit-frame-pointer")
 endif(PERF_PROFILING)
 
 # Linking
-target_link_libraries(${ONEPASS_PLUS} ${MARGOT_HEEL_LIBRARIES})
-target_link_libraries(${ONEPASS_PLUS} stdc++fs)
-target_link_libraries(${ONEPASS_PLUS} Boost::graph Boost::program_options)
+target_link_libraries(${KSPWLO} ${MARGOT_HEEL_LIBRARIES})
+target_link_libraries(${KSPWLO} stdc++fs)
+target_link_libraries(${KSPWLO} Boost::graph Boost::program_options)
 
 
 # Testing
@@ -152,11 +143,17 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_graph_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_esx.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/include/test_penalty.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/impl/esx_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/esx.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/onepass_plus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/model/graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/dijkstra.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/algorithms/skyline.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/astar.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/exploration/graph_utils.cpp)
 add_executable(tests ${TEST_SOURCES})
 target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test)
 target_link_libraries(tests Catch)

@@ -2,13 +2,30 @@
 
 # Per application definitions
 CONF_NAME="kspwlo.conf"
-APPLICATION_BIN="onepass_plus"
+APPLICATION_BIN="kspwlo"
 
 # HELP
-HELP="Usage: $0 [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"
+HELP="Usage: $0 [opplus|esx|penalty] [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"
 # Check number of arguments
-if [ $# -ne 1 ]; then
-	echo "Wrong number of parameters: $@. Required 1."
+if [ $# -ne 2 ]; then
+	echo "Wrong number of parameters: $@. Required 2."
+	echo $HELP
+	exit -1
+fi
+
+# Parse algorithm name and set WORKSPACE
+OPT=$1
+if [ $OPT == "opplus" ]; then
+	WORKSPACE="opplus"
+	shift
+elif [ $OPT == "esx" ]; then
+	WORKSPACE="esx"
+	shift
+elif [ $OPT == "penalty" ]; then
+	WORKSPACE="penalty"
+	shift
+else
+	echo "Unknown parameter \"$OPT\"."
 	echo $HELP
 	exit -1
 fi
@@ -35,7 +52,6 @@ fi
 WORKING_DIR=$PWD
 APPLICATION_ROOT=$WORKING_DIR
 MARGOT_ROOT=$WORKING_DIR/../core2/
-WORKSPACE=$APPLICATION_BIN
 
 # check if we already have a dse workspace to resume
 if [ -d $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE ]; then
@@ -52,7 +68,7 @@ else
 	/bin/bash $APPLICATION_ROOT/build_exploration.sh || exit -1
 
 	# Generate the workspace
-	python3 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli generate_dse --workspace $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE --executable $APPLICATION_ROOT/build/$APPLICATION_BIN $APPLICATION_ROOT/dse_apps/${APPLICATION_BIN}/${WORKSPACE}.xml && echo "OP list succesfully created!"
+	python3 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli generate_dse --workspace $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE --executable $APPLICATION_ROOT/build/$APPLICATION_BIN $APPLICATION_ROOT/dse_apps/${WORKSPACE}.xml && echo "OP list succesfully created!"
 
 	# Resume the DSE
 	make -C $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE || (echo "DSE interrupted! (you can resume it later)" && exit -1)

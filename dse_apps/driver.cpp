@@ -1,27 +1,36 @@
-#include "kspwlo/onepass_plus.hpp"
+#include "kspwlo/error_metrics.hpp"
+#include "kspwlo/esx.hpp"
+#include "kspwlo/penalty.hpp"
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
-#include "kspwlo/error_metrics.hpp"
+#include "kspwlo/onepass_plus.hpp"
 
 #include <boost/program_options.hpp>
 
 #include <experimental/filesystem>
 #include <optional>
 #include <string>
+#include <limits>
 
 #include <margot.hpp>
 
 namespace po = boost::program_options;
 namespace fs = std::experimental::filesystem;
 
+enum class Algorithm { invalid = 0, opplus, esx, penalty };
+
 struct opplus_options {
   fs::path graph_file;
+  Algorithm algorithm;
   int source;
   int destination;
   int k;
   double theta;
 };
 
+std::vector<kspwlo::Path<kspwlo::Graph>>
+run_kspwlo(kspwlo::Graph &G, kspwlo::Vertex s, kspwlo::Vertex t, int k,
+           double theta, Algorithm algorithm);
 opplus_options parse_program_options(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
@@ -34,14 +43,15 @@ int main(int argc, char *argv[]) {
     auto &G = G_opt.value();
 
     // Unpack parameters
+    Algorithm algo = options.algorithm;
     kspwlo::Vertex s = options.source;
     kspwlo::Vertex t = options.destination;
     int k = options.k;
     double theta = options.theta;
 
-    // Run OnePass+
+    // Run kSPwLO algorithm
     margot::parameter_space_exploration::start_monitor();
-    auto res_paths = boost::onepass_plus(G, s, t, k, theta);
+    auto res_paths = run_kspwlo(G, s, t, k, theta, algo);
     margot::parameter_space_exploration::stop_monitor();
 
     // Compute AG error metrics
@@ -72,8 +82,10 @@ opplus_options parse_program_options(int argc, char *argv[]) {
     po::options_description desc("OnePass+ program options");
     desc.add_options()("help", "Print this help message")(
         "graph-file,f", po::value<std::string>(),
-        "The .gr graph description file")("source,S", po::value<int>(),
-                                          "The source node index")(
+        "The .gr graph description file")(
+        "algorithm,a", po::value<std::string>(),
+        "The kSPwLO algorithm to use: [opplus|esx]")(
+        "source,S", po::value<int>(), "The source node index")(
         "destination,D", po::value<int>(), "The destination node index")(
         "k-paths,k", po::value<int>(), "The number k of alternative paths")(
         "similarity-threshold,s", po::value<double>(),
@@ -98,6 +110,24 @@ opplus_options parse_program_options(int argc, char *argv[]) {
       }
     } else {
       std::cout << "Missing argument: --graph-file\n" << desc << "\n";
+      exit(1);
+    }
+
+    Algorithm algo = Algorithm::invalid;
+    if (vm.count("algorithm")) {
+      auto algo_s = vm["algorithm"].as<std::string>();
+      if (algo_s == "opplus") {
+        algo = Algorithm::opplus;
+      } else if (algo_s == "esx") {
+        algo = Algorithm::esx;
+      } else if (algo_s == "penalty") {
+        algo = Algorithm::penalty;
+      } else {
+        std::cout << algo_s << " is not a valid algorithm name\n";
+        exit(1);
+      }
+    } else {
+      std::cout << "Missing argument: --algorithm\n" << desc << "\n";
       exit(1);
     }
 
@@ -151,10 +181,27 @@ opplus_options parse_program_options(int argc, char *argv[]) {
       exit(1);
     }
 
-    return {gr_file, source, destination, k_paths, theta};
+    return {gr_file, algo, source, destination, k_paths, theta};
 
   } catch (std::exception &e) {
     std::cout << e.what() << "\n";
+    exit(1);
+  }
+}
+
+std::vector<kspwlo::Path<kspwlo::Graph>>
+run_kspwlo(kspwlo::Graph &G, kspwlo::Vertex s, kspwlo::Vertex t, int k,
+           double theta, Algorithm algorithm) {
+  switch (algorithm) {
+  case Algorithm::opplus:
+    return boost::onepass_plus(G, s, t, k, theta);
+  case Algorithm::esx:
+    return boost::esx(G, s, t, k, theta);
+  case Algorithm::penalty:
+    return boost::penalty_ag(G, s, t, k, theta, 0.1, 0.1, 100, 1000);
+  case Algorithm::invalid:
+  default:
+    std::cout << "Invalid algorithm. Exiting...\n";
     exit(1);
   }
 }

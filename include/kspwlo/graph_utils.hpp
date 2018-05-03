@@ -81,30 +81,20 @@ std::string dump_edges_weight(const kspwlo::Graph &G);
 template <typename Graph>
 Graph build_graph_from_edges(const std::vector<kspwlo::Edge> &edge_list,
                              Graph &G) {
-  using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
   using Length = typename boost::property_traits<typename boost::property_map<
       Graph, boost::edge_weight_t>::type>::value_type;
   auto weight = get(edge_weight, G);
   auto weights = std::vector<Length>{};
-  auto nodes = std::unordered_set<Vertex>{};
 
   for (auto &e : edge_list) {
     auto u = e.first;
     auto v = e.second;
     auto edge_in_G = edge(u, v, G).first;
     weights.push_back(weight[edge_in_G]);
-
-    if (nodes.find(u) != nodes.end()) {
-      nodes.insert(u);
-    }
-
-    if (nodes.find(v) != nodes.end()) {
-      nodes.insert(v);
-    }
   }
 
   return Graph{std::begin(edge_list), std::end(edge_list), std::begin(weights),
-               nodes.size()};
+               num_vertices(G)};
 }
 
 template <typename Graph>

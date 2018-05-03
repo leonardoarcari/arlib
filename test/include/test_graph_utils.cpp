@@ -33,13 +33,16 @@ template <typename Edge> std::vector<Edge> build_test_edges() {
                            Edge{3, 5}, Edge{4, 5}, Edge{4, 6}, Edge{5, 6}};
 }
 
-std::vector<int> build_test_weights() {
-  return std::vector<int>{6, 3, 4, 6, 5, 2, 3, 5, 3, 1, 3, 2};
+std::vector<kspwlo::Length> build_test_weights() {
+  return std::vector<kspwlo::Length>{6, 3, 4, 6, 5, 2, 3, 5, 3, 1, 3, 2};
 }
 
-template <typename PropertyGraph, typename Edge>
+template <typename PropertyGraph, typename Edge,
+          typename Length =
+              typename boost::property_traits<typename boost::property_map<
+                  PropertyGraph, boost::edge_weight_t>::type>::value_type>
 void require_correct_weights(const std::vector<Edge> &test_edges,
-                             const std::vector<int> &test_weights,
+                             const std::vector<Length> &test_weights,
                              const PropertyGraph &G) {
   using namespace boost;
   auto weights = get(edge_weight, G);
