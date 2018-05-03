@@ -1,21 +1,23 @@
 #include "kspwlo/error_metrics.hpp"
+#include "kspwlo/esx.hpp"
+#include "kspwlo/penalty.hpp"
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
 #include "kspwlo/onepass_plus.hpp"
-#include "kspwlo/esx.hpp"
 
 #include <boost/program_options.hpp>
 
 #include <experimental/filesystem>
 #include <optional>
 #include <string>
+#include <limits>
 
 #include <margot.hpp>
 
 namespace po = boost::program_options;
 namespace fs = std::experimental::filesystem;
 
-enum class Algorithm { invalid = 0, opplus, esx };
+enum class Algorithm { invalid = 0, opplus, esx, penalty };
 
 struct opplus_options {
   fs::path graph_file;
@@ -118,6 +120,8 @@ opplus_options parse_program_options(int argc, char *argv[]) {
         algo = Algorithm::opplus;
       } else if (algo_s == "esx") {
         algo = Algorithm::esx;
+      } else if (algo_s == "penalty") {
+        algo = Algorithm::penalty;
       } else {
         std::cout << algo_s << " is not a valid algorithm name\n";
         exit(1);
@@ -193,6 +197,9 @@ run_kspwlo(kspwlo::Graph &G, kspwlo::Vertex s, kspwlo::Vertex t, int k,
     return boost::onepass_plus(G, s, t, k, theta);
   case Algorithm::esx:
     return boost::esx(G, s, t, k, theta);
+  case Algorithm::penalty:
+    return boost::penalty_ag(G, s, t, k, theta, 0.1, 0.1, 100, 1000);
+  case Algorithm::invalid:
   default:
     std::cout << "Invalid algorithm. Exiting...\n";
     exit(1);

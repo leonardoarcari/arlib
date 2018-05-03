@@ -5,7 +5,7 @@ CONF_NAME="kspwlo.conf"
 APPLICATION_BIN="kspwlo"
 
 # HELP
-HELP="Usage: $0 [opplus|esx] [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"
+HELP="Usage: $0 [opplus|esx|penalty] [exec_time|avg_total_distance|avg_average_distance|avg_decision_edges]"
 # Check number of arguments
 if [ $# -ne 2 ]; then
 	echo "Wrong number of parameters: $@. Required 2."
@@ -20,6 +20,9 @@ if [ $OPT == "opplus" ]; then
 	shift
 elif [ $OPT == "esx" ]; then
 	WORKSPACE="esx"
+	shift
+elif [ $OPT == "penalty" ]; then
+	WORKSPACE="penalty"
 	shift
 else
 	echo "Unknown parameter \"$OPT\"."
