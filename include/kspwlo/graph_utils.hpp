@@ -80,7 +80,7 @@ std::string dump_edges_weight(const kspwlo::Graph &G);
 
 template <typename Graph>
 Graph build_graph_from_edges(const std::vector<kspwlo::Edge> &edge_list,
-                             Graph &G) {
+                             const Graph &G) {
   using Length = typename boost::property_traits<typename boost::property_map<
       Graph, boost::edge_weight_t>::type>::value_type;
   auto weight = get(edge_weight, G);
@@ -98,7 +98,7 @@ Graph build_graph_from_edges(const std::vector<kspwlo::Edge> &edge_list,
 }
 
 template <typename Graph>
-Graph build_AG(const std::vector<kspwlo::Path<Graph>> &paths, Graph &g) {
+Graph build_AG(const std::vector<kspwlo::Path<Graph>> &paths, const Graph &g) {
   using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
   using Length = typename boost::property_traits<typename boost::property_map<
       Graph, boost::edge_weight_t>::type>::value_type;

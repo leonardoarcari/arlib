@@ -76,7 +76,7 @@ template <
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
 std::optional<std::vector<kspwlo::Edge>>
-dijkstra_shortest_path_two_ways(Graph &G, Vertex s, Vertex t,
+dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
                                 DistanceMap<Length> &distance_s,
                                 DistanceMap<Length> &distance_t) {
   using namespace boost;
@@ -113,7 +113,7 @@ template <
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
 std::optional<std::vector<kspwlo::Edge>>
-dijkstra_shortest_path(Graph &G, Vertex s, Vertex t,
+dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                        WeightMap<Edge, Length> &weight) {
   using namespace boost;
 
@@ -149,7 +149,8 @@ template <
 void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
                              const Graph &G, Vertex s, Vertex t, double p,
                              double r, WeightMap<Edge, Length> &weight,
-                             DistanceMap &distance_s, DistanceMap &distance_t,
+                             const DistanceMap &distance_s,
+                             const DistanceMap &distance_t,
                              PenBoundsMap<Edge> &penalty_bounds,
                              int bound_limit) {
   using namespace boost;

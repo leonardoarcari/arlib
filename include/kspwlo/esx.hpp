@@ -40,7 +40,7 @@ namespace boost {
 template <typename PropertyGraph,
           typename Vertex =
               typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<kspwlo::Path<PropertyGraph>> esx(PropertyGraph &G, Vertex s,
+std::vector<kspwlo::Path<PropertyGraph>> esx(const PropertyGraph &G, Vertex s,
                                              Vertex t, int k, double theta) {
   // P_LO set of k paths
   using Length = typename boost::property_traits<typename boost::property_map<

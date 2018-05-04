@@ -117,7 +117,7 @@ public:
       : node{node}, length{length}, lower_bound{lower_bound}, previous{nullptr},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
-  std::vector<kspwlo::Edge> get_path() {
+  std::vector<kspwlo::Edge> get_path() const {
     auto edge_set = std::vector<kspwlo::Edge>{};
 
     auto v = node;
@@ -134,7 +134,7 @@ public:
     return edge_set;
   }
 
-  bool is_path_acyclic(Vertex begin) {
+  bool is_path_acyclic(Vertex begin) const {
     bool is_acyclic = true;
     auto current = this;
     while (current != nullptr) {
@@ -300,7 +300,7 @@ public:
    * @return true if the skyline contains @p node.
    * @return false otherwise.
    */
-  bool contains(Vertex node) {
+  bool contains(Vertex node) const {
     return container.find(node) != std::end(container);
   }
 
@@ -323,8 +323,7 @@ public:
     // For each of the paths p' we have similarity measure in 'label' we
     // check if label.sim(p') is less than at least one of the labels in the
     // skyline. If so, the skyline does NOT dominates 'label'.
-    for (auto label_p : container[node_n]) {
-      // if (auto tmpLabel = label_p.lock()) {
+    for (const auto label_p : container[node_n]) {
       LabelPtr tmpLabel = label_p;
       bool skyline_dominates_label = true;
 
@@ -338,7 +337,6 @@ public:
       if (skyline_dominates_label) {
         return true;
       }
-      //}
     }
 
     return false;
@@ -347,7 +345,7 @@ public:
   /**
    * @return the number of labels stored in the skyline.
    */
-  int num_labels() {
+  int num_labels() const {
     int nb_labels = 0;
 
     for (auto it = std::begin(container); it != std::end(container); ++it) {
@@ -374,7 +372,7 @@ private:
 template <typename Graph> struct OnePassPlusASComparator {
   using LabelPtr = OnePassLabel<Graph> *;
 
-  bool operator()(LabelPtr lhs, LabelPtr rhs) {
+  bool operator()(LabelPtr lhs, LabelPtr rhs) const {
     return lhs->get_lower_bound() > rhs->get_lower_bound();
   }
 };
@@ -385,7 +383,7 @@ template <typename Graph> struct OnePassPlusASComparator {
 
 template <typename Graph, typename EdgeMap,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void update_res_edges(Graph &candidate, Graph &graph, EdgeMap &resEdges,
+void update_res_edges(const Graph &candidate, const Graph &graph, EdgeMap &resEdges,
                       resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto ei = edges(candidate).first; ei != edges(candidate).second; ++ei) {
@@ -403,7 +401,7 @@ void update_res_edges(Graph &candidate, Graph &graph, EdgeMap &resEdges,
 
 template <typename Graph, typename EdgeMap,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void update_res_edges(const std::vector<kspwlo::Edge> &candidate, Graph &graph,
+void update_res_edges(const std::vector<kspwlo::Edge> &candidate, const Graph &graph,
                       EdgeMap &resEdges, resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto &e : candidate) {
@@ -420,7 +418,7 @@ void update_res_edges(const std::vector<kspwlo::Edge> &candidate, Graph &graph,
 
 template <typename Label, typename Graph, typename EdgesMap, typename PathsMap,
           typename WeightMap>
-bool update_label_similarity(Label &label, Graph &G, const EdgesMap &resEdges,
+bool update_label_similarity(Label &label, const Graph &G, const EdgesMap &resEdges,
                              const PathsMap &resPaths, WeightMap &weight,
                              double theta, int step) {
   using namespace boost;

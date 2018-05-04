@@ -120,7 +120,7 @@ template <
     typename length_type =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-std::vector<length_type> distance_from_target(Graph &G, Vertex t) {
+std::vector<length_type> distance_from_target(const Graph &G, Vertex t) {
   // Reverse graph
   auto G_rev = boost::make_reverse_graph(G);
   auto distance = std::vector<length_type>(boost::num_vertices(G_rev));
@@ -134,7 +134,7 @@ template <typename Graph, typename PredecessorMap, typename Vertex,
           typename length_type =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph> build_path_from_dijkstra(Graph &G, const PredecessorMap &p,
+kspwlo::Path<Graph> build_path_from_dijkstra(const Graph &G, const PredecessorMap &p,
                                              Vertex s, Vertex t) {
   length_type length = 0;
   auto weight = boost::get(boost::edge_weight, G);
@@ -160,7 +160,7 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph> compute_shortest_path(Graph &G, Vertex s, Vertex t) {
+kspwlo::Path<Graph> compute_shortest_path(const Graph &G, Vertex s, Vertex t) {
   using namespace boost;
   auto sp_distances = std::vector<Length>(num_vertices(G));
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);

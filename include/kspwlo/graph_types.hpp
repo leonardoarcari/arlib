@@ -19,7 +19,7 @@ template <typename Graph,
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
 struct Path {
-  Path(Graph &g, length_type length) : graph(g), length{length} {};
+  Path(const Graph &g, length_type length) : graph{g}, length{length} {};
   Path(Graph &&g, length_type length) : graph{}, length{length} {
     // Swap data from graph to move from (g) to this->graph
     this->graph.swap(g);

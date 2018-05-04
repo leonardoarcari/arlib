@@ -21,7 +21,7 @@ namespace boost {
 template <typename Graph, typename Vertex = typename boost::graph_traits<
                               Graph>::vertex_descriptor>
 std::vector<kspwlo::Path<Graph>>
-penalty_ag(Graph &G, Vertex s, Vertex t, int k, double theta, double p,
+penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
            double r, int max_nb_updates, int max_nb_steps) {
   // P_LO set of k paths
   using Length = typename property_traits<

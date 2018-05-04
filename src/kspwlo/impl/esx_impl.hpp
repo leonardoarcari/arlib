@@ -43,7 +43,7 @@ template <typename Edge> struct EdgePriorityComparator {
    * @return true if @p lhs has lower priority then @p rhs
    * @return false otherwise.
    */
-  bool operator()(Priority lhs, Priority rhs) {
+  bool operator()(Priority lhs, Priority rhs) const {
     return lhs.second < rhs.second;
   }
 };
@@ -111,7 +111,7 @@ public:
    * @param G The Graph on which to search
    * @param t The target vertex
    */
-  distance_heuristic(Graph &G, Vertex t) {
+  distance_heuristic(const Graph &G, Vertex t) {
     lower_bounds = kspwlo_impl::distance_from_target(G, t);
   }
 
@@ -119,7 +119,7 @@ public:
    * @param u The Vertex
    * @return The heuristic of the cost of Vertex @p u.
    */
-  CostType operator()(Vertex u) { return lower_bounds[u]; }
+  CostType operator()(Vertex u) const { return lower_bounds[u]; }
 
 private:
   std::vector<CostType> lower_bounds;
@@ -188,7 +188,7 @@ template <
     typename Graph, typename PredMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
-bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, Graph &G,
+bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
                                  const PredMap &predecessor) {
   auto e_s = boost::source(e, G);
   auto e_t = boost::target(e, G);
@@ -225,7 +225,7 @@ template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
 std::optional<std::vector<kspwlo::Edge>>
-astar_shortest_path(Graph &G, Vertex s, Vertex t,
+astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                     const AStarHeuristic &heuristic,
                     DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
@@ -275,7 +275,7 @@ astar_shortest_path(Graph &G, Vertex s, Vertex t,
  */
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
           typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
-int compute_priority(Graph &G, const Edge &e, const AStarHeuristic &heuristic,
+int compute_priority(const Graph &G, const Edge &e, const AStarHeuristic &heuristic,
                      const DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
