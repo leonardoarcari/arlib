@@ -28,44 +28,6 @@ using WeightMap = std::unordered_map<Edge, Length, boost::hash<Edge>>;
 template <typename Vertex> using DistanceMap = std::vector<Vertex>;
 
 //===----------------------------------------------------------------------===//
-//                      Penalty algorithm classes
-//===----------------------------------------------------------------------===//
-// template <typename Graph,
-//           typename Edge = typename
-//           boost::graph_traits<Graph>::edge_descriptor, typename Length =
-//               typename boost::property_traits<typename boost::property_map<
-//                   Graph, boost::edge_weight_t>::type>::value_type>
-//     class reverse_weights_property_map
-//     : public boost::put_get_helper <
-//       typename WeightMap<Edge, Length>::value_type::second_type &,
-//     associative_property_map<WeightMap<Edge, Length>> {
-//   using namespace boost;
-//   using C = WeightMap<Edge, Length>;
-//   using RevG = reverse_graph<Graph, Graph &>
-
-//       public : using key_type = typename C::key_type;
-//   using value_type = typename C::value_type::second_type;
-//   using reference = value_type &;
-//   using category = lvalue_property_map_tag;
-
-//   reverse_associative_property_map() : c{nullptr}, G{nullptr}, rev_g{nullptr}
-//   {} reverse_associative_property_map(C &c, Graph &G, RevG &rev_g)
-//       : c{std::addreof(c)}, G{std::addresof(G)}, rev_G{std::addressof(rev_g)}
-//       {}
-
-//   reference operator[](const key_type &k) const {
-//     auto u = source(k, rev_g);
-//     auto v = target(k, rev_g);
-
-//   }
-
-// private:
-//   C *c;
-//   Graph *G;
-//   RevG *rev_g;
-// };
-
-//===----------------------------------------------------------------------===//
 //                     Penalty algorithm support routines
 //===----------------------------------------------------------------------===//
 
@@ -120,7 +82,6 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, G);
 
-  // Forward step
   try {
     dijkstra_shortest_paths(
         G, s,
