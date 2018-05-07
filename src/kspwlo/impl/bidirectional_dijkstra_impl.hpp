@@ -13,9 +13,6 @@
 #include <vector>
 
 namespace kspwlo_impl {
-template <typename Edge, typename Length>
-using WeightMap = std::unordered_map<Edge, Length, boost::hash<Edge>>;
-
 template <typename Vertex>
 using PathMap =
     std::unordered_map<Vertex, std::vector<Vertex>, boost::hash<Vertex>>;
@@ -61,35 +58,46 @@ void init_distance_vector(Graph &G, DistanceMap distance, Vertex s) {
 }
 
 template <typename Vertex>
-void merge_predecessors(Vertex w, Vertex t, PathMap<Vertex> &paths,
-                        PathMap<Vertex> &paths_b,
-                        std::vector<Vertex> &final_path) {
-  // auto v = w;
-  // while (v != t) {
-  //   auto u = predecessor_b[v];
-  //   predecessor[u] = v;
-  //   v = u;
-  // }
+void merge_paths(Vertex w, Vertex t, PathMap<Vertex> &paths,
+                 PathMap<Vertex> &paths_b, std::vector<Vertex> &final_path) {
   auto &path_w = paths[w];
   auto &path_w_b = paths_b[w];
   final_path.clear();
+
+  // Copy s-w path to final_path
   final_path.insert(final_path.end(), path_w.cbegin(), path_w.cend());
 
+  // Append w-t path to final_path (excluding w)
   auto w_t_it = std::next(path_w_b.crbegin());
   final_path.insert(final_path.end(), w_t_it, path_w_b.crend());
 }
 
+template <typename Vertex, typename Length>
+void compare_and_update_shortest_path(Seen<Vertex, Length> &seen_f,
+                                      Seen<Vertex, Length> &seen_b, Vertex w,
+                                      Length &final_distance,
+                                      std::vector<Vertex> &final_path) {
+  auto search_w_f = seen_f.find(w);
+  auto search_w_b = seen_b.find(w);
+  if (search_w_f != std::end(seen_f) && search_w_b != std::end(seen_b)) {
+    auto total_distance = search_w_f->second + search_w_b->second;
+    if (final_distance > total_distance) {
+      final_distance = total_distance;
+      merge_paths(w, t, paths_f, paths_b, final_path);
+    }
+  }
+}
+
 template <
     typename Graph, typename DistanceMap, typename WeightMap,
-    typename VertexIndexMap, typename OtherDistanceMap, typename OtherIndexMap,
+    typename OtherDistanceMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Length = typename boost::property_traits<DistanceMap>::value_type>
 BiDijkStepRes
 bi_dijkstra_step(const Graph &G, Vertex t, PathMap<Vertex> &paths,
                  DistanceMap distance, WeightMap weight,
-                 VertexIndexMap index_map, Fringe<Vertex, Length> &fringe,
-                 Seen<Vertex, Length> &seen, PathMap<Vertex> &other_paths,
-                 OtherDistanceMap other_distance, OtherIndexMap other_index_map,
+                 Fringe<Vertex, Length> &fringe, Seen<Vertex, Length> &seen,
+                 PathMap<Vertex> &other_paths, OtherDistanceMap other_distance,
                  Fringe<Vertex, Length> &other_fringe,
                  Seen<Vertex, Length> &other_seen, Direction direction,
                  Length &final_distance, std::vector<Vertex> &final_path) {
@@ -104,7 +112,7 @@ bi_dijkstra_step(const Graph &G, Vertex t, PathMap<Vertex> &paths,
   }
 
   // Update distance
-  distance[v] = dist; // Equal to seen[index_map[v]]
+  distance[v] = dist; // Equal to seen[v]
   if (other_distance[v] != inf) {
     // If we have scanned v in both directions we are done,
     // we have now discovered the shortest path
@@ -112,19 +120,16 @@ bi_dijkstra_step(const Graph &G, Vertex t, PathMap<Vertex> &paths,
     // Check terminating condition:
     auto min_dist = fringe.top().second;
     auto other_min_dist = other_fringe.top().second;
+    auto d_s_t = final_distance;
 
-    Length d_s_t = inf;
-    if (direction == Direction::forward)
-      d_s_t = final_distance;
-    else
-      d_s_t = final_distance;
+    // Please refer to:
+    // Andreas Paraskevopoulos, Christos Zaroliagis. Improved Alternative Route
+    // Planning. Daniele Frigioni and Sebastian Stiller. ATMOS - 13th Workshop
+    // on Algorithmic Approaches for Transportation Modelling, Optimizations and
+    // Systems - 2013
+    auto terminating_condition = min_dist + other_min_dist > d_s_t;
 
-    auto condition = min_dist + other_min_dist > d_s_t;
-
-    std::cout << "Terminating condition: " << min_dist + other_min_dist << " > "
-              << d_s_t << ": " << std::boolalpha << condition << "\n";
-
-    if (condition) {
+    if (terminating_condition) {
       return BiDijkStepRes::end;
     } else {
       return BiDijkStepRes::next;
@@ -147,45 +152,23 @@ bi_dijkstra_step(const Graph &G, Vertex t, PathMap<Vertex> &paths,
       // Relax v-w edge
       seen.insert_or_assign(w, vw_length);
       fringe.push(std::make_pair(w, vw_length));
+
+      // Build new path to w
       auto new_path = std::vector<Vertex>(paths[v]);
       new_path.push_back(w);
       paths.insert_or_assign(w, std::move(new_path));
 
       // See if this path is better than the already discovered shortests path
       if (direction == Direction::forward) {
-        auto &seen_f = seen;
-        auto &paths_f = paths;
-        auto &seen_b = other_seen;
-        auto &paths_b = other_paths;
-
-        auto search_w_f = seen_f.find(w);
-        auto search_w_b = seen_b.find(w);
-        if (search_w_f != std::end(seen_f) && search_w_b != std::end(seen_b)) {
-          auto total_distance = search_w_f->second + search_w_b->second;
-          if (final_distance > total_distance) {
-            final_distance = total_distance;
-            merge_predecessors(w, t, paths_f, paths_b, final_path);
-          }
-        }
+        compare_and_update_shortest_path(seen, other_seen, w, final_distance,
+                                         final_path);
       } else {
-        auto seen_f = other_seen;
-        auto paths_f = other_paths;
-        auto seen_b = seen;
-        auto paths_b = paths;
-
-        auto search_w_f = seen_f.find(w);
-        auto search_w_b = seen_b.find(w);
-        if (search_w_f != std::end(seen_f) && search_w_b != std::end(seen_b)) {
-          auto total_distance = search_w_f->second + search_w_b->second;
-          if (final_distance > total_distance) {
-            final_distance = total_distance;
-            merge_predecessors(w, t, paths_f, paths_b, final_path);
-          }
-        }
+        compare_and_update_shortest_path(other_seen, seen, w, final_distance,
+                                         final_path);
       }
     }
   }
-
+  // Everything went fine, go with other direction
   return BiDijkStepRes::next;
 }
 

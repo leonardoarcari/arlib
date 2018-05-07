@@ -42,10 +42,6 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
   auto paths_b = kspwlo_impl::PathMap<Vertex>{};
   paths.insert({s, std::vector<Vertex>{s}});
   paths_b.insert({t, std::vector<Vertex>{t}});
-  
-  // auto predecessor_b_vec = std::vector<Vertex>(num_vertices(G_b));
-  // auto predecessor_b =
-  //     make_iterator_property_map(std::begin(predecessor_b_vec), index_map_b, t);
 
   // Init fringe structures
   auto fringe = kspwlo_impl::Fringe<Vertex, Length>{};
@@ -72,24 +68,24 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
     // Run a step
     if (direction == Direction::forward) {
       result = kspwlo_impl::bi_dijkstra_step(
-          G, t, paths, distance, weight, index_map, fringe, seen,
-          paths_b, distance_b, index_map_b, fringe_b, seen_b, direction,
-          final_distance, final_path);
+          G, t, paths, distance, weight, index_map, fringe, seen, paths_b,
+          distance_b, index_map_b, fringe_b, seen_b, direction, final_distance,
+          final_path);
     } else {
       result = kspwlo_impl::bi_dijkstra_step(
-          G_b, t, paths_b, distance_b, weight_b, index_map_b, fringe_b,
-          seen_b, paths, distance, index_map, fringe, seen, direction,
-          final_distance, final_path);
+          G_b, t, paths_b, distance_b, weight_b, index_map_b, fringe_b, seen_b,
+          paths, distance, index_map, fringe, seen, direction, final_distance,
+          final_path);
     }
 
+    // Handle the outcome of this step
     if (result == BiDijkStepRes::next) {
-      std::cout << "Next!\n";
       continue;
     } else if (result == BiDijkStepRes::end) {
+      // Update predecessor map for computed shortest path
       for (std::size_t i = 0; i < final_path.size() - 1; ++i) {
-        predecessor[final_path[i+1]] = final_path[i];
+        predecessor[final_path[i + 1]] = final_path[i];
       }
-      std::cout << "End!\n";
       return;
     } else if (result == BiDijkStepRes::negative_weights) {
       throw std::domain_error{"Contradictory paths found: negative weights? "};
