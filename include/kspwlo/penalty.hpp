@@ -24,17 +24,20 @@ std::vector<kspwlo::Path<Graph>>
 penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
            double r, int max_nb_updates, int max_nb_steps) {
   // P_LO set of k paths
-  using Length = typename property_traits<
-      typename property_map<Graph, edge_weight_t>::type>::value_type;
+  // using Length = typename property_traits<
+  //     typename property_map<Graph, edge_weight_t>::type>::value_type;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   auto resPaths = std::vector<kspwlo::Path<Graph>>{};
 
   // Make a local weight map to avoid modifying existing graph.
-  const auto original_weight = get(edge_weight, G);
-  auto weight = std::unordered_map<Edge, Length, boost::hash<Edge>>{};
-  for (auto[it, end] = edges(G); it != end; ++it) {
-    weight[*it] = original_weight[*it];
-  }
+  auto original_weight = get(edge_weight, G);
+  auto[edge_it, edge_last] = edges(G);
+  auto penalty =
+      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+  // auto weight = std::unordered_map<Edge, Length, boost::hash<Edge>>{};
+  // for (auto[it, end] = edges(G); it != end; ++it) {
+  //   weight[*it] = original_weight[*it];
+  // }
 
   // Compute shortest path from s to t
   auto distance_s = std::vector<kspwlo::Length>(num_vertices(G));
@@ -56,14 +59,14 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
 
   // Penalize sp edges
-  kspwlo_impl::penalize_candidate_path(*sp, G, s, t, p, r, weight, distance_s,
+  kspwlo_impl::penalize_candidate_path(*sp, G, s, t, p, r, penalty, distance_s,
                                        distance_t, penalty_bounds,
                                        max_nb_updates);
 
   int step = 0;
   using Index = std::size_t;
   while (resPaths.size() < static_cast<Index>(k) && step < max_nb_steps) {
-    auto p_tmp = kspwlo_impl::dijkstra_shortest_path(G, s, t, weight);
+    auto p_tmp = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
     // std::cout << "p_tmp = [ ";
     // for (auto[u, v] : *p_tmp) {
     //   std::cout << "(" << u << ", " << v << ") ";
@@ -71,7 +74,7 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
     // std::cout << "]\n";
 
     // Penalize p_tmp edges
-    kspwlo_impl::penalize_candidate_path(*p_tmp, G, s, t, p, r, weight,
+    kspwlo_impl::penalize_candidate_path(*p_tmp, G, s, t, p, r, penalty,
                                          distance_s, distance_t, penalty_bounds,
                                          max_nb_updates);
     ++step;

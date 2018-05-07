@@ -31,7 +31,8 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   auto bound_limit = 10;
   auto max_nb_steps = 100000;
 
-  auto res_paths = penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
+  auto res_paths =
+      penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
 
   REQUIRE(res_paths.size() == 3);
 
@@ -60,11 +61,10 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
   auto distance_t = std::vector<kspwlo::Length>{8, 6, 7, 5, 2, 2, 0};
 
   // Weight map
-  const auto original_weight = get(edge_weight, G);
-  auto weight = std::unordered_map<Edge, kspwlo::Length, boost::hash<Edge>>{};
-  for (auto[it, end] = edges(G); it != end; ++it) {
-    weight[*it] = original_weight[*it];
-  }
+  auto original_weight = get(edge_weight, G);
+  auto[edge_it, edge_last] = edges(G);
+  auto penalty =
+      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
 
   // Penalty bounds
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
@@ -75,10 +75,11 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
     auto r = 0.1;
     auto bound_limit = 1;
 
-    auto old_weight =
-        std::unordered_map<Edge, kspwlo::Length, boost::hash<Edge>>{weight};
+    auto[edge_it, edge_last] = edges(G);
+    auto old_penalty =
+        kspwlo_impl::penalty_functor{penalty};
 
-    kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, weight,
+    kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
                                          distance_s, distance_t, penalty_bounds,
                                          bound_limit);
 
@@ -100,8 +101,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
       candidate_vertices.insert(v);
 
       // Weight penalization is correct
-      REQUIRE(weight[e] == old_weight[e] + old_weight[e] * p);
-      
+      REQUIRE(penalty[e] == old_penalty[e] + old_penalty[e] * p);
+
       // A nb of updates counter have been created
       auto search = penalty_bounds.find(e);
       REQUIRE(search != std::end(penalty_bounds));
@@ -118,8 +119,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
 
         if (candidate_vertices.find(a) == std::end(candidate_vertices)) {
           auto closeness = distance_t[u] / distance_t[s];
-          REQUIRE(weight[*it] ==
-                  old_weight[*it] + old_weight[*it] * (0.1 + r * closeness));
+          REQUIRE(penalty[*it] ==
+                  old_penalty[*it] + old_penalty[*it] * (0.1 + r * closeness));
         }
       }
 
@@ -128,8 +129,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
 
         if (candidate_vertices.find(b) == std::end(candidate_vertices)) {
           auto closeness = distance_s[v] / distance_s[t];
-          REQUIRE(weight[*it] ==
-                  old_weight[*it] + old_weight[*it] * (0.1 + r * closeness));
+          REQUIRE(penalty[*it] ==
+                  old_penalty[*it] + old_penalty[*it] * (0.1 + r * closeness));
         }
       }
     }
@@ -151,16 +152,16 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
     penalty_bounds.insert({e1, bound_limit});
     penalty_bounds.insert({e2, bound_limit});
 
-    auto old_weight =
-        std::unordered_map<Edge, kspwlo::Length, boost::hash<Edge>>{weight};
+    auto old_penalty =
+        kspwlo_impl::penalty_functor{penalty};
 
-    kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, weight,
+    kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
                                          distance_s, distance_t, penalty_bounds,
                                          bound_limit);
 
     // Weights must be left unchanged.
-    REQUIRE(weight[e1] == old_weight[e1]);
-    REQUIRE(weight[e2] == old_weight[e2]);
+    REQUIRE(penalty[e1] == old_penalty[e1]);
+    REQUIRE(penalty[e2] == old_penalty[e2]);
   }
 }
 
@@ -181,7 +182,8 @@ TEST_CASE("Two-ways dijkstra computes right distance maps") {
   auto test_distance_s = std::vector<kspwlo::Length>(num_vertices(G));
   auto test_distance_t = std::vector<kspwlo::Length>(num_vertices(G));
 
-  kspwlo_impl::dijkstra_shortest_path_two_ways(G, s, t, test_distance_s, test_distance_t);
+  kspwlo_impl::dijkstra_shortest_path_two_ways(G, s, t, test_distance_s,
+                                               test_distance_t);
 
   REQUIRE(distance_s == test_distance_s);
   REQUIRE(distance_t == test_distance_t);
