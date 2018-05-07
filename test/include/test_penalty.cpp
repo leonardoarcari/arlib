@@ -76,8 +76,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
     auto bound_limit = 1;
 
     auto[edge_it, edge_last] = edges(G);
-    auto old_penalty =
-        kspwlo_impl::penalty_functor{penalty};
+    auto old_penalty = kspwlo_impl::penalty_functor{penalty};
 
     kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
                                          distance_s, distance_t, penalty_bounds,
@@ -152,8 +151,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
     penalty_bounds.insert({e1, bound_limit});
     penalty_bounds.insert({e2, bound_limit});
 
-    auto old_penalty =
-        kspwlo_impl::penalty_functor{penalty};
+    auto old_penalty = kspwlo_impl::penalty_functor{penalty};
 
     kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
                                          distance_s, distance_t, penalty_bounds,

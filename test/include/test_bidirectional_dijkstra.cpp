@@ -54,13 +54,15 @@ TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
   auto sp_uni =
       kspwlo_impl::build_edge_list_from_dijkstra(s, t, predecessor_uni);
 
-  for (auto [u, v] : sp_bi) {
+  for (auto[u, v] : sp_bi) {
     std::cout << "(" << u << ", " << v << ") ";
-  } std::cout << "\n";
+  }
+  std::cout << "\n";
 
-  for (auto [u, v] : sp_uni) {
+  for (auto[u, v] : sp_uni) {
     std::cout << "(" << u << ", " << v << ") ";
-  } std::cout << "\n";
+  }
+  std::cout << "\n";
 
   REQUIRE(sp_bi == sp_uni);
 }
