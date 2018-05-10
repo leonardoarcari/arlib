@@ -1,5 +1,6 @@
 #include "kspwlo/error_metrics.hpp"
 #include "kspwlo/esx.hpp"
+#include "kspwlo/graph_pruning.hpp"
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
 #include "kspwlo/onepass_plus.hpp"
@@ -26,11 +27,13 @@ struct opplus_options {
   int destination;
   int k;
   double theta;
+  bool apply_pruning;
+  double tau;
 };
 
 std::vector<kspwlo::Path<kspwlo::Graph>>
 run_kspwlo(kspwlo::Graph &G, kspwlo::Vertex s, kspwlo::Vertex t, int k,
-           double theta, Algorithm algorithm);
+           double theta, Algorithm algorithm, bool apply_pruning, double tau);
 opplus_options parse_program_options(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
@@ -48,10 +51,12 @@ int main(int argc, char *argv[]) {
     kspwlo::Vertex t = options.destination;
     int k = options.k;
     double theta = options.theta;
+    bool apply_pruning = options.apply_pruning;
+    double tau = options.tau;
 
     // Run kSPwLO algorithm
     margot::parameter_space_exploration::start_monitor();
-    auto res_paths = run_kspwlo(G, s, t, k, theta, algo);
+    auto res_paths = run_kspwlo(G, s, t, k, theta, algo, apply_pruning, tau);
     margot::parameter_space_exploration::stop_monitor();
 
     // Compute AG error metrics
@@ -89,7 +94,9 @@ opplus_options parse_program_options(int argc, char *argv[]) {
         "destination,D", po::value<int>(), "The destination node index")(
         "k-paths,k", po::value<int>(), "The number k of alternative paths")(
         "similarity-threshold,s", po::value<double>(),
-        "The similarity threshold");
+        "The similarity threshold")(
+        "prune,p", po::value<double>(),
+        "Apply Uninformed Bidirectional Pruning (tau = arg).");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -181,7 +188,18 @@ opplus_options parse_program_options(int argc, char *argv[]) {
       exit(1);
     }
 
-    return {gr_file, algo, source, destination, k_paths, theta};
+    bool apply_pruning = false;
+    double tau = 1.0;
+    if (vm.count("prune")) {
+      apply_pruning = true;
+      tau = vm["prune"].as<double>();
+      if (tau < 0) {
+        apply_pruning = false;
+      }
+    }
+
+    return {gr_file, algo,  source,        destination,
+            k_paths, theta, apply_pruning, tau};
 
   } catch (std::exception &e) {
     std::cout << e.what() << "\n";
@@ -191,14 +209,20 @@ opplus_options parse_program_options(int argc, char *argv[]) {
 
 std::vector<kspwlo::Path<kspwlo::Graph>>
 run_kspwlo(kspwlo::Graph &G, kspwlo::Vertex s, kspwlo::Vertex t, int k,
-           double theta, Algorithm algorithm) {
+           double theta, Algorithm algorithm, bool apply_pruning, double tau) {
+  auto &G_prime = G;
+  if (apply_pruning) {
+    auto G_pruned = boost::uninformed_bidirectional_pruner(G, s, t, tau);
+    G_prime = G_pruned;
+  }
+
   switch (algorithm) {
   case Algorithm::opplus:
-    return boost::onepass_plus(G, s, t, k, theta);
+    return boost::onepass_plus(G_prime, s, t, k, theta);
   case Algorithm::esx:
-    return boost::esx(G, s, t, k, theta);
+    return boost::esx(G_prime, s, t, k, theta);
   case Algorithm::penalty:
-    return boost::penalty_ag(G, s, t, k, theta, 0.1, 0.1, 100, 1000);
+    return boost::penalty_ag(G_prime, s, t, k, theta, 0.1, 0.1, 100, 1000);
   case Algorithm::invalid:
   default:
     std::cout << "Invalid algorithm. Exiting...\n";
