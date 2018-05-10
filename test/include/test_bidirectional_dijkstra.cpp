@@ -18,7 +18,7 @@
 #include <string_view>
 
 TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
-          "unidirectional dijkstra") {
+          "unidirectional dijkstra", "[bi_dijkstra") {
   using namespace boost;
   using kspwlo::Vertex;
 
@@ -29,7 +29,8 @@ TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
   // Bidirectional Dijkstra
   auto weight_bi = get(edge_weight, G);
   auto distance_bi_vec = std::vector<kspwlo::Length>(num_vertices(G), 6);
-  auto predecessor_bi_vec = std::vector<Vertex>(num_vertices(G), s);
+  auto predecessor_bi_vec =
+      std::vector<Vertex>(vertices(G).first, vertices(G).second);
   auto vertex_id = get(vertex_index, G);
   auto distance_bi =
       make_iterator_property_map(std::begin(distance_bi_vec), vertex_id);
@@ -41,25 +42,27 @@ TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
   auto vertex_id_b = get(vertex_index, G);
 
   // Run Bidirectional dijkstra
-  bidirectional_dijkstra(G, s, t, predecessor_bi, distance_bi, weight_bi,
-                         vertex_id, rev, weight_b, vertex_id_b);
+  bidirectional_dijkstra(G, s, t, predecessor_bi, distance_bi, weight_bi, rev,
+                         weight_b, vertex_id_b);
 
   auto sp_bi = kspwlo_impl::build_edge_list_from_dijkstra(s, t, predecessor_bi);
 
   // Unidirectional Dijkstra
-  auto predecessor_uni = std::vector<Vertex>(num_vertices(G), s);
+  auto predecessor_uni =
+      std::vector<Vertex>(vertices(G).first, vertices(G).second);
   dijkstra_shortest_paths(G, s,
                           predecessor_map(make_iterator_property_map(
                               std::begin(predecessor_uni), vertex_id, s)));
   auto sp_uni =
       kspwlo_impl::build_edge_list_from_dijkstra(s, t, predecessor_uni);
 
-  for (auto[u, v] : sp_bi) {
+  std::cout << "***** BiDirectional vs Unidirectional solutions*****\n";
+  for (auto [u, v] : sp_bi) {
     std::cout << "(" << u << ", " << v << ") ";
   }
   std::cout << "\n";
 
-  for (auto[u, v] : sp_uni) {
+  for (auto [u, v] : sp_uni) {
     std::cout << "(" << u << ", " << v << ") ";
   }
   std::cout << "\n";
