@@ -5,6 +5,7 @@
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/property_map/function_property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 
 #include "kspwlo/graph_types.hpp"
@@ -30,41 +31,80 @@ template <typename Vertex> using DistanceMap = std::vector<Vertex>;
 //===----------------------------------------------------------------------===//
 //                      Penalty algorithm classes
 //===----------------------------------------------------------------------===//
-// template <typename Graph,
-//           typename Edge = typename
-//           boost::graph_traits<Graph>::edge_descriptor, typename Length =
-//               typename boost::property_traits<typename boost::property_map<
-//                   Graph, boost::edge_weight_t>::type>::value_type>
-//     class reverse_weights_property_map
-//     : public boost::put_get_helper <
-//       typename WeightMap<Edge, Length>::value_type::second_type &,
-//     associative_property_map<WeightMap<Edge, Length>> {
-//   using namespace boost;
-//   using C = WeightMap<Edge, Length>;
-//   using RevG = reverse_graph<Graph, Graph &>
+template <typename PMap> class penalty_functor {
+public:
+  using Edge = typename boost::property_traits<PMap>::key_type;
+  using Length = typename boost::property_traits<PMap>::value_type;
 
-//       public : using key_type = typename C::key_type;
-//   using value_type = typename C::value_type::second_type;
-//   using reference = value_type &;
-//   using category = lvalue_property_map_tag;
+  template <typename EdgeIterator>
+  penalty_functor(PMap weight, EdgeIterator first, EdgeIterator last)
+      : weight{weight}, penalties{} {
+    for (auto it = first; it != last; ++it) {
+      penalties.insert({*it, weight[*it]});
+    }
+  }
 
-//   reverse_associative_property_map() : c{nullptr}, G{nullptr}, rev_g{nullptr}
-//   {} reverse_associative_property_map(C &c, Graph &G, RevG &rev_g)
-//       : c{std::addreof(c)}, G{std::addresof(G)}, rev_G{std::addressof(rev_g)}
-//       {}
+  penalty_functor(const penalty_functor<PMap> &other)
+      : weight{other.weight}, penalties{other.penalties} {}
 
-//   reference operator[](const key_type &k) const {
-//     auto u = source(k, rev_g);
-//     auto v = target(k, rev_g);
+  const Length &operator()(const Edge &e) const { return penalties.at(e); }
 
+  Length &operator[](const Edge &e) { return penalties.at(e); }
+
+  const Length &operator[](const Edge &e) const { return penalties.at(e); }
+
+private:
+  PMap weight;
+  WeightMap<Edge, Length> penalties;
+};
+
+// template <typename PMap, typename Graph, typename GraphRef = const Graph &>
+// class reverse_penalty_functor {
+// public:
+//   using Edge = typename boost::property_traits<PMap>::key_type;
+//   using Length = typename boost::property_traits<PMap>::value_type;
+//   using RevGraph = boost::reverse_graph<Graph, Graph &>;
+//   using RevGraphRef = const RevGraph &;
+
+//   reverse_penalty_functor(const penalty_functor<PMap> &pf, const Graph &G,
+//                           const RevGraph &rev_G)
+//       : pf{pf}, G{G}, rev_G{rev_G} {}
+
+//   Length &operator()(const Edge &e) const {
+//     // Get edge in original graph
+//     auto e_G = get_underlying_edge(e);
+
+//     // Forward call to underlying penalty_functor
+//     return pf(e_G);
+//   }
+
+//   Length &operator[](const Edge &e) { // Get edge in original graph
+//     auto e_G = get_underlying_edge(e);
+
+//     // Forward call to underlying penalty_functor
+//     return pf[e_G];
+//   }
+
+//   const Length &operator[](const Edge &e) const {
+//     // Get edge in original graph
+//     auto e_G = get_underlying_edge(e);
+
+//     // Forward call to underlying penalty_functor
+//     return pf[e_G];
 //   }
 
 // private:
-//   C *c;
-//   Graph *G;
-//   RevG *rev_g;
-// };
+//   Edge get_underlying_edge(const Edge &e) {
+//     using namespace boost;
+//     auto u = source(e, rev_G);
+//     auto v = target(e, rev_G);
+//     return edge(v, u, G).first;
+//   }
 
+//   const penalty_functor<PMap> &pf;
+//   GraphRef G;
+//   RevGraphRef rev_G;
+// };
 //===----------------------------------------------------------------------===//
 //                     Penalty algorithm support routines
 //===----------------------------------------------------------------------===//
@@ -106,7 +146,7 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
 } // namespace kspwlo_impl
 
 template <
-    typename Graph,
+    typename Graph, typename PMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
@@ -114,17 +154,18 @@ template <
             Graph, boost::edge_weight_t>::type>::value_type>
 std::optional<std::vector<kspwlo::Edge>>
 dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
-                       WeightMap<Edge, Length> &weight) {
+                       penalty_functor<PMap> &penalty) {
   using namespace boost;
 
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, G);
 
-  // Forward step
+  //auto weight_init = get(edge_weight, G);
+  auto weight = make_function_property_map<Edge>(penalty);
   try {
     dijkstra_shortest_paths(
         G, s,
-        weight_map(make_assoc_property_map(weight))
+        weight_map(weight)
             .predecessor_map(make_iterator_property_map(std::begin(predecessor),
                                                         vertex_id, s))
             .visitor(make_dijkstra_visitor(
@@ -140,7 +181,7 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
 }
 
 template <
-    typename Graph, typename DistanceMap,
+    typename Graph, typename DistanceMap, typename PMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
@@ -148,7 +189,7 @@ template <
             Graph, boost::edge_weight_t>::type>::value_type>
 void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
                              const Graph &G, Vertex s, Vertex t, double p,
-                             double r, WeightMap<Edge, Length> &weight,
+                             double r, penalty_functor<PMap> &penalty,
                              const DistanceMap &distance_s,
                              const DistanceMap &distance_t,
                              PenBoundsMap<Edge> &penalty_bounds,
@@ -159,6 +200,7 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
   // edges update
   auto candidate_vertices = std::unordered_set<Vertex, boost::hash<Vertex>>{};
   auto candidate_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
+
   for (const auto & [ u_c, v_c ] : candidate) {
     auto[e, is_valid] = edge(u_c, v_c, G);
     assert(is_valid);
@@ -180,11 +222,11 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
       // If so, penalize only if limit isnt reached
       auto n_updates = search->second;
       if (n_updates < bound_limit) {
-        weight[e] += p * weight[e];
+        penalty[e] += p * penalty[e];
         ++penalty_bounds[e];
       }
     } else { // Penalize and create a nb_updates counter for e
-      weight[e] += p * weight[e];
+      penalty[e] += p * penalty[e];
       penalty_bounds.insert({e, 1});
     }
 
@@ -202,13 +244,15 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
           // penalize only if limit isnt reached
           if (n_updates < bound_limit) {
             auto closeness = distance_t[u] / distance_t[s];
-            weight[*it] += (0.1 + r * closeness) * weight[*it];
+            auto pen_factor = 0.1 + r * closeness;
+            penalty[*it] += pen_factor * penalty[*it];
             ++penalty_bounds[*it];
           }
         } else {
           // Else, just update it
           auto closeness = distance_t[u] / distance_t[s];
-          weight[*it] += (0.1 + r * closeness) * weight[*it];
+          auto pen_factor = 0.1 + r * closeness;
+          penalty[*it] += pen_factor * penalty[*it];
         }
       }
     }
@@ -227,13 +271,15 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
           // penalize only if limit isnt reached
           if (n_updates < bound_limit) {
             auto closeness = distance_s[v] / distance_s[t];
-            weight[*it] += (0.1 + r * closeness) * weight[*it];
+            auto pen_factor = 0.1 + r * closeness;
+            penalty[*it] += pen_factor * penalty[*it];
             ++penalty_bounds[*it];
           }
         } else {
           // Else, just update it
           auto closeness = distance_s[v] / distance_s[t];
-          weight[*it] += (0.1 + r * closeness) * weight[*it];
+          auto pen_factor = 0.1 + r * closeness;
+          penalty[*it] += pen_factor * penalty[*it];
         }
       }
     }

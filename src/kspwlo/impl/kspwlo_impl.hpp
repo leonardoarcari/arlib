@@ -77,7 +77,7 @@ Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
   Length length = 0;
   auto weight = get(edge_weight, G);
 
-  for (const auto & [ u, v ] : candidate) {
+  for (const auto &[u, v] : candidate) {
     auto egde_in_G = edge(u, v, G);
     bool edge_is_shared = egde_in_G.second;
 
@@ -134,8 +134,9 @@ template <typename Graph, typename PredecessorMap, typename Vertex,
           typename length_type =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph> build_path_from_dijkstra(const Graph &G, const PredecessorMap &p,
-                                             Vertex s, Vertex t) {
+kspwlo::Path<Graph> build_path_from_dijkstra(const Graph &G,
+                                             const PredecessorMap &p, Vertex s,
+                                             Vertex t) {
   length_type length = 0;
   auto weight = boost::get(boost::edge_weight, G);
   auto edge_list = std::vector<kspwlo::Edge>{};
@@ -201,6 +202,10 @@ build_edge_list_from_dijkstra(Vertex s, Vertex t, const PredecessorMap &p) {
   auto current = t;
   while (current != s) {
     auto u = p[current];
+    if (u == current) {
+      // Vertex 'current' is not reachable from source vertex
+      break;
+    }
     edge_list.emplace_back(u, current);
     current = u;
   }

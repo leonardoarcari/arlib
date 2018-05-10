@@ -62,7 +62,7 @@ TEST_CASE("Edge priority computation", "[esx]") {
   REQUIRE(prio_n5_t == 0);
 }
 
-TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[boost::graph,esx]") {
+TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr_esx});
   kspwlo::Vertex s = 0, t = 6;
   auto res = boost::esx(G, s, t, 3, 0.5);

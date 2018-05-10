@@ -48,7 +48,7 @@ void require_correct_weights(const std::vector<Edge> &test_edges,
   auto weights = get(edge_weight, G);
   for (decltype(test_edges.size()) i = 0; i < test_edges.size(); ++i) {
     // Check weights inside graph structure
-    auto[u, v] = test_edges[i];
+    auto [u, v] = test_edges[i];
     auto e = edge(u, v, G);
 
     REQUIRE(e.second);
@@ -56,7 +56,7 @@ void require_correct_weights(const std::vector<Edge> &test_edges,
   }
 }
 
-TEST_CASE("Boost::Graph can be built from .gr strings", "[boost::graph]") {
+TEST_CASE("Boost::Graph can be built from .gr strings", "[graph_utils]") {
   auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
 
   SECTION("Reading gr string builds a graph with same vertices") {
@@ -72,7 +72,8 @@ TEST_CASE("Boost::Graph can be built from .gr strings", "[boost::graph]") {
     require_vertices_in_graph(std::begin(Vs), std::end(Vs));
   }
 
-  SECTION("Reading gr string builds a graph with edges with correct weights") {
+  SECTION("Reading gr string builds a graph with edges with correct weights",
+          "[graph_utils]") {
     using namespace boost;
     using kspwlo::Edge;
 
@@ -85,7 +86,7 @@ TEST_CASE("Boost::Graph can be built from .gr strings", "[boost::graph]") {
   }
 }
 
-TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
+TEST_CASE("Boost::Graph can be built from .gr files", "[graph_utils]") {
   // Create a new tmp file out of graph_gr
   namespace fs = std::experimental::filesystem;
   auto path = fs::temp_directory_path() / std::string{"graph_gr_file.gr"};
@@ -97,7 +98,8 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
   using namespace boost;
   auto G_opt = read_graph_from_file<kspwlo::Graph>(path.string());
 
-  SECTION("Reading existing gr files builds a graph with same vertices") {
+  SECTION("Reading existing gr files builds a graph with same vertices",
+          "[graph_utils]") {
     // File must exist
     REQUIRE(G_opt);
     auto G = *G_opt;
@@ -114,7 +116,8 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
   }
 
   SECTION("Reading existing gr file builds a graph with edges with correct "
-          "weights") {
+          "weights",
+          "[graph_utils]") {
     // File must exist
     REQUIRE(G_opt);
     auto G = *G_opt;
@@ -140,7 +143,7 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[boost::graph]") {
 }
 
 TEST_CASE("Building an AG from k alternative paths doesn't lose info",
-          "[boost::graph]") {
+          "[graph_utils]") {
   using namespace boost;
   // Build the graph
   auto G = read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});

@@ -26,7 +26,7 @@ bool one_regression_path_have_edges(std::vector<Path> &, Graph &);
 //                                Test cases
 //===----------------------------------------------------------------------===//
 
-TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
+TEST_CASE("OnePassLabel builds a right path back to source", "[onepassplus]") {
   using kspwlo::Edge;
   using Label = kspwlo_impl::OnePassLabel<kspwlo::Graph>;
   auto s = std::make_unique<Label>(0, 0, 0, 0, 0);
@@ -44,7 +44,7 @@ TEST_CASE("OnePassLabel builds a right path back to source", "[onepasslabel]") {
           std::end(path));
 }
 
-TEST_CASE("Computing distance from target", "[distance_from_target]") {
+TEST_CASE("Computing distance from target", "[onepassplus]") {
   using namespace boost;
   auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr));
 
@@ -60,7 +60,7 @@ TEST_CASE("Computing distance from target", "[distance_from_target]") {
   REQUIRE(distance[index[6]] == 0);
 }
 
-TEST_CASE("Computing path from dijkstra_shortest_paths") {
+TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
   using namespace boost;
 
   auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr));
@@ -85,7 +85,7 @@ TEST_CASE("Computing path from dijkstra_shortest_paths") {
 }
 
 TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
-          "[boost::graph]") {
+          "[onepassplus]") {
   auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
   kspwlo::Vertex s = 0, t = 6;
   auto res = boost::onepass_plus(G, s, t, 3, 0.5);
