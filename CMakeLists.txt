@@ -136,7 +136,6 @@ target_link_libraries(${KSPWLO} ${MARGOT_HEEL_LIBRARIES})
 target_link_libraries(${KSPWLO} stdc++fs)
 target_link_libraries(${KSPWLO} Boost::graph Boost::program_options)
 
-
 # Testing
 # Make test executable
 set(TEST_SOURCES
@@ -163,7 +162,6 @@ target_link_libraries(tests Boost::graph stdc++fs)
 
 enable_testing(true)
 add_test(NAME tests COMMAND tests)
-
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (
