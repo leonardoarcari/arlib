@@ -46,7 +46,7 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   }
 }
 
-TEST_CASE("Graph penalization follows specifications", "[penalization]") {
+TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   using namespace boost;
   using kspwlo::Vertex;
   using Edge = typename graph_traits<kspwlo::Graph>::edge_descriptor;
@@ -70,12 +70,11 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
   Vertex s = 0, t = 6;
 
-  SECTION("Penalizing the first candidate updates correct edges weights") {
+  SECTION("Penalizing the first candidate updates correct edges weights","[penalty]") {
     auto p = 0.1;
     auto r = 0.1;
     auto bound_limit = 1;
 
-    auto[edge_it, edge_last] = edges(G);
     auto old_penalty = kspwlo_impl::penalty_functor{penalty};
 
     kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
@@ -136,7 +135,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
   }
 
   SECTION("Penalizing edges that reached the limit of number of updates leave "
-          "their weights unchanged") {
+          "their weights unchanged","[penalty]") {
     auto p = 0.1;
     auto r = 0.1;
     auto bound_limit = 1;
@@ -163,7 +162,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalization]") {
   }
 }
 
-TEST_CASE("Two-ways dijkstra computes right distance maps") {
+TEST_CASE("Two-ways dijkstra computes right distance maps","[penalty]") {
   using namespace boost;
   using kspwlo::Vertex;
 
