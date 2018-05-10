@@ -383,8 +383,8 @@ template <typename Graph> struct OnePassPlusASComparator {
 
 template <typename Graph, typename EdgeMap,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void update_res_edges(const Graph &candidate, const Graph &graph, EdgeMap &resEdges,
-                      resPathIndex paths_count) {
+void update_res_edges(const Graph &candidate, const Graph &graph,
+                      EdgeMap &resEdges, resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto ei = edges(candidate).first; ei != edges(candidate).second; ++ei) {
     auto edge_in_g =
@@ -401,8 +401,9 @@ void update_res_edges(const Graph &candidate, const Graph &graph, EdgeMap &resEd
 
 template <typename Graph, typename EdgeMap,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void update_res_edges(const std::vector<kspwlo::Edge> &candidate, const Graph &graph,
-                      EdgeMap &resEdges, resPathIndex paths_count) {
+void update_res_edges(const std::vector<kspwlo::Edge> &candidate,
+                      const Graph &graph, EdgeMap &resEdges,
+                      resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto &e : candidate) {
     auto edge_in_g = edge(e.first, e.second, graph).first;
@@ -418,9 +419,9 @@ void update_res_edges(const std::vector<kspwlo::Edge> &candidate, const Graph &g
 
 template <typename Label, typename Graph, typename EdgesMap, typename PathsMap,
           typename WeightMap>
-bool update_label_similarity(Label &label, const Graph &G, const EdgesMap &resEdges,
-                             const PathsMap &resPaths, WeightMap &weight,
-                             double theta, int step) {
+bool update_label_similarity(Label &label, const Graph &G,
+                             const EdgesMap &resEdges, const PathsMap &resPaths,
+                             WeightMap &weight, double theta, int step) {
   using namespace boost;
   bool below_sim_threshold = true;
   auto tmpPath = label.get_path();

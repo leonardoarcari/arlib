@@ -26,8 +26,8 @@ vector<Path> multipass(RoadNetwork *rN, NodeID source, NodeID target,
   unordered_map<Edge, vector<int>, boost::hash<Edge>>::iterator iterE;
 
   vector<Path> resPaths;
-  
-  // Compute shortest path and add it to P_LO 
+
+  // Compute shortest path and add it to P_LO
   pair<Path, vector<int>> resDijkstra =
       dijkstra_path_and_bounds(rN, source, target);
 
@@ -38,7 +38,7 @@ vector<Path> multipass(RoadNetwork *rN, NodeID source, NodeID target,
   if (k == 1)
     return resPaths;
 
-  // While |P_LO| < k 
+  // While |P_LO| < k
   for (unsigned int i = 1; i < k; i++) {
     // Keep a list of edges that are part of P_LO
     for (unsigned int j = 0; j < resNext.nodes.size() - 1; j++) {
@@ -90,8 +90,8 @@ Path next_spwlo_bounds(
   // Initialize V_sim vector
   newOverlap.resize(resPaths.size(), 0);
   int newLowerBound = bounds[source];
-  
-  // Initialize Q with <source, empty_path> 
+
+  // Initialize Q with <source, empty_path>
   Q.push(new OlLabel(source, newLength, newLowerBound, newOverlap, -1));
 
   while (!Q.empty()) {

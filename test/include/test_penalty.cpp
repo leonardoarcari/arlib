@@ -62,7 +62,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
   // Weight map
   auto original_weight = get(edge_weight, G);
-  auto[edge_it, edge_last] = edges(G);
+  auto [edge_it, edge_last] = edges(G);
   auto penalty =
       kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
 
@@ -70,7 +70,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
   Vertex s = 0, t = 6;
 
-  SECTION("Penalizing the first candidate updates correct edges weights","[penalty]") {
+  SECTION("Penalizing the first candidate updates correct edges weights",
+          "[penalty]") {
     auto p = 0.1;
     auto r = 0.1;
     auto bound_limit = 1;
@@ -87,8 +88,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
     auto candidate_vertices = std::unordered_set<Vertex, boost::hash<Vertex>>{};
 
     // Candidate path weights have been updated
-    for (auto[u_c, v_c] : candidate) {
-      auto[e, is_valid] = edge(u_c, v_c, G);
+    for (auto [u_c, v_c] : candidate) {
+      auto [e, is_valid] = edge(u_c, v_c, G);
       REQUIRE(is_valid);
 
       candidate_edges.insert(e);
@@ -112,7 +113,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
       auto u = source(e, G);
       auto v = target(e, G);
 
-      for (auto[it, end] = in_edges(u, G); it != end; ++it) {
+      for (auto [it, end] = in_edges(u, G); it != end; ++it) {
         auto a = source(*it, G);
 
         if (candidate_vertices.find(a) == std::end(candidate_vertices)) {
@@ -122,7 +123,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
         }
       }
 
-      for (auto[it, end] = out_edges(v, G); it != end; ++it) {
+      for (auto [it, end] = out_edges(v, G); it != end; ++it) {
         auto b = target(*it, G);
 
         if (candidate_vertices.find(b) == std::end(candidate_vertices)) {
@@ -135,13 +136,14 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   }
 
   SECTION("Penalizing edges that reached the limit of number of updates leave "
-          "their weights unchanged","[penalty]") {
+          "their weights unchanged",
+          "[penalty]") {
     auto p = 0.1;
     auto r = 0.1;
     auto bound_limit = 1;
 
-    auto[e1, is_e1_valid] = edge(3, 5, G);
-    auto[e2, is_e2_valid] = edge(1, 6, G);
+    auto [e1, is_e1_valid] = edge(3, 5, G);
+    auto [e2, is_e2_valid] = edge(1, 6, G);
 
     REQUIRE(is_e1_valid);
     REQUIRE(is_e2_valid);
@@ -162,7 +164,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   }
 }
 
-TEST_CASE("Two-ways dijkstra computes right distance maps","[penalty]") {
+TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
   using namespace boost;
   using kspwlo::Vertex;
 

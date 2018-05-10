@@ -5,11 +5,11 @@
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/properties.hpp>
 
+#include "cittastudi_graph.hpp"
 #include "kspwlo/graph_pruning.hpp"
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
 #include "utils.hpp"
-#include "cittastudi_graph.hpp"
 
 #include <experimental/filesystem>
 #include <memory>
@@ -17,7 +17,9 @@
 
 #include <string_view>
 
-TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a small graph do not prune nodes","[pruning]") {
+TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a small graph do "
+          "not prune nodes",
+          "[pruning]") {
   using namespace boost;
   using kspwlo::Vertex;
 
@@ -36,7 +38,9 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a small graph do n
   REQUIRE(num_edges(pruned_G) == num_edges(G));
 }
 
-TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a real world network prunes nodes","[pruning]") {
+TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a real world "
+          "network prunes nodes",
+          "[pruning]") {
   using namespace boost;
   using kspwlo::Vertex;
 

@@ -240,7 +240,7 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
   try {
     astar_search(filtered_G, s, heuristic,
                  predecessor_map(make_iterator_property_map(
-                         std::begin(predecessor), vertex_id, s))
+                                     std::begin(predecessor), vertex_id, s))
                      .visitor(astar_target_visitor{t}));
   } catch (target_found tf) {
     auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
@@ -275,7 +275,8 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
  */
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
           typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
-int compute_priority(const Graph &G, const Edge &e, const AStarHeuristic &heuristic,
+int compute_priority(const Graph &G, const Edge &e,
+                     const AStarHeuristic &heuristic,
                      const DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
@@ -407,7 +408,7 @@ void init_edge_priorities(const std::vector<kspwlo::Edge> &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
                           const Graph &G, const AStarHeuristic &heuristic,
                           const EdgeMap &deleted_edges) {
-  for (const auto & [ u, v ] : alternative) {
+  for (const auto &[u, v] : alternative) {
     auto edge_in_G = edge(u, v, G).first;
     auto prio_e_i = compute_priority(G, edge_in_G, heuristic, deleted_edges);
     edge_priorities[alt_index].push(std::make_pair(edge_in_G, prio_e_i));

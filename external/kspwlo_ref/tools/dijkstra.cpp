@@ -69,8 +69,8 @@ pair<Path, vector<int>> dijkstra_path_and_bounds(RoadNetwork *rN, NodeID source,
       }
     }
   }
-  for(unsigned int i=0;i<allCreatedLabels.size();++i)
-  	delete allCreatedLabels[i];
+  for (unsigned int i = 0; i < allCreatedLabels.size(); ++i)
+    delete allCreatedLabels[i];
 
   return make_pair(resPath, distances);
 }

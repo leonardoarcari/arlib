@@ -18,7 +18,8 @@
 #include <string_view>
 
 TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
-          "unidirectional dijkstra", "[bi_dijkstra") {
+          "unidirectional dijkstra",
+          "[bi_dijkstra") {
   using namespace boost;
   using kspwlo::Vertex;
 

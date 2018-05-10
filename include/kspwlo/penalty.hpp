@@ -31,7 +31,7 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
 
   // Make a local weight map to avoid modifying existing graph.
   auto original_weight = get(edge_weight, G);
-  auto[edge_it, edge_last] = edges(G);
+  auto [edge_it, edge_last] = edges(G);
   auto penalty =
       kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
   // auto weight = std::unordered_map<Edge, Length, boost::hash<Edge>>{};

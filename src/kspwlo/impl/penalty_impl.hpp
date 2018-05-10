@@ -160,7 +160,7 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, G);
 
-  //auto weight_init = get(edge_weight, G);
+  // auto weight_init = get(edge_weight, G);
   auto weight = make_function_property_map<Edge>(penalty);
   try {
     dijkstra_shortest_paths(
@@ -201,8 +201,8 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
   auto candidate_vertices = std::unordered_set<Vertex, boost::hash<Vertex>>{};
   auto candidate_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
-  for (const auto & [ u_c, v_c ] : candidate) {
-    auto[e, is_valid] = edge(u_c, v_c, G);
+  for (const auto &[u_c, v_c] : candidate) {
+    auto [e, is_valid] = edge(u_c, v_c, G);
     assert(is_valid);
     candidate_edges.insert(e);
 
@@ -231,7 +231,7 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
     }
 
     // Update incoming edges
-    for (auto[it, end] = in_edges(u, G); it != end; ++it) {
+    for (auto [it, end] = in_edges(u, G); it != end; ++it) {
       auto a = source(*it, G);
 
       // Incoming edge (a, u) is updated only if 'a' is not part of candidate
@@ -258,7 +258,7 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
     }
 
     // Update outgoing edges
-    for (auto[it, end] = out_edges(v, G); it != end; ++it) {
+    for (auto [it, end] = out_edges(v, G); it != end; ++it) {
       auto b = target(*it, G);
 
       // Outgoing edge (v, b) is updated only if 'b' is not part of candidate

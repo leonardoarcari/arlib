@@ -46,7 +46,7 @@ vector<Path> onepass_plus(RoadNetwork *rN, NodeID source, NodeID target,
   // Only the shortest path is requested
   if (k == 1)
     return resPaths;
-  
+
   // For each edge in the candidate path see if it's already in any of the
   // P_LO paths. If not, add it to the resEdges. If so, keep track of which
   // path includes it
@@ -136,7 +136,7 @@ vector<Path> onepass_plus(RoadNetwork *rN, NodeID source, NodeID target,
       }
 
       count++; // new path added to P_LO.
-    } else { // Expand Search
+    } else {   // Expand Search
       if (skyline.dominates(curLabel))
         continue;
       skyline.insert(curLabel);

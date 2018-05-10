@@ -1,16 +1,16 @@
 #include "kspwlo/error_metrics.hpp"
 #include "kspwlo/esx.hpp"
-#include "kspwlo/penalty.hpp"
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/graph_utils.hpp"
 #include "kspwlo/onepass_plus.hpp"
+#include "kspwlo/penalty.hpp"
 
 #include <boost/program_options.hpp>
 
 #include <experimental/filesystem>
+#include <limits>
 #include <optional>
 #include <string>
-#include <limits>
 
 #include <margot.hpp>
 

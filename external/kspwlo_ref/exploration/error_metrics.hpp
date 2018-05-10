@@ -38,10 +38,10 @@ float totalDistance(RoadNetwork &ag, NodeID source, NodeID target) {
   auto total_distance = 0.0f;
   using index = decltype(ag.adjListOut.size());
 
-  #pragma omp parallel for reduction(+:total_distance)
+#pragma omp parallel for reduction(+ : total_distance)
   for (index i = 0; i < ag.adjListOut.size(); ++i) {
     NodeID u = i;
-    auto& outEdges = ag.adjListOut[u];
+    auto &outEdges = ag.adjListOut[u];
     for (auto &[v, weight] : outEdges) {
       int d_s_u = dijkstra_path_and_bounds(&ag, source, u).first.length;
       int d_v_t = dijkstra_path_and_bounds(&ag, v, target).first.length;
@@ -50,7 +50,8 @@ float totalDistance(RoadNetwork &ag, NodeID source, NodeID target) {
       total_distance += distance;
 
       // std::cerr << "s = " << source << ", t = " << target << ", u = " << u
-      //           << ", v = " << v << ", w = " << weight << ", d_s_u = " << d_s_u
+      //           << ", v = " << v << ", w = " << weight << ", d_s_u = " <<
+      //           d_s_u
       //           << ", d_v_t = " << d_v_t << ", distance = " << distance
       //           << ", total_distance = " << total_distance << "\n";
     }
@@ -112,7 +113,8 @@ ErrorMetrics compute_errors(vector<Path> &result, RoadNetwork &g, NodeID source,
   auto ag = build_AG(result, g);
 
   auto total_distance = totalDistance(ag, source, target);
-  auto average_distance = averageDistance(ag, g, source, target, total_distance);
+  auto average_distance =
+      averageDistance(ag, g, source, target, total_distance);
   auto decision_edges = decisionEdges(ag, target);
 
   return {total_distance, average_distance, decision_edges};
