@@ -28,7 +28,7 @@ make -j4 || exit -1
 mkdir -p $APPLICATION_ROOT/build || exit -1
 cd $APPLICATION_ROOT/build
 cmake $CLANG -DCMAKE_BUILD_TYPE=Release .. || exit -1
-make -j4 || exit -1
+make kspwlo -j4 || exit -1
 
 # Restore working directory
 cd $WORKING_DIR

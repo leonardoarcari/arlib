@@ -2,6 +2,10 @@ import argparse
 import sys
 import csv
 
+# === ----------------------------------------------------------------------=== #
+#                               GNUPLOT generators
+# === ----------------------------------------------------------------------=== #
+
 
 def sim_time_pruning(args):
     # Parse csv and extract data to plot
@@ -14,9 +18,9 @@ def sim_time_pruning(args):
         for row in reader:
             if int(row['#k_paths']) != args.k:
                 continue
-            sim = row['#similarity_threshold']
-            time = row['exec_time']
-            tau = (tau + 1) % 3  # row['#prune']
+            sim = float(row['#similarity_threshold'])
+            time = float(row['exec_time'])
+            tau = float(row['#prune'])
             d_str = data.setdefault(tau, '')
             d_str += data_fmt.format(sim, time)
             data[tau] = d_str
@@ -25,16 +29,16 @@ def sim_time_pruning(args):
         gnuplot.write(GNUPLOT_SIM_TIME_PRUNING)
         gnuplot.write('\n')
 
-        plot = ''
-        for k in sorted(data.keys()):
+        plot = 'plot '
+        for i, k in enumerate(sorted(data.keys())):
             if k < 0:
                 title = 'No pruning'
             else:
                 title = 'UBP (tau = {})'.format(k)
 
-            plot += 'plot "-" u 1:2 w points ls 1 title "{}",\\\n'.format(
-                title)
-        plot = plot[:-3]
+            plot += '\'-\' u 1:2 w points ls {} title "{}", \\\n'.format(
+                i + 1, title)
+        plot = plot[:-4]
         gnuplot.write(plot)
         gnuplot.write('\n\n# --- Data points\n')
 
@@ -43,13 +47,18 @@ def sim_time_pruning(args):
             gnuplot.write('e\n')
 
 
+# === ----------------------------------------------------------------------=== #
+#                               Parser builders
+# === ----------------------------------------------------------------------=== #
+
+
 def get_programs_list():
     return [build_sim_time_pruning_parser]
 
 
 def build_sim_time_pruning_parser(subparsers):
     p = subparsers.add_parser(
-        'k_time_pruning',
+        'sim_time_pruning',
         help='Plots the "sim. vs exec. time vs pruning factor" graph')
     p.add_argument('--k', type=int, help='The number of alternative paths')
     p.add_argument('--csv-file', type=str, metavar='CSV',
@@ -74,21 +83,28 @@ def parse_arguments():
     return args
 
 
+# === ----------------------------------------------------------------------=== #
+#                               GNUPLOT preambles
+# === ----------------------------------------------------------------------=== #
+
 GNUPLOT_SIM_TIME_PRUNING = ('reset\n'
-                            'set terminal pdf size 20, 10 enhanced font ",60"\n'
-                            'set style line 11 lc rgb "#000000" lt 1\n'
+                            'set terminal pdf size 20, 10 enhanced font ",50"\n'
+                            'set style line 11 lc rgb \'#000000\' lt 1\n'
                             'set border back 3 ls 11\n'
                             'set tics nomirror in\n'
-                            'set style line 12 lc rgb "#000000" lt 0 lw 2\n'
+                            'set style line 12 lc rgb \'#000000\' lt 0 lw 2\n'
                             'set grid xtics ytics ls 12\n'
-                            'set key above\n'
-                            'set style line 1 lc rgb "#1B9E77" pt 7 ps 6 lt 1 lw 4  # --- dark teal\n'
-                            'set style line 2 lc rgb "#D95F02" pt 7 ps 2 lt 1 lw 4  # --- dark orange\n'
-                            'set style line 3 lc rgb "#7570B3" pt 7 ps 2 lt 1 lw 4  # --- dark lilac\n'
-                            'set style line 4 lc rgb "#E7298A" pt 7 ps 2 lt 1 lw 4  # --- dark\n'
-                            'magenta\n'
-                            'set xlabel "Throughput single process [Katoms/sec]"\n'
-                            'set ylabel "Overlap degradation [%]"\n')
+                            'set key above horizontal\n'
+                            'set style line 1 lc rgb \'#1B9E77\' pt 7 ps 6 lt 1 lw 4  # --- dark teal\n'
+                            'set style line 2 lc rgb \'#D95F02\' pt 7 ps 2 lt 1 lw 4  # --- dark orange\n'
+                            'set style line 3 lc rgb \'#7570B3\' pt 7 ps 2 lt 1 lw 4  # --- dark lilac\n'
+                            'set style line 4 lc rgb \'#E7298A\' pt 7 ps 2 lt 1 lw 4  # --- dark magenta\n'
+                            'set xlabel "Similarity threshold [%]"\n'
+                            'set ylabel "Response time [ms]"\n')
+
+# === ----------------------------------------------------------------------=== #
+#                                Main function
+# === ----------------------------------------------------------------------=== #
 
 
 def main():
