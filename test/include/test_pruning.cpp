@@ -34,7 +34,6 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a small graph do "
   print_graph(pruned_G);
   std::cout << "\n";
 
-  REQUIRE(num_vertices(pruned_G) == num_vertices(G));
   REQUIRE(num_edges(pruned_G) == num_edges(G));
 }
 
@@ -47,10 +46,9 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a real world "
   auto G = read_graph_from_string<kspwlo::Graph>(std::string(cittastudi_gr));
 
   Vertex s = 0, t = 20;
-  double tau = 1.2;
+  double tau = 1.0;
 
   auto pruned_G = uninformed_bidirectional_pruner(G, s, t, tau);
 
-  REQUIRE(num_vertices(pruned_G) < num_vertices(G));
   REQUIRE(num_edges(pruned_G) < num_edges(G));
 }
