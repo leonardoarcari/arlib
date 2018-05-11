@@ -60,8 +60,10 @@ else
 fi
 
 # Now plot data with GNU Plot
-GNUPLOT_SCRIPTS=("${ALGORITHM}_sim-resp_time-pruning.gnuplot")
-PDF_NAMES=("${ALGORITHM}_sim-resp_time-pruning.pdf")
+GNUPLOT_SCRIPTS=("${ALGORITHM}_sim-resp_time-pruning.gnuplot"
+			     "${ALGORITHM}_tau-quality_and_resp_time-k.gnuplot")
+PDF_NAMES=("${ALGORITHM}_sim-resp_time-pruning.pdf"
+		   "${ALGORITHM}_tau-quality_and_resp_time-k.pdf")
 METRICS=("exec_time" "avg_total_distance"
 		 "avg_average_distance" "avg_decision_edges")
 
@@ -77,7 +79,10 @@ done
 # Thesis plot
 OPLIST_CSV=/tmp/oplist.csv
 python3 $MARGOT_ROOT/margot_heel/margot_heel_cli/bin/margot_cli xml2csv $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/oplist.conf > $OPLIST_CSV
+
 python3 $APPLICATION_ROOT/thesis_plotter.py sim_time_pruning --k 5 --csv-file $OPLIST_CSV $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/${ALGORITHM}_sim-resp_time-pruning.gnuplot  && echo "GNUPLOT Sim|RespTime|Pruning script succesfully created!"
+python3 $APPLICATION_ROOT/thesis_plotter.py pruning_quality_and_time_k --sim 0.75 --csv-file $OPLIST_CSV $APPLICATION_ROOT/dse/${APPLICATION_BIN}/$WORKSPACE/${ALGORITHM}_tau-quality_and_resp_time-k.gnuplot  && echo "GNUPLOT Tau|Quality&RespTime|K script succesfully created!"
+
 
 NB_PLOTS=${#GNUPLOT_SCRIPTS[@]}
 for ((i=0; i<${NB_PLOTS}; i++)); do
