@@ -64,7 +64,7 @@ def pruning_quality_and_time_k(args):
                     continue
                 tau = float(row['#prune'])
                 if tau < 0:
-                    tau = 1.35
+                    tau = 1.4
 
                 time = float(row['exec_time'])
                 total_distance = float(row['avg_total_distance'])
@@ -77,6 +77,10 @@ def pruning_quality_and_time_k(args):
 
     with open(vars(args)['gnuplot-file'], 'w') as gnuplot:
         gnuplot.write(GNUPLOT_TAU_QUALITY_AND_TIME_K)
+        plot_title = ('set multiplot layout 2, 1 title '
+                      '"Quality vs. Response time tradeoff '
+                      '[{{/Symbol q}} = {}]"\n')
+        gnuplot.write(plot_title.format(args.sim))
         gnuplot.write(
             'set ylabel "(totalDistance - averageDistance + 1)" font ", 20"\n')
         gnuplot.write('\n')
@@ -99,7 +103,8 @@ def pruning_quality_and_time_k(args):
 
         TIME_PLOT = ('unset key\n'
                      'set ylabel "Response time [ms]" font ", 37"\n'
-                     'set xlabel "Uninformed Bidirectional Pruning [tau]" font ", 37"\n\n')
+                     'set xlabel "Uninformed Bidirectional Pruning '
+                     '[{{/Symbol q}}]" font ", 37"\n\n')
         gnuplot.write(TIME_PLOT)
         gnuplot.write(plot)
         gnuplot.write('\n# --- Data points\n')
@@ -178,13 +183,12 @@ GNUPLOT_SIM_TIME_PRUNING = ('reset\n'
 
 GNUPLOT_TAU_QUALITY_AND_TIME_K = ('reset\n'
                                   'set terminal pdf size 20, 10 enhanced font ",40"\n'
-                                  'set multiplot layout 2, 1 title "Solution Quality / Response time tradeoff"\n'
                                   'set style line 11 lc rgb \'#000000\' lt 1\n'
                                   'set border back 3 ls 11\n'
                                   'set tics nomirror in\n'
                                   'set style line 12 lc rgb \'#000000\' lt 0 lw 2\n'
-                                  'set xtics out axis 1,0.05,1.35\n'
-                                  'set xtics add ("No pruning" 1.35) \n'
+                                  'set xtics out axis 1,0.1,1.4\n'
+                                  'set xtics add ("No pruning" 1.4) \n'
                                   'set grid xtics ytics ls 12\n'
                                   'set key above horizontal\n'
                                   'set style line 1 lc rgb \'#1B9E77\' pt 7 ps 2 lt 1 lw 4  # --- dark teal\n'
