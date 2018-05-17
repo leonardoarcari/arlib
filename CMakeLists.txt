@@ -13,12 +13,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # setting common c++ flags
-set(CMAKE_CXX_STANDARD 17 )
+# set(CMAKE_CXX_STANDARD 17 )
 
 add_compile_options(-Wall
     -Wextra
     -pedantic
-    -ansi)
+    -ansi
+    -std=c++17)
 
 # setting debug flags
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -ftemplate-depth=1100")
