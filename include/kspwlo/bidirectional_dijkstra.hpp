@@ -73,7 +73,6 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
   using kspwlo_impl::Direction;
 
   Length final_distance = inf;
-  bool end_phase = false;
   auto final_path = std::deque<Vertex>{};
   auto direction = Direction::backward;
   while (!fringe.empty() && !fringe_b.empty()) {

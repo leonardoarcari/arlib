@@ -76,8 +76,12 @@ public:
       return true;
   }
 
-  std::pair<const_iterator, const_iterator> get_pruned_vertices() {
+  std::pair<const_iterator, const_iterator> get_pruned_vertices() const {
     return {pruned_vertices.cbegin(), pruned_vertices.cend()};
+  }
+
+  bool is_pruned(const Vertex &v) const {
+    return (pruned_vertices.find(v) != std::end(pruned_vertices));
   }
 
 private:
