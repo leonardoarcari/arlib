@@ -9,6 +9,8 @@
 #include <kspwlo/graph_types.hpp>
 #include <kspwlo/graph_utils.hpp>
 
+#include <numeric>
+
 namespace margot {
 
 struct ErrorMetrics {
@@ -108,6 +110,19 @@ compute_errors(const std::vector<kspwlo::Path<kspwlo::Graph>> &paths,
   auto decision_es = decision_edges(ag, t);
 
   return {tot_distance, avg_distance, decision_es};
+}
+
+double
+compute_kspwlo_quality(const std::vector<kspwlo::Path<kspwlo::Graph>> &result) {
+  auto n_sols = result.size();
+  auto sp_len = result.front().length;
+
+  auto len_sum = std::accumulate(
+      result.cbegin(), result.cend(), 0.0,
+      [](const auto &acc, const auto &path) { return acc + path.length; });
+  auto avg_length = static_cast<double>(len_sum) / n_sols;
+  auto diff_sp = (avg_length - sp_len) / sp_len;
+  return diff_sp;
 }
 } // namespace margot
 
