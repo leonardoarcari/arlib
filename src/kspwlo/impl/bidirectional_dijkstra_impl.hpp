@@ -15,19 +15,41 @@
 #include <queue>
 #include <vector>
 
+/**
+ * @brief Implementations details of kSPwLO algorithms
+ */
 namespace kspwlo_impl {
 //===----------------------------------------------------------------------===//
 //                      Bidirectional Dijkstra types
 //===----------------------------------------------------------------------===//
 
+/**
+ * @brief Enum to describe whether a forward or a backward step of bidirectional
+ * dijkstra is executing.
+ */
 enum class Direction { forward = 1, backward };
 
+/**
+ * @brief Returns the opposite direction.
+ *
+ * @param prev_dir The current execution direction.
+ * @return Direction::forward if @p prev_dir == Direction::backward.
+ *         Direction::backward otherwise.
+ */
 constexpr Direction switch_direction(Direction prev_dir) {
   return (prev_dir == Direction::backward) ? Direction::forward
                                            : Direction::backward;
 }
 
-enum class BiDijkStepRes { next = 1, end, negative_weights };
+/**
+ * @brief Return code of bi_dijkstra_step()
+ */
+enum class BiDijkStepRes {
+  next = 1,        /**< bidirectional_dijkstra() should execute another step. */
+  end,             /**< bidirectional_dijkstra() should end. */
+  negative_weights /**< bidirectional_dijkstra() should exit because
+                        preconditions are violated. */
+};
 
 //===----------------------------------------------------------------------===//
 //                      Bidirectional Dijkstra  aliases
@@ -56,7 +78,18 @@ using Seen = std::unordered_map<Vertex, Length, boost::hash<Vertex>>;
 //===----------------------------------------------------------------------===//
 //                      Bidirectional Dijkstra routines
 //===----------------------------------------------------------------------===//
-
+/**
+ * @brief Initialize a DistanceMap with @c infinite value for each vertex in the
+ * graph.
+ *
+ * @post For each vertex @c v in @p G, <tt>distance[v] = +inf</tt>, given
+ *       <tt>inf = std::numeric_limits<distance_type>::max()</tt>
+ *
+ * @tparam Graph A Boost::Graph.
+ * @tparam DistanceMap The distance PropertyMap.
+ * @param G The graph.
+ * @param distance the DistanceMap to initialize.
+ */
 template <typename Graph, typename DistanceMap>
 void init_distance_vector(Graph &G, DistanceMap distance) {
   using Length = typename boost::property_traits<DistanceMap>::value_type;

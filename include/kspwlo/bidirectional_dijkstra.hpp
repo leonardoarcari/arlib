@@ -33,6 +33,56 @@ void fill_predecessor(PredecessorMap predecessor,
   }
 }
 
+/**
+ * @brief Implementation of Bidirectional Dijkstra method for Boost::Graph to
+ *        compute the shortest path between two vertices.
+ *
+ * This implementation follows the one from nx.graph library:
+ * https://networkx.github.io/documentation/networkx-1.10/_modules/networkx/algorithms/shortest_paths/weighted.html#bidirectional_dijkstra
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam PredecessorMap The predecessor map records the edges in the shortest
+ *         path tree, the tree computed by the traversal of the graph. Upon
+ *         completion of the algorithm, the edges (p[u],u) for all u in V are in
+ *         the tree. The shortest path from vertex s to each vertex v in the
+ *         graph consists of the vertices v, p[v], p[p[v]], and so on until s is
+ *         reached, in reverse order. The tree is not guaranteed to be a minimum
+ *         spanning tree. If p[u] = u then u is either the source vertex or a
+ *         vertex that is not reachable from the source. The PredecessorMap type
+ *         must be a Read/Write Property Map whose key and value types are the
+ *         same as the vertex descriptor type of the graph.
+ * @tparam DistanceMap The shortest path weight from the source vertex s to each
+ *         vertex in the graph g is recorded in this property map. The shortest
+ *         path weight is the sum of the edge weights along the shortest path.
+ *         The type DistanceMap must be a model of Read/Write Property Map. The
+ *         vertex descriptor type of the graph needs to be usable as the key
+ *         type of the distance map.
+ * @tparam WeightMap The weight or ``length'' of each edge in the graph. The
+ *         weights must all be non-negative, and the algorithm will throw a
+ *         negative_edge exception is one of the edges is negative. The type
+ *         WeightMap must be a model of Readable Property Map. The edge
+ *         descriptor type of the graph needs to be usable as the key type for
+ *         the weight map. The value type for this map must be the same as the
+ *         value type of the distance map.
+ * @tparam BackGraph A boost::reverse_graph<Graph>
+ * @tparam BackPredecessorMap A PredecessorMap of a boost::reverse_graph<Graph>
+ * @tparam BackDistanceMap A DistanceMap of a boost::reverse_graph<Graph>
+ * @tparam BackWeightMap A WeightMap of a boost::reverse_graph<Graph>
+ * @tparam BiDijkstraVisitorImpl An implementation of a BiDijkstraVisitor.
+ * @tparam Vertex a vertex_descriptor.
+ * @param G The graph.
+ * @param s The source vertex.
+ * @param t The target vertex.
+ * @param predecessor The PredecessorMap for the forward step.
+ * @param distance The DistanceMap for the forward step.
+ * @param weight The WeightMap for the forward step.
+ * @param G_b A boost::reverse_graph<Graph> of @p G.
+ * @param predecessor_b The PredecessorMap for the backward step.
+ * @param distance_b The DistanceMap for the backward step.
+ * @param weight_b The WeightMap for the backward step.
+ * @param visitor An implementation of a BiDijkstraVisitor.
+ */
 template <
     typename Graph, typename PredecessorMap, typename DistanceMap,
     typename WeightMap, typename BackGraph, typename BackPredecessorMap,
@@ -119,6 +169,29 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
   }
 }
 
+/**
+ * @brief Implementation of Bidirectional Dijkstra method for Boost::Graph to
+ *        compute the shortest path between two vertices.
+ *
+ * This overload does not need a PredecessorMap nor a DistanceMap for the
+ * backward step.
+ *
+ * @see bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
+ *                             PredecessorMap predecessor, DistanceMap distance,
+ *                             WeightMap weight, const BackGraph &G_b,
+ *                             BackPredecessorMap predecessor_b,
+ *                             BackDistanceMap distance_b,
+ *                             BackWeightMap weight_b,
+ *                             BiDijkstraVisitor<BiDijkstraVisitorImpl>
+ *                                 &visitor)
+ *
+ * @tparam BackIndexMap This maps each vertex to an integer in the range [0,
+ *         num_vertices(g)). This is necessary for efficient updates of the heap
+ *         data structure [61] when an edge is relaxed. The type VertexIndexMap
+ *         must be a model of Readable Property Map. The value type of the map
+ *         must be an integer type. The vertex descriptor type of the graph
+ *         needs to be usable as the key type of the map.
+ */
 template <
     typename Graph, typename PredecessorMap, typename DistanceMap,
     typename WeightMap, typename BackGraph, typename BackWeightMap,
@@ -145,6 +218,30 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                          predecessor_b, distance_b, weight_b, visitor);
 }
 
+/**
+ * @brief Implementation of Bidirectional Dijkstra method for Boost::Graph to
+ *        compute the shortest path between two vertices.
+ *
+ * This overload does not need a PredecessorMap nor a DistanceMap for the
+ * backward step nor a BiDijkstraVisitor. This simply runs Bidirectional
+ * Dijkstra.
+ *
+ * @see bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
+ *                             PredecessorMap predecessor, DistanceMap distance,
+ *                             WeightMap weight, const BackGraph &G_b,
+ *                             BackPredecessorMap predecessor_b,
+ *                             BackDistanceMap distance_b,
+ *                             BackWeightMap weight_b,
+ *                             BiDijkstraVisitor<BiDijkstraVisitorImpl>
+ *                                 &visitor)
+ *
+ * @tparam BackIndexMap This maps each vertex to an integer in the range [0,
+ *         num_vertices(g)). This is necessary for efficient updates of the heap
+ *         data structure [61] when an edge is relaxed. The type VertexIndexMap
+ *         must be a model of Readable Property Map. The value type of the map
+ *         must be an integer type. The vertex descriptor type of the graph
+ *         needs to be usable as the key type of the map.
+ */
 template <
     typename Graph, typename PredecessorMap, typename DistanceMap,
     typename WeightMap, typename BackGraph, typename BackWeightMap,
