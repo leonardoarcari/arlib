@@ -18,14 +18,40 @@
  */
 namespace boost {
 
+/**
+ * @brief An implementation of Penalty method to compute alternative routes for
+ * Boost::Graph.
+ *
+ * This implementation refers to the following publication:
+ * Andreas Paraskevopoulos, Christos Zaroliagis. Improved Alternative Route
+ * Planning. Daniele Frigioni and Sebastian Stiller. ATMOS - 13th Workshop on
+ * Algorithmic Approaches for Transportation Modelling, Optimization, and
+ * Systems - 2013, Sep 2013, Sophia Antipolis, France.
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam Vertex A vertex_descriptor of PropertyGraph.
+ * @param G The graph.
+ * @param s The source node.
+ * @param t The target node.
+ * @param k The number of alternative paths to compute
+ * @param theta The similarity threshold. A candidate path is accepted as
+ *              alternative route iff its similarity wrt all the other
+ *              alternative paths is less than @p theta
+ * @param p The penalty factor for edges in the candidate path.
+ * @param r The penalty factor for edges incoming and outgoing to/from vertices
+ *          of the candidate path.
+ * @param max_nb_updates The maximum number of times an edge can be penalized.
+ * @param max_nb_steps The maximum number of steps of the algorithm (timeout).
+ *
+ * @return A vector of at maximum @p k alternative paths.
+ */
 template <typename Graph, typename Vertex = typename boost::graph_traits<
                               Graph>::vertex_descriptor>
 std::vector<kspwlo::Path<Graph>>
 penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
            double r, int max_nb_updates, int max_nb_steps) {
   // P_LO set of k paths
-  // using Length = typename property_traits<
-  //     typename property_map<Graph, edge_weight_t>::type>::value_type;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   auto resPaths = std::vector<kspwlo::Path<Graph>>{};
 
@@ -34,10 +60,6 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
   auto [edge_it, edge_last] = edges(G);
   auto penalty =
       kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
-  // auto weight = std::unordered_map<Edge, Length, boost::hash<Edge>>{};
-  // for (auto[it, end] = edges(G); it != end; ++it) {
-  //   weight[*it] = original_weight[*it];
-  // }
 
   // Compute shortest path from s to t
   auto distance_s = std::vector<kspwlo::Length>(num_vertices(G));
@@ -67,11 +89,6 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
   using Index = std::size_t;
   while (resPaths.size() < static_cast<Index>(k) && step < max_nb_steps) {
     auto p_tmp = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
-    // std::cout << "p_tmp = [ ";
-    // for (auto[u, v] : *p_tmp) {
-    //   std::cout << "(" << u << ", " << v << ") ";
-    // }
-    // std::cout << "]\n";
 
     // Penalize p_tmp edges
     kspwlo_impl::penalize_candidate_path(*p_tmp, G, s, t, p, r, penalty,

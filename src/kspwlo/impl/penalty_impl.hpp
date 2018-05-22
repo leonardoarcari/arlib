@@ -16,26 +16,62 @@
 #include <unordered_set>
 #include <vector>
 
+/**
+ * @brief Implementations details of kSPwLO algorithms
+ */
 namespace kspwlo_impl {
 //===----------------------------------------------------------------------===//
 //                      Penalty algorithm types
 //===----------------------------------------------------------------------===//
+/**
+ * @brief A map from edges to the number of time they have been penalized so
+ * far.
+ *
+ * @tparam Edge An edge_descriptor
+ */
 template <typename Edge>
 using PenBoundsMap = std::unordered_map<Edge, int, boost::hash<Edge>>;
 
+/**
+ * @brief A map from edges to their weights
+ *
+ * @tparam Edge An edge_descriptor
+ * @tparam Length The edge weight type
+ */
 template <typename Edge, typename Length>
 using WeightMap = std::unordered_map<Edge, Length, boost::hash<Edge>>;
 
-template <typename Vertex> using DistanceMap = std::vector<Vertex>;
+/**
+ * @brief A vector for tracking distance of a vertex from the source.
+ *
+ * The vector must be indexable by the vertex_descriptor, thus its size should
+ * be equal to the number of vertices in the graph.
+ *
+ * @tparam Length The edge weight type.
+ */
+template <typename Length> using DistanceMap = std::vector<Length>;
 
 //===----------------------------------------------------------------------===//
 //                      Penalty algorithm classes
 //===----------------------------------------------------------------------===//
+
+/**
+ * @brief A functor to return the penalized weight of an edge, to avoid changing
+ * the original graph weights.
+ *
+ * @tparam PMap A Weight Property Map.
+ */
 template <typename PMap> class penalty_functor {
 public:
   using Edge = typename boost::property_traits<PMap>::key_type;
   using Length = typename boost::property_traits<PMap>::value_type;
 
+  /**
+   * @brief Construct a new penalty functor object.
+   *
+   * @tparam EdgeIterator An iterator of the graph edges.
+   * @param weight The weight property map.
+   */
   template <typename EdgeIterator>
   penalty_functor(PMap weight, EdgeIterator first, EdgeIterator last)
       : weight{weight}, penalties{} {
@@ -44,13 +80,36 @@ public:
     }
   }
 
+  /**
+   * @brief Copy constructor.
+   *
+   * @param other The penalty functor to copy from
+   */
   penalty_functor(const penalty_functor<PMap> &other)
       : weight{other.weight}, penalties{other.penalties} {}
 
+  /**
+   * @brief Returns the penalized weight of an edge.
+   *
+   * @param e The quey edge.
+   * @return The penalized weight for @p e.
+   */
   const Length &operator()(const Edge &e) const { return penalties.at(e); }
 
+  /**
+   * @brief Returns the penalized weight of an edge.
+   *
+   * @param e The quey edge.
+   * @return The penalized weight for @p e.
+   */
   Length &operator[](const Edge &e) { return penalties.at(e); }
 
+  /**
+   * @brief Returns the penalized weight of an edge.
+   *
+   * @param e The quey edge.
+   * @return The penalized weight for @p e.
+   */
   const Length &operator[](const Edge &e) const { return penalties.at(e); }
 
 private:
@@ -58,57 +117,27 @@ private:
   WeightMap<Edge, Length> penalties;
 };
 
-// template <typename PMap, typename Graph, typename GraphRef = const Graph &>
-// class reverse_penalty_functor {
-// public:
-//   using Edge = typename boost::property_traits<PMap>::key_type;
-//   using Length = typename boost::property_traits<PMap>::value_type;
-//   using RevGraph = boost::reverse_graph<Graph, Graph &>;
-//   using RevGraphRef = const RevGraph &;
-
-//   reverse_penalty_functor(const penalty_functor<PMap> &pf, const Graph &G,
-//                           const RevGraph &rev_G)
-//       : pf{pf}, G{G}, rev_G{rev_G} {}
-
-//   Length &operator()(const Edge &e) const {
-//     // Get edge in original graph
-//     auto e_G = get_underlying_edge(e);
-
-//     // Forward call to underlying penalty_functor
-//     return pf(e_G);
-//   }
-
-//   Length &operator[](const Edge &e) { // Get edge in original graph
-//     auto e_G = get_underlying_edge(e);
-
-//     // Forward call to underlying penalty_functor
-//     return pf[e_G];
-//   }
-
-//   const Length &operator[](const Edge &e) const {
-//     // Get edge in original graph
-//     auto e_G = get_underlying_edge(e);
-
-//     // Forward call to underlying penalty_functor
-//     return pf[e_G];
-//   }
-
-// private:
-//   Edge get_underlying_edge(const Edge &e) {
-//     using namespace boost;
-//     auto u = source(e, rev_G);
-//     auto v = target(e, rev_G);
-//     return edge(v, u, G).first;
-//   }
-
-//   const penalty_functor<PMap> &pf;
-//   GraphRef G;
-//   RevGraphRef rev_G;
-// };
 //===----------------------------------------------------------------------===//
 //                     Penalty algorithm support routines
 //===----------------------------------------------------------------------===//
 
+/**
+ * @brief Computes the shortest path between two vertices s and t, first from s
+ * to t and then from t to s. The distances of each node in the
+ * shortest paths are stored in distance_s and distance_t.
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *               property with tag boost::edge_weight_t.
+ * @tparam Vertex A vertex_descriptor
+ * @tparam Length The edge weight type.
+ * @param G The graph.
+ * @param s The source vertex.
+ * @param t The target vertex.
+ * @param distance_s A map from Vertex to its distance from @p s
+ * @param distance_t A map from Vertex to its distance from @p t
+ * @return A vector of the edges of the shortest path from s to t.
+ *         An empty optional if t is not reachable from s.
+ */
 template <
     typename Graph,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
@@ -145,6 +174,24 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
 
 } // namespace kspwlo_impl
 
+/**
+ * @brief Computes the Dijkstra shortest path from s to t using a
+ *        penalty_functor to gather edges weight instead of the Graph's weight
+ *        property map
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *               property with tag boost::edge_weight_t.
+ * @tparam PMap The graph's weight property map.
+ * @tparam Vertex A vertex_descriptor.
+ * @tparam Edge An edge_descriptor.
+ * @tparam Length The edge weight type.
+ * @param G The graph
+ * @param s The source vertex
+ * @param t The target vertex
+ * @param penalty A penalty_functor
+ * @return A vector of the edges of the shortest path from s to t.
+ *         An empty optional if t is not reachable from s.
+ */
 template <
     typename Graph, typename PMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
@@ -180,6 +227,47 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   return std::optional<std::vector<kspwlo::Edge>>{};
 }
 
+/**
+ * @brief Apply penalization step to the candidate path.
+ *
+ * @pre For each vertex @c v in @p candidate @p distance_s contains the shortest
+ *      path distance of @c v from @p s
+ * @pre For each vertex @c v in @p candidate @p distance_t contains the shortest
+ *      path distance of @c v from @p t
+ * @post For each edge @c e in @p candidate, if <tt>penalty_bounds[e] <
+ *       bound_limit</tt>, @c e is penalized in @p penalty according to the
+ *       following formula: <tt>w(e)_new = w(e) + @p p * w(e)</tt>
+ * @post For each edge @c e incoming to a vertex @c u in @p candidate, if
+ *       <tt>penalty_bounds[e] < bound_limit</tt>, @c e is penalized in @p
+ *       penalty according to the following formula:
+ *       <tt>w(e)_new = w(e) + w(e) * (0.1 + @p r * @p distance_t[u] / @p
+ *       distance_t[s])</tt>
+ * @post For each edge @c e outgoing from a vertex @c v in @p candidate, if
+ *       <tt>penalty_bounds[e] < bound_limit</tt>, @c e is penalized in @p
+ *       penalty according to the following formula:
+ *       <tt>w(e)_new = w(e) + w(e) * (0.1 + @p r * @p distance_s[v] / @p
+ *       distance_s[t])</tt>
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *               property with tag boost::edge_weight_t.
+ * @tparam DistanceMap A DistanceMap.
+ * @tparam PMap The graph's weight property map.
+ * @tparam Vertex A vertex_descriptor.
+ * @tparam Edge An edge_descriptor.
+ * @tparam Length The edge weight type.
+ * @param candidate The candidate path.
+ * @param G The graph.
+ * @param s The source vertex.
+ * @param t The target vertex.
+ * @param p The penalty factor for edges in the candidate path.
+ * @param r The penalty factor for edges incoming and outgoing to/from vertices
+ *          of the candidate path.
+ * @param penalty A penalty_functor.
+ * @param distance_s A DistanceMap from s.
+ * @param distance_t A DistanceMap from t.
+ * @param penalty_bounds A PenBoundsMap.
+ * @param bound_limit The maximum number of times an edge can be penalized.
+ */
 template <
     typename Graph, typename DistanceMap, typename PMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,

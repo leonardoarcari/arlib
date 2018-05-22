@@ -38,7 +38,7 @@ namespace boost {
  * @param k The number of alternative paths to compute.
  * @param theta The similarity threshold.
  *
- * @return A list of at maximum @p k alternative paths.
+ * @return A vector of at maximum @p k alternative paths.
  */
 template <typename PropertyGraph,
           typename Vertex =
