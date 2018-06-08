@@ -187,3 +187,58 @@ TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
   REQUIRE(distance_s == test_distance_s);
   REQUIRE(distance_t == test_distance_t);
 }
+
+TEST_CASE("Bidirectional dijkstra works with reverse penalty functor adaptor",
+          "[penalty]") {
+  using namespace boost;
+  using kspwlo::Vertex;
+
+  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  Vertex s = 0, t = 6;
+
+  // Make a local weight map to avoid modifying existing graph.
+  auto original_weight = get(edge_weight, G);
+  auto [edge_it, edge_last] = edges(G);
+  auto penalty =
+      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+
+  // Forward Dijkstra sp
+  auto sp_forward = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
+  REQUIRE(sp_forward);
+
+  // Bi-Dijkstra sp
+  auto sp_bi =
+      kspwlo_impl::bidirectional_dijkstra_shortest_path(G, s, t, penalty);
+  REQUIRE(sp_bi);
+
+  REQUIRE(*sp_forward == *sp_bi);
+}
+
+TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
+          "unidirectional dijkstra",
+          "[penalty]") {
+  using namespace boost;
+  using kspwlo::Vertex;
+
+  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+
+  Vertex s = 0, t = 6;
+  int k = 3;
+  double theta = 0.5;
+  auto p = 0.1;
+  auto r = 0.1;
+  auto bound_limit = 10;
+  auto max_nb_steps = 100000;
+
+  auto res_paths_uni =
+      penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
+  auto res_paths_bi =
+      penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps,
+                 kspwlo::shortest_path_algorithm::bidirectional_dijkstra);
+
+  REQUIRE(res_paths_uni.size() == res_paths_bi.size());
+
+  for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
+    REQUIRE(res_paths_uni[i].length == res_paths_bi[i].length);
+  }
+}

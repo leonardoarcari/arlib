@@ -112,3 +112,26 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
 }
+
+TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
+          "unidirectional dijkstra",
+          "[esx]") {
+  using namespace boost;
+  using kspwlo::Vertex;
+
+  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+
+  Vertex s = 0, t = 6;
+  int k = 3;
+  double theta = 0.5;
+
+  auto res_paths_uni = boost::esx(G, s, t, 3, 0.5);
+  auto res_paths_bi = boost::esx(
+      G, s, t, 3, 0.5, kspwlo::shortest_path_algorithm::bidirectional_dijkstra);
+
+  REQUIRE(res_paths_uni.size() == res_paths_bi.size());
+
+  for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
+    REQUIRE(res_paths_uni[i].length == res_paths_bi[i].length);
+  }
+}

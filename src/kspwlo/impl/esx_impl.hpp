@@ -8,6 +8,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+#include "kspwlo/bidirectional_dijkstra.hpp"
 #include "kspwlo/graph_types.hpp"
 #include "kspwlo/impl/kspwlo_impl.hpp"
 
@@ -168,6 +169,32 @@ private:
 //                          ESX algorithm routines
 //===----------------------------------------------------------------------===//
 
+template <
+    typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+constexpr std::function<std::optional<std::vector<kspwlo::Edge>>(
+    const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
+build_shortest_path_fn(kspwlo::shortest_path_algorithm algorithm, const Graph &,
+                       Vertex, Vertex, const AStarHeuristic &,
+                       DeletedEdgeMap &) {
+  switch (algorithm) {
+  case kspwlo::shortest_path_algorithm::astar:
+    return [](const auto &G, auto s, auto t, const auto &heuristic,
+              auto &deleted_edge_map) {
+      return astar_shortest_path(G, s, t, heuristic, deleted_edge_map);
+    };
+  case kspwlo::shortest_path_algorithm::bidirectional_dijkstra:
+    return [](const auto &G, auto s, auto t, const auto &heuristic,
+              auto &deleted_edge_map) {
+      return bidirectional_dijkstra_shortest_path(G, s, t, heuristic,
+                                                  deleted_edge_map);
+    };
+  default:
+    throw std::invalid_argument{
+        "Invalid algorithm. Only [dijkstra|bidirectional_dijkstra] allowed."};
+  }
+}
+
 /**
  * @brief Checks whether the path from @p s to @p t contains edge @p e or not.
  *
@@ -249,6 +276,45 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
   // In case t could not be found from astar_search and target_found is not
   // thrown, return empty optional
   return std::optional<std::vector<kspwlo::Edge>>{};
+}
+
+template <
+    typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Length =
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+std::optional<std::vector<kspwlo::Edge>>
+bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
+                                     const AStarHeuristic &,
+                                     DeletedEdgeMap &deleted_edge_map) {
+  using namespace boost;
+
+  // Get a graph with deleted edges filtered out
+  auto filter = edge_deleted_filter{deleted_edge_map};
+  auto filtered_G = filtered_graph(G, filter);
+
+  auto index = get(vertex_index, filtered_G);
+  auto predecessor_vec = std::vector<Vertex>(num_vertices(G), s);
+  auto predecessor = make_iterator_property_map(predecessor_vec.begin(), index);
+  auto distance_vec = std::vector<Length>(num_vertices(G));
+  auto distance = make_iterator_property_map(distance_vec.begin(), index);
+  auto weight = get(edge_weight, filtered_G);
+
+  auto rev_G = make_reverse_graph(filtered_G);
+  auto rev_weight = get(edge_weight, rev_G);
+  auto rev_index = get(vertex_index, rev_G);
+
+  try {
+    bidirectional_dijkstra(filtered_G, s, t, predecessor, distance, weight,
+                           rev_G, rev_weight, rev_index);
+  } catch (kspwlo_impl::target_not_found &) {
+    // In case t could not be found return empty optional
+    return std::optional<std::vector<kspwlo::Edge>>{};
+  }
+
+  auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+  return std::make_optional(edge_list);
 }
 
 /**
