@@ -28,6 +28,12 @@ struct Path {
   Graph graph;
   length_type length;
 };
+
+enum class shortest_path_algorithm {
+  dijkstra = 1,
+  astar,
+  bidirectional_dijkstra
+};
 } // namespace kspwlo
 
 #endif

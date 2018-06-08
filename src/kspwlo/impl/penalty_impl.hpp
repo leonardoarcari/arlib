@@ -5,11 +5,14 @@
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/graph/reverse_graph.hpp>
 #include <boost/property_map/function_property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 
+#include "kspwlo/bidirectional_dijkstra.hpp"
 #include "kspwlo/graph_types.hpp"
 
+#include <functional>
 #include <iostream>
 #include <queue>
 #include <unordered_map>
@@ -117,13 +120,79 @@ private:
   WeightMap<Edge, Length> penalties;
 };
 
+template <typename PMap, typename Graph> class reverse_penalty_functor {
+public:
+  using Edge = typename boost::graph_traits<
+      boost::reverse_graph<Graph>>::edge_descriptor;
+  using Length = typename boost::property_traits<PMap>::value_type;
+
+  reverse_penalty_functor(penalty_functor<PMap> &penalty, const Graph &G,
+                          const boost::reverse_graph<Graph> &rev_G)
+      : inner_pf{penalty}, G{G}, rev_G{rev_G} {}
+
+  const Length &operator()(const Edge &e) const {
+    auto forward_edge = get_forward_edge(e);
+
+    return inner_pf(forward_edge);
+  }
+
+  Length &operator[](const Edge &e) {
+    auto forward_edge = get_forward_edge(e);
+
+    return inner_pf[forward_edge];
+  }
+
+  const Length &operator[](const Edge &e) const {
+    auto forward_edge = get_forward_edge(e);
+
+    return inner_pf[forward_edge];
+  }
+
+private:
+  auto get_forward_edge(const Edge &e) {
+    using namespace boost;
+    auto u = source(e, rev_G);
+    auto v = target(e, rev_G);
+
+    auto [forward_edge, is_valid] = edge(v, u, G);
+    assert(is_valid);
+    return forward_edge;
+  }
+
+  penalty_functor<PMap> &inner_pf;
+  const Graph &G;
+  const boost::reverse_graph<Graph> &rev_G;
+};
+
 //===----------------------------------------------------------------------===//
 //                     Penalty algorithm support routines
 //===----------------------------------------------------------------------===//
 
+template <
+    typename Graph, typename PMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+constexpr std::function<std::optional<std::vector<kspwlo::Edge>>(
+    const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
+build_shortest_path_fn(kspwlo::shortest_path_algorithm algorithm, const Graph &,
+                       const PMap &) {
+  switch (algorithm) {
+  case kspwlo::shortest_path_algorithm::dijkstra:
+    return [](const auto &G, auto s, auto t, auto &penalty) {
+      return dijkstra_shortest_path(G, s, t, penalty);
+    };
+  case kspwlo::shortest_path_algorithm::bidirectional_dijkstra:
+    return [](const auto &G, auto s, auto t, auto &penalty) {
+      return bidirectional_dijkstra_shortest_path(G, s, t, penalty);
+    };
+  default:
+    throw std::invalid_argument{
+        "Invalid algorithm. Only [dijkstra|bidirectional_dijkstra] allowed."};
+  }
+}
+
 /**
- * @brief Computes the shortest path between two vertices s and t, first from s
- * to t and then from t to s. The distances of each node in the
+ * @brief Computes the shortest path between two vertices s and t, first
+ * from s to t and then from t to s. The distances of each node in the
  * shortest paths are stored in distance_s and distance_t.
  *
  * @tparam Graph A Boost::PropertyGraph having at least one edge
@@ -207,7 +276,6 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, G);
 
-  // auto weight_init = get(edge_weight, G);
   auto weight = make_function_property_map<Edge>(penalty);
   try {
     dijkstra_shortest_paths(
@@ -225,6 +293,41 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   // In case t could not be found from astar_search and target_found is not
   // thrown, return empty optional
   return std::optional<std::vector<kspwlo::Edge>>{};
+}
+
+template <
+    typename Graph, typename PMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+    typename Length =
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+std::optional<std::vector<kspwlo::Edge>>
+bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
+                                     penalty_functor<PMap> &penalty) {
+  using namespace boost;
+
+  auto index = get(vertex_index, G);
+  auto predecessor_vec = std::vector<Vertex>(num_vertices(G), s);
+  auto predecessor = make_iterator_property_map(predecessor_vec.begin(), index);
+  auto distance_vec = std::vector<Length>(num_vertices(G));
+  auto distance = make_iterator_property_map(distance_vec.begin(), index);
+  auto weight = make_function_property_map<Edge>(penalty);
+
+  auto rev_G = make_reverse_graph(G);
+  auto rev_weight = reverse_penalty_functor(penalty, G, rev_G);
+  auto rev_index = get(vertex_index, rev_G);
+
+  try {
+    bidirectional_dijkstra(G, s, t, predecessor, distance, weight, rev_G,
+                           rev_weight, rev_index);
+  } catch (kspwlo_impl::target_not_found &) {
+    // In case t could not be found return empty optional
+    return std::optional<std::vector<kspwlo::Edge>>{};
+  }
+
+  auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+  return std::make_optional(edge_list);
 }
 
 /**

@@ -40,8 +40,10 @@ namespace boost {
 template <typename PropertyGraph,
           typename Vertex =
               typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<kspwlo::Path<PropertyGraph>> esx(const PropertyGraph &G, Vertex s,
-                                             Vertex t, int k, double theta) {
+std::vector<kspwlo::Path<PropertyGraph>>
+esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
+    kspwlo::shortest_path_algorithm algorithm =
+        kspwlo::shortest_path_algorithm::astar) {
   // P_LO set of k paths
   using Length = typename boost::property_traits<typename boost::property_map<
       PropertyGraph, boost::edge_weight_t>::type>::value_type;
@@ -75,6 +77,10 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(const PropertyGraph &G, Vertex s,
 
   // Compute lower bounds for AStar
   auto heuristic = kspwlo_impl::distance_heuristic<PropertyGraph, Length>(G, t);
+
+  // Make shortest path algorithm function
+  auto compute_shortest_path = kspwlo_impl::build_shortest_path_fn(
+      algorithm, G, s, t, heuristic, deleted_edges);
 
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
   kspwlo_impl::init_edge_priorities(sp, edge_priorities, 0, G, heuristic,
@@ -118,10 +124,9 @@ std::vector<kspwlo::Path<PropertyGraph>> esx(const PropertyGraph &G, Vertex s,
       }
 
       // Compute p_tmp shortest path
-      auto p_tmp =
-          kspwlo_impl::astar_shortest_path(G, s, t, heuristic, deleted_edges);
+      auto p_tmp = compute_shortest_path(G, s, t, heuristic, deleted_edges);
 
-      // If astar shortest path did not find a path
+      // If shortest path did not find a path
       if (!p_tmp) {
         auto old_size = deleted_edges.size();
         deleted_edges.erase(e_tmp); // Reinsert e_tmp into G

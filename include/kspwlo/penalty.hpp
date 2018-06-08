@@ -50,7 +50,9 @@ template <typename Graph, typename Vertex = typename boost::graph_traits<
                               Graph>::vertex_descriptor>
 std::vector<kspwlo::Path<Graph>>
 penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
-           double r, int max_nb_updates, int max_nb_steps) {
+           double r, int max_nb_updates, int max_nb_steps,
+           kspwlo::shortest_path_algorithm algorithm =
+               kspwlo::shortest_path_algorithm::dijkstra) {
   // P_LO set of k paths
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   auto resPaths = std::vector<kspwlo::Path<Graph>>{};
@@ -60,6 +62,10 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
   auto [edge_it, edge_last] = edges(G);
   auto penalty =
       kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+
+  // Make shortest path algorithm function
+  auto compute_shortest_path =
+      kspwlo_impl::build_shortest_path_fn(algorithm, G, original_weight);
 
   // Compute shortest path from s to t
   auto distance_s = std::vector<kspwlo::Length>(num_vertices(G));
@@ -88,7 +94,7 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
   int step = 0;
   using Index = std::size_t;
   while (resPaths.size() < static_cast<Index>(k) && step < max_nb_steps) {
-    auto p_tmp = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
+    auto p_tmp = compute_shortest_path(G, s, t, penalty);
 
     // Penalize p_tmp edges
     kspwlo_impl::penalize_candidate_path(*p_tmp, G, s, t, p, r, penalty,
