@@ -28,8 +28,10 @@ using PathMap =
 template <typename PredecessorMap, typename Vertex>
 void fill_predecessor(PredecessorMap predecessor,
                       const std::deque<Vertex> &final_path) {
-  for (std::size_t i = 0; i < final_path.size() - 1; ++i) {
-    predecessor[final_path[i + 1]] = final_path[i];
+  if (!final_path.empty()) {
+    for (std::size_t i = 0; i < final_path.size() - 1; ++i) {
+      predecessor[final_path[i + 1]] = final_path[i];
+    }
   }
 }
 
@@ -160,9 +162,13 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
   }
 
   if (fringe.empty() || fringe_b.empty()) {
-    // Clean exit
-    fill_predecessor(predecessor, final_path);
-    return;
+    if (final_path.empty()) {
+      throw kspwlo_impl::target_not_found{"No path found!"};
+    } else {
+      // Clean exit
+      fill_predecessor(predecessor, final_path);
+      return;
+    }
   } else {
     // Otherwise
     throw kspwlo_impl::target_not_found{"No path found!"};
