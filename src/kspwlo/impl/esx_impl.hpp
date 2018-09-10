@@ -269,7 +269,7 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                  predecessor_map(make_iterator_property_map(
                                      std::begin(predecessor), vertex_id, s))
                      .visitor(astar_target_visitor{t}));
-  } catch (target_found tf) {
+  } catch (target_found &tf) {
     auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
     return std::make_optional(edge_list);
   }
@@ -382,23 +382,7 @@ int compute_priority(const Graph &G, const Edge &e,
 
   for (auto s_i : sources) {
     for (auto t_i : targets) {
-      // // Compute the shortest path from s_i to t_i
-      // auto predecessor = std::vector<Vertex>(num_vertices(G), s_i);
-      // auto vertex_id = get(vertex_index, filtered_G);
-
-      // try {
-      //   astar_search(
-      //       filtered_G, s_i, heuristic,
-      //       predecessor_map(make_iterator_property_map(std::begin(predecessor),
-      //                                                  vertex_id, s_i))
-      //           .visitor(astar_target_visitor{t_i}));
-      // } catch (target_found tf) {
-      //   if (shortest_path_contains_edge(s_i, t_i, e, filtered_G,
-      //   predecessor)) {
-      //     ++priority;
-      //   }
-      // }
-
+      // Compute the shortest path from s_i to t_i
       auto index = get(vertex_index, filtered_G);
       auto predecessor_vec = std::vector<Vertex>(num_vertices(G), s_i);
       auto predecessor =
