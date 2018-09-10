@@ -269,7 +269,7 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                  predecessor_map(make_iterator_property_map(
                                      std::begin(predecessor), vertex_id, s))
                      .visitor(astar_target_visitor{t}));
-  } catch (target_found tf) {
+  } catch (target_found &tf) {
     auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
     return std::make_optional(edge_list);
   }
@@ -340,7 +340,10 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
  * @return The priority of @p e.
  */
 template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+          typename Length =
+              typename boost::property_traits<typename boost::property_map<
+                  Graph, boost::edge_weight_t>::type>::value_type>
 int compute_priority(const Graph &G, const Edge &e,
                      const AStarHeuristic &heuristic,
                      const DeletedEdgeMap &deleted_edge_map) {
@@ -380,19 +383,27 @@ int compute_priority(const Graph &G, const Edge &e,
   for (auto s_i : sources) {
     for (auto t_i : targets) {
       // Compute the shortest path from s_i to t_i
-      auto predecessor = std::vector<Vertex>(num_vertices(G), s_i);
-      auto vertex_id = get(vertex_index, filtered_G);
+      auto index = get(vertex_index, filtered_G);
+      auto predecessor_vec = std::vector<Vertex>(num_vertices(G), s_i);
+      auto predecessor =
+          make_iterator_property_map(predecessor_vec.begin(), index);
+      auto distance_vec = std::vector<Length>(num_vertices(G));
+      auto distance = make_iterator_property_map(distance_vec.begin(), index);
+      auto weight = get(edge_weight, filtered_G);
+
+      auto rev_G = make_reverse_graph(filtered_G);
+      auto rev_weight = get(edge_weight, rev_G);
+      auto rev_index = get(vertex_index, rev_G);
 
       try {
-        astar_search(
-            filtered_G, s_i, heuristic,
-            predecessor_map(make_iterator_property_map(std::begin(predecessor),
-                                                       vertex_id, s_i))
-                .visitor(astar_target_visitor{t_i}));
-      } catch (target_found tf) {
+        bidirectional_dijkstra(filtered_G, s_i, t_i, predecessor, distance,
+                               weight, rev_G, rev_weight, rev_index);
         if (shortest_path_contains_edge(s_i, t_i, e, filtered_G, predecessor)) {
           ++priority;
         }
+      } catch (kspwlo_impl::target_not_found &ex) {
+        // In case t could not be found do nothing
+        std::cout << "Caught exception: " << ex.what() << "\n";
       }
     }
   }
