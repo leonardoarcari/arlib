@@ -75,9 +75,7 @@ public:
    * @tparam EdgeIterator An iterator of the graph edges.
    * @param weight The weight property map.
    */
-  template <typename EdgeIterator>
-  penalty_functor(PMap weight, EdgeIterator first, EdgeIterator last)
-      : weight{weight}, penalties{} {}
+  penalty_functor(PMap weight) : weight{weight}, penalties{} {}
 
   /**
    * @brief Copy constructor.

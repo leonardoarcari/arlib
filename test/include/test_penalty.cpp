@@ -62,9 +62,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
   // Weight map
   auto original_weight = get(edge_weight, G);
-  auto [edge_it, edge_last] = edges(G);
   auto penalty =
-      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+      kspwlo_impl::penalty_functor{original_weight};
 
   // Penalty bounds
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
@@ -198,9 +197,7 @@ TEST_CASE("Bidirectional dijkstra works with reverse penalty functor adaptor",
 
   // Make a local weight map to avoid modifying existing graph.
   auto original_weight = get(edge_weight, G);
-  auto [edge_it, edge_last] = edges(G);
-  auto penalty =
-      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+  auto penalty = kspwlo_impl::penalty_functor{original_weight};
 
   // Forward Dijkstra sp
   auto sp_forward = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
