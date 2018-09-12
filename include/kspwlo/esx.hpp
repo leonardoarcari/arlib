@@ -51,7 +51,7 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
 
   // Compute shortest path from s to t
   auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
-  auto &sp = sp_path.graph;
+  auto &sp = sp_path.graph();
 
   // P_LO <-- {shortest path p_0(s, t)};
   resPaths.push_back(sp_path);
@@ -128,10 +128,7 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
 
       // If shortest path did not find a path
       if (!p_tmp) {
-        auto old_size = deleted_edges.size();
-        deleted_edges.erase(e_tmp); // Reinsert e_tmp into G
-        assert(deleted_edges.size() + 1 == old_size);
-        dnr_edges.insert(e_tmp); // Mark e_tmp as do_not_remove
+        kspwlo_impl::move_to_dnr(e_tmp, deleted_edges, dnr_edges);
         continue;
       }
 
