@@ -62,8 +62,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
   // Weight map
   auto original_weight = get(edge_weight, G);
-  auto penalty =
-      kspwlo_impl::penalty_functor{original_weight};
+  auto penalty = kspwlo_impl::penalty_functor{original_weight};
 
   // Penalty bounds
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
