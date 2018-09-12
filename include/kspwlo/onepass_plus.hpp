@@ -76,7 +76,7 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
 
   // Compute shortest path from s to t
   auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
-  auto &sp = sp_path.graph;
+  auto &sp = sp_path.graph();
 
   // P_LO <-- {shortest path p_0(s, t)};
   resPaths.push_back(sp_path);
@@ -128,8 +128,7 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
 
       if (static_cast<int>(paths_count) == k) { // we found k paths. End.
         // Add computed alternatives to resPaths
-        using index = decltype(resPathsEdges.size());
-        for (index i = 0; i < resPathsEdges.size(); ++i) {
+        for (std::size_t i = 0; i < resPathsEdges.size(); ++i) {
           resPaths.emplace_back(build_graph_from_edges(resPathsEdges[i], G),
                                 resPathsLengths[i]);
         }

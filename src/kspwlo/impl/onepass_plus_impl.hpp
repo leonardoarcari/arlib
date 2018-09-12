@@ -438,7 +438,7 @@ bool update_label_similarity(Label &label, const Graph &G,
 
           // Check Lemma 1. The similarity between the candidate path and
           // all the other k-shortest-paths must be less then theta
-          if (label.get_similarity_with(index) / resPaths[step].length >
+          if (label.get_similarity_with(index) / resPaths[step].length() >
               theta) {
             below_sim_threshold = false;
             break;
@@ -472,7 +472,7 @@ bool is_below_sim_threshold(const Edge &c_edge,
     auto &res_paths_with_c_edge = search->second;
     for (auto index : res_paths_with_c_edge) {
       similarity_map[index] += weight[c_edge];
-      auto similarity = similarity_map[index] / resPaths[index].length;
+      auto similarity = similarity_map[index] / resPaths[index].length();
       if (similarity > theta) {
         return false;
       }

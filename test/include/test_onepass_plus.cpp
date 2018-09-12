@@ -71,7 +71,8 @@ TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
       predecessor_map(make_iterator_property_map(std::begin(predecessor),
                                                  vertex_id, vertex_id[0])));
 
-  auto path = kspwlo_impl::build_path_from_dijkstra(G, predecessor, 0, 6).graph;
+  auto path =
+      kspwlo_impl::build_path_from_dijkstra(G, predecessor, 0, 6).graph();
 
   REQUIRE(num_edges(path) == 3);
 
@@ -105,7 +106,7 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
   using boost::target;
   std::cout << "boost::graph result:\n";
   for (auto &resPath : res) {
-    auto &p = resPath.graph;
+    auto &p = resPath.graph();
     for (auto it = edges(p).first; it != edges(p).second; ++it) {
       std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
     }
@@ -130,7 +131,7 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
   // For each k-spwlo check if its edges are in a solution of the regression
   // test
   for (auto &resPath : res) {
-    auto &p = resPath.graph;
+    auto &p = resPath.graph();
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
 }

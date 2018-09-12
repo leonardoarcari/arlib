@@ -109,7 +109,7 @@ Graph build_AG(const std::vector<kspwlo::Path<Graph>> &paths, const Graph &g) {
   auto nodes = std::unordered_set<Vertex>{};
 
   for (auto &path : paths) {
-    auto &path_g = path.graph;
+    auto &path_g = path.graph();
     for (auto it = edges(path_g).first; it != edges(path_g).second; ++it) {
       auto u = source(*it, g);
       auto v = target(*it, g);

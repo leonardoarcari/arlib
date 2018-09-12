@@ -38,7 +38,7 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
 
   std::cout << "Penalty boost::Graph result:\n";
   for (auto &resPath : res_paths) {
-    auto &p = resPath.graph;
+    auto &p = resPath.graph();
     for (auto it = edges(p).first; it != edges(p).second; ++it) {
       std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
     }
@@ -239,6 +239,6 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 
   for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
-    REQUIRE(res_paths_uni[i].length == res_paths_bi[i].length);
+    REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
   }
 }

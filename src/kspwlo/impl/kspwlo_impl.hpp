@@ -108,10 +108,10 @@ Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
 template <typename Graph>
 double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
                           const kspwlo::Path<Graph> &alt_path) {
-  double shared_length =
-      static_cast<double>(compute_length_from_edges(candidate, alt_path.graph));
+  double shared_length = static_cast<double>(
+      compute_length_from_edges(candidate, alt_path.graph()));
 
-  return shared_length / alt_path.length;
+  return shared_length / alt_path.length();
 }
 
 template <
