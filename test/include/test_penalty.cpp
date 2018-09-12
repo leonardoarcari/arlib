@@ -38,7 +38,7 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
 
   std::cout << "Penalty boost::Graph result:\n";
   for (auto &resPath : res_paths) {
-    auto &p = resPath.graph;
+    auto &p = resPath.graph();
     for (auto it = edges(p).first; it != edges(p).second; ++it) {
       std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
     }
@@ -62,9 +62,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
   // Weight map
   auto original_weight = get(edge_weight, G);
-  auto [edge_it, edge_last] = edges(G);
-  auto penalty =
-      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+  auto penalty = kspwlo_impl::penalty_functor{original_weight};
 
   // Penalty bounds
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
@@ -198,9 +196,7 @@ TEST_CASE("Bidirectional dijkstra works with reverse penalty functor adaptor",
 
   // Make a local weight map to avoid modifying existing graph.
   auto original_weight = get(edge_weight, G);
-  auto [edge_it, edge_last] = edges(G);
-  auto penalty =
-      kspwlo_impl::penalty_functor{original_weight, edge_it, edge_last};
+  auto penalty = kspwlo_impl::penalty_functor{original_weight};
 
   // Forward Dijkstra sp
   auto sp_forward = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
@@ -239,6 +235,6 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 
   for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
-    REQUIRE(res_paths_uni[i].length == res_paths_bi[i].length);
+    REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
   }
 }

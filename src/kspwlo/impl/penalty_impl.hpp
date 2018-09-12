@@ -75,13 +75,7 @@ public:
    * @tparam EdgeIterator An iterator of the graph edges.
    * @param weight The weight property map.
    */
-  template <typename EdgeIterator>
-  penalty_functor(PMap weight, EdgeIterator first, EdgeIterator last)
-      : weight{weight}, penalties{} {
-    for (auto it = first; it != last; ++it) {
-      penalties.insert({*it, weight[*it]});
-    }
-  }
+  penalty_functor(PMap weight) : weight{weight}, penalties{} {}
 
   /**
    * @brief Copy constructor.
@@ -94,30 +88,40 @@ public:
   /**
    * @brief Returns the penalized weight of an edge.
    *
-   * @param e The quey edge.
+   * @param e The query edge.
    * @return The penalized weight for @p e.
    */
-  const Length &operator()(const Edge &e) const { return penalties.at(e); }
+  const Length &operator()(const Edge &e) const { return get_or_insert(e); }
 
   /**
    * @brief Returns the penalized weight of an edge.
    *
-   * @param e The quey edge.
+   * @param e The query edge.
    * @return The penalized weight for @p e.
    */
-  Length &operator[](const Edge &e) { return penalties.at(e); }
+  Length &operator[](const Edge &e) { return get_or_insert(e); }
 
   /**
    * @brief Returns the penalized weight of an edge.
    *
-   * @param e The quey edge.
+   * @param e The query edge.
    * @return The penalized weight for @p e.
    */
-  const Length &operator[](const Edge &e) const { return penalties.at(e); }
+  const Length &operator[](const Edge &e) const { return get_or_insert(e); }
 
 private:
   PMap weight;
-  WeightMap<Edge, Length> penalties;
+  mutable WeightMap<Edge, Length> penalties;
+
+  Length &get_or_insert(const Edge &e) const {
+    if (auto search = penalties.find(e); search != penalties.end()) {
+      return search->second;
+    } else {
+      auto [it, ok] = penalties.insert({e, weight[e]});
+      assert(ok && "[kspwlo::penalty_functor] Could not insert edge weight");
+      return it->second;
+    }
+  }
 };
 
 template <typename PMap, typename Graph> class reverse_penalty_functor {
@@ -129,6 +133,9 @@ public:
   reverse_penalty_functor(penalty_functor<PMap> &penalty, const Graph &G,
                           const boost::reverse_graph<Graph> &rev_G)
       : inner_pf{penalty}, G{G}, rev_G{rev_G} {}
+
+  reverse_penalty_functor(reverse_penalty_functor const &other)
+      : inner_pf{other.inner_pf}, G{other.G}, rev_G{other.rev_G} {}
 
   const Length &operator()(const Edge &e) const {
     auto forward_edge = get_forward_edge(e);
@@ -149,7 +156,7 @@ public:
   }
 
 private:
-  auto get_forward_edge(const Edge &e) {
+  auto get_forward_edge(const Edge &e) const {
     using namespace boost;
     auto u = source(e, rev_G);
     auto v = target(e, rev_G);
@@ -315,7 +322,10 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   auto weight = make_function_property_map<Edge>(penalty);
 
   auto rev_G = make_reverse_graph(G);
-  auto rev_weight = reverse_penalty_functor(penalty, G, rev_G);
+  auto rev_weight_ = reverse_penalty_functor(penalty, G, rev_G);
+  using RevEdge = typename boost::graph_traits<
+      boost::reverse_graph<Graph>>::edge_descriptor;
+  auto rev_weight = make_function_property_map<RevEdge>(rev_weight_);
   auto rev_index = get(vertex_index, rev_G);
 
   try {

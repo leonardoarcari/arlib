@@ -13,6 +13,7 @@
 #include "kspwlo/impl/kspwlo_impl.hpp"
 
 #include <limits>
+#include <unordered_set>
 #include <utility>
 
 /**
@@ -528,6 +529,16 @@ bool check_candidate_validity(
     }
   }
   return candidate_is_valid;
+}
+
+template <typename Edge>
+void move_to_dnr(Edge e,
+                 std::unordered_set<Edge, boost::hash<Edge>> &deleted_edges,
+                 std::unordered_set<Edge, boost::hash<Edge>> &dnr_edges) {
+  auto old_size = deleted_edges.size();
+  deleted_edges.erase(e); // Reinsert e_tmp into G
+  assert(deleted_edges.size() + 1 == old_size);
+  dnr_edges.insert(e); // Mark e_tmp as do_not_remove
 }
 } // namespace kspwlo_impl
 #endif

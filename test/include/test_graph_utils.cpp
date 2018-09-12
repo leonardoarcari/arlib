@@ -158,7 +158,7 @@ TEST_CASE("Building an AG from k alternative paths doesn't lose info",
   auto test_weights = std::vector<kspwlo::Length>();
 
   for (auto &path : res_paths) {
-    auto &path_g = path.graph;
+    auto &path_g = path.graph();
     for (auto it = edges(path_g).first; it != edges(path_g).second; ++it) {
       auto u = source(*it, G);
       auto v = target(*it, G);

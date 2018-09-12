@@ -30,7 +30,7 @@ TEST_CASE("Edge priority computation", "[esx]") {
 
   // Compute shortest path from s to t
   auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
-  auto &sp = sp_path.graph;
+  auto &sp = sp_path.graph();
 
   // Compute lower bounds for AStar
   auto heuristic =
@@ -83,7 +83,7 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   using boost::target;
   std::cout << "Esx boost::graph result:\n";
   for (auto &resPath : res) {
-    auto &p = resPath.graph;
+    auto &p = resPath.graph();
     for (auto it = edges(p).first; it != edges(p).second; ++it) {
       std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
     }
@@ -108,7 +108,7 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   // For each k-spwlo check if its edges are in a solution of the regression
   // test
   for (auto &resPath : res) {
-    auto &p = resPath.graph;
+    auto &p = resPath.graph();
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
 }
@@ -132,6 +132,6 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 
   for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
-    REQUIRE(res_paths_uni[i].length == res_paths_bi[i].length);
+    REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
   }
 }

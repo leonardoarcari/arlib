@@ -19,14 +19,23 @@ template <typename Graph,
           typename length_type =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
-struct Path {
-  Path(const Graph &g, length_type length) : graph{g}, length{length} {};
-  Path(Graph &&g, length_type length) : graph{}, length{length} {
+class Path {
+public:
+  Path(const Graph &g, length_type length) : graph_{g}, length_{length} {};
+  Path(Graph &&g, length_type length) : graph_{}, length_{length} {
     // Swap data from graph to move from (g) to this->graph
-    this->graph.swap(g);
+    this->graph_.swap(g);
   }
-  Graph graph;
-  length_type length;
+
+  Graph const &graph() const { return graph_; }
+  Graph &graph() { return graph_; }
+
+  length_type length() const { return length_; }
+
+private:
+  Graph graph_ = {};
+  length_type length_ = {};
+  double similarity_with_sp_ = {};
 };
 
 enum class shortest_path_algorithm {
