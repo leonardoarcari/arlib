@@ -83,16 +83,14 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
       algorithm, G, s, t, heuristic, deleted_edges);
 
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
-  kspwlo_impl::init_edge_priorities(sp, edge_priorities, 0, G, heuristic,
-                                    deleted_edges);
+  kspwlo_impl::init_edge_priorities(sp, edge_priorities, 0, G, deleted_edges);
 
   auto overlaps = std::vector<double>(k, 0.0);
-  using PathIndex = typename decltype(overlaps)::size_type;
   overlaps[0] = 1.0; // Set p_c overlap with sp (itself) to 1
 
   bool still_feasible = true;
-  while (resPaths.size() < static_cast<PathIndex>(k) && still_feasible) {
-    PathIndex p_max_idx = 0;
+  while (resPaths.size() < static_cast<std::size_t>(k) && still_feasible) {
+    std::ptrdiff_t p_max_idx = 0;
     double overlap_ratio = 1.0;
 
     while (overlap_ratio > theta) {
@@ -155,13 +153,13 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
             kspwlo_impl::compute_length_from_edges(*p_tmp, G));
 
         // Set p_c overlap with itself to 1
-        PathIndex p_c_idx = resPaths.size() - 1;
+        std::ptrdiff_t p_c_idx = resPaths.size() - 1;
         overlaps[p_c_idx] = 1.0;
 
         // Initialize max-heap H_i with the priority of each edge of new
         // alternative path
         kspwlo_impl::init_edge_priorities(*p_tmp, edge_priorities, p_c_idx, G,
-                                          heuristic, deleted_edges);
+                                          deleted_edges);
         break; // From inner while loop
       }
     }

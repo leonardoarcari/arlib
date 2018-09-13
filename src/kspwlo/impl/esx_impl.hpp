@@ -340,13 +340,12 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
  * @param deleted_edge_map The set of edges to filter from @p G
  * @return The priority of @p e.
  */
-template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+template <typename Graph, typename DeletedEdgeMap,
           typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
           typename Length =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
 int compute_priority(const Graph &G, const Edge &e,
-                     const AStarHeuristic &heuristic,
                      const DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
@@ -435,13 +434,11 @@ int compute_priority(const Graph &G, const Edge &e,
  * @param heuristic An A* heuristic to use in performing shortest paths search.
  * @param deleted_edges The set of edges to filter from @p G
  */
-template <typename Graph, typename PrioritiesVector, typename AStarHeuristic,
-          typename EdgeMap,
+template <typename Graph, typename PrioritiesVector, typename EdgeMap,
           typename Index = typename PrioritiesVector::size_type>
 void init_edge_priorities(const Graph &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
-                          const Graph &G, const AStarHeuristic &heuristic,
-                          const EdgeMap &deleted_edges) {
+                          const Graph &G, const EdgeMap &deleted_edges) {
   using namespace boost;
   for (auto it = edges(alternative).first; it != edges(alternative).second;
        ++it) {
@@ -450,8 +447,7 @@ void init_edge_priorities(const Graph &alternative,
     auto v = target(*it, alternative);
     auto edge_in_G = edge(u, v, G);
     assert(edge_in_G.second); // (u, v) must exist in G
-    auto prio_e_i =
-        compute_priority(G, edge_in_G.first, heuristic, deleted_edges);
+    auto prio_e_i = compute_priority(G, edge_in_G.first, deleted_edges);
     edge_priorities[alt_index].push(std::make_pair(edge_in_G.first, prio_e_i));
   }
 }
@@ -479,16 +475,14 @@ void init_edge_priorities(const Graph &alternative,
  * @param heuristic An A* heuristic to use in performing shortest paths search.
  * @param deleted_edges The set of edges to filter from @p G
  */
-template <typename PrioritiesVector, typename Graph, typename AStarHeuristic,
-          typename EdgeMap,
+template <typename PrioritiesVector, typename Graph, typename EdgeMap,
           typename Index = typename PrioritiesVector::size_type>
 void init_edge_priorities(const std::vector<kspwlo::Edge> &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
-                          const Graph &G, const AStarHeuristic &heuristic,
-                          const EdgeMap &deleted_edges) {
+                          const Graph &G, const EdgeMap &deleted_edges) {
   for (const auto &[u, v] : alternative) {
     auto edge_in_G = edge(u, v, G).first;
-    auto prio_e_i = compute_priority(G, edge_in_G, heuristic, deleted_edges);
+    auto prio_e_i = compute_priority(G, edge_in_G, deleted_edges);
     edge_priorities[alt_index].push(std::make_pair(edge_in_G, prio_e_i));
   }
 }
