@@ -44,21 +44,21 @@ TEST_CASE("Edge priority computation", "[esx]") {
   REQUIRE(edge(0, 3, sp).second);
   auto s_n3 = edge(0, 3, G).first;
 
-  int prio_s_n3 = compute_priority(G, s_n3, heuristic, deleted_edges);
+  int prio_s_n3 = compute_priority(G, s_n3, deleted_edges);
   REQUIRE(prio_s_n3 == 0);
 
   // Check that (3, 5) was computed in shortest path
   REQUIRE(edge(3, 5, sp).second);
   auto n3_n5 = edge(3, 5, G).first;
 
-  int prio_n3_n5 = compute_priority(G, n3_n5, heuristic, deleted_edges);
+  int prio_n3_n5 = compute_priority(G, n3_n5, deleted_edges);
   REQUIRE(prio_n3_n5 == 3);
 
   // Check that (5, 6) was computed in shortest path
   REQUIRE(edge(5, 6, sp).second);
   auto n5_t = edge(5, 6, G).first;
 
-  int prio_n5_t = compute_priority(G, n5_t, heuristic, deleted_edges);
+  int prio_n5_t = compute_priority(G, n5_t, deleted_edges);
   REQUIRE(prio_n5_t == 0);
 }
 
