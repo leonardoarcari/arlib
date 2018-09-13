@@ -89,6 +89,29 @@ Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
   return length;
 }
 
+template <typename Graph,
+          typename Length =
+              typename boost::property_traits<typename boost::property_map<
+                  Graph, boost::edge_weight_t>::type>::value_type>
+Length compute_length_from_edges(const Graph &candidate, const Graph &G) {
+  using namespace boost;
+  Length length = 0;
+  auto weight = get(edge_weight, G);
+
+  for (auto [it, end] = edges(candidate); it != end; ++it) {
+    auto u = source(*it, candidate);
+    auto v = target(*it, candidate);
+    auto egde_in_G = edge(u, v, G);
+    bool edge_is_shared = egde_in_G.second;
+
+    if (edge_is_shared) {
+      length += weight[egde_in_G.first];
+    }
+  }
+
+  return length;
+}
+
 /**
  * @brief Evaluates the similarity of a candidate path with respect to some
  * alterative path.
@@ -110,6 +133,15 @@ double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
                           const kspwlo::Path<Graph> &alt_path) {
   double shared_length = static_cast<double>(
       compute_length_from_edges(candidate, alt_path.graph()));
+
+  return shared_length / alt_path.length();
+}
+
+template <typename Graph>
+double compute_similarity(const kspwlo::Path<Graph> &candidate,
+                          const kspwlo::Path<Graph> &alt_path) {
+  double shared_length = static_cast<double>(
+      compute_length_from_edges(candidate.graph(), alt_path.graph()));
 
   return shared_length / alt_path.length();
 }
@@ -174,7 +206,7 @@ kspwlo::Path<Graph> compute_shortest_path(const Graph &G, Vertex s, Vertex t) {
                                                         vertex_id, s))
             .visitor(make_dijkstra_visitor(
                 make_target_visitor(t, on_examine_vertex{}))));
-  } catch (target_found tf) {
+  } catch (target_found &tf) {
     return build_path_from_dijkstra(G, predecessor, s, t);
   }
   // If target was not found, t is unreachable from s
