@@ -26,6 +26,24 @@ public:
     // Swap data from graph to move from (g) to this->graph
     this->graph_.swap(g);
   }
+  Path(Path const &other) = default;
+  Path(Path &&other) : graph_{}, length_{other.length_} {
+    this->graph_.swap(other.graph_);
+  }
+
+  Path &operator=(Path const &other) = default;
+  Path &operator=(Path &&other) {
+    using std::swap;
+    graph_.swap(other.graph_);
+    swap(length_, other.length_);
+    return *this;
+  }
+
+  void swap(Path &other) {
+    using std::swap;
+    graph_.swap(other.graph_);
+    swap(length_, other.length_);
+  }
 
   Graph const &graph() const { return graph_; }
   Graph &graph() { return graph_; }
@@ -35,8 +53,11 @@ public:
 private:
   Graph graph_ = {};
   length_type length_ = {};
-  double similarity_with_sp_ = {};
 };
+
+template <typename Graph> void swap(Path<Graph> &p1, Path<Graph> &p2) {
+  p1.swap(p2);
+}
 
 enum class shortest_path_algorithm {
   dijkstra = 1,
