@@ -6,6 +6,7 @@
 #include <boost/graph/properties.hpp>
 
 #include "kspwlo/graph_types.hpp"
+#include <kspwlo/graph_utils.hpp>
 #include "kspwlo/impl/penalty_impl.hpp"
 
 #include <queue>
@@ -47,12 +48,12 @@ namespace boost {
  * @return A vector of at maximum @p k alternative paths.
  */
 template <typename Graph, typename Vertex = typename boost::graph_traits<
-                              Graph>::vertex_descriptor>
+    Graph>::vertex_descriptor>
 std::vector<kspwlo::Path<Graph>>
 penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
            double r, int max_nb_updates, int max_nb_steps,
            kspwlo::shortest_path_algorithm algorithm =
-               kspwlo::shortest_path_algorithm::dijkstra) {
+           kspwlo::shortest_path_algorithm::dijkstra) {
   // P_LO set of k paths
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   auto resPaths = std::vector<kspwlo::Path<Graph>>{};

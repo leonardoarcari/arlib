@@ -6,6 +6,7 @@
 #include <boost/graph/properties.hpp>
 
 #include "kspwlo/graph_types.hpp"
+#include <kspwlo/graph_utils.hpp>
 #include "kspwlo/impl/esx_impl.hpp"
 
 #include <queue>
@@ -38,12 +39,12 @@ namespace boost {
  * @return A list of at maximum @p k alternative paths.
  */
 template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+    typename Vertex =
+    typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
 std::vector<kspwlo::Path<PropertyGraph>>
 esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
     kspwlo::shortest_path_algorithm algorithm =
-        kspwlo::shortest_path_algorithm::astar) {
+    kspwlo::shortest_path_algorithm::astar) {
   // P_LO set of k paths
   using Length = typename boost::property_traits<typename boost::property_map<
       PropertyGraph, boost::edge_weight_t>::type>::value_type;
@@ -65,8 +66,8 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
   using Priority = std::pair<Edge, int>;
   using EdgePriorityQueue =
-      std::priority_queue<Priority, std::vector<Priority>,
-                          kspwlo_impl::EdgePriorityComparator<Edge>>;
+  std::priority_queue<Priority, std::vector<Priority>,
+                      kspwlo_impl::EdgePriorityComparator<Edge>>;
   auto edge_priorities = std::vector<EdgePriorityQueue>(k);
 
   // We keep a set of non-removable edges

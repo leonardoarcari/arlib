@@ -1,7 +1,7 @@
 #ifndef BOOST_GRAPH_UTILS_H
 #define BOOST_GRAPH_UTILS_H
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -54,9 +54,8 @@ PropertyGraph read_graph_from_string(const std::string &graph) {
 }
 
 template <typename PropertyGraph>
-std::optional<PropertyGraph>
-read_graph_from_file(const std::string_view &path) {
-  namespace fs = std::experimental::filesystem;
+std::optional<PropertyGraph> read_graph_from_file(const std::string_view path) {
+  namespace fs = std::filesystem;
   auto fs_path = fs::path(path);
 
   if (!fs::is_regular_file(fs_path)) {
