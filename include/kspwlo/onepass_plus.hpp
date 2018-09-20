@@ -6,6 +6,7 @@
 #include <boost/graph/properties.hpp>
 
 #include "kspwlo/graph_types.hpp"
+#include <kspwlo/graph_utils.hpp>
 #include "kspwlo/impl/onepass_plus_impl.hpp"
 
 #include <cassert>
@@ -41,8 +42,8 @@ namespace boost {
  * @return A vector of at maximum @p k alternative paths.
  */
 template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+    typename Vertex =
+    typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
 std::vector<kspwlo::Path<PropertyGraph>>
 onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // P_LO set of k paths
