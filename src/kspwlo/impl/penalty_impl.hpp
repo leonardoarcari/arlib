@@ -75,7 +75,9 @@ public:
    * @tparam EdgeIterator An iterator of the graph edges.
    * @param weight The weight property map.
    */
-  penalty_functor(PMap weight) : weight{weight}, penalties{} {}
+  penalty_functor(PMap weight)
+      : weight{weight}, penalties{std::make_shared<WeightMap<Edge, Length>>()} {
+  }
 
   /**
    * @brief Copy constructor.
@@ -111,13 +113,13 @@ public:
 
 private:
   PMap weight;
-  mutable WeightMap<Edge, Length> penalties;
+  mutable std::shared_ptr<WeightMap<Edge, Length>> penalties;
 
   Length &get_or_insert(const Edge &e) const {
-    if (auto search = penalties.find(e); search != penalties.end()) {
+    if (auto search = penalties->find(e); search != penalties->end()) {
       return search->second;
     } else {
-      auto [it, ok] = penalties.insert({e, weight[e]});
+      auto [it, ok] = penalties->insert({e, weight[e]});
       assert(ok && "[kspwlo::penalty_functor] Could not insert edge weight");
       return it->second;
     }
@@ -218,8 +220,8 @@ template <
     typename Graph,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+    typename boost::property_traits<typename boost::property_map<
+        Graph, boost::edge_weight_t>::type>::value_type>
 std::optional<std::vector<kspwlo::Edge>>
 dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
                                 DistanceMap<Length> &distance_s,
@@ -273,8 +275,8 @@ template <
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+    typename boost::property_traits<typename boost::property_map<
+        Graph, boost::edge_weight_t>::type>::value_type>
 std::optional<std::vector<kspwlo::Edge>>
 dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                        penalty_functor<PMap> &penalty) {
@@ -307,8 +309,8 @@ template <
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+    typename boost::property_traits<typename boost::property_map<
+        Graph, boost::edge_weight_t>::type>::value_type>
 std::optional<std::vector<kspwlo::Edge>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      penalty_functor<PMap> &penalty) {
@@ -386,8 +388,8 @@ template <
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+    typename boost::property_traits<typename boost::property_map<
+        Graph, boost::edge_weight_t>::type>::value_type>
 void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
                              const Graph &G, Vertex s, Vertex t, double p,
                              double r, penalty_functor<PMap> &penalty,
