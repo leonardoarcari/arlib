@@ -2,7 +2,7 @@
 cmake_minimum_required( VERSION 3.5 )
 
 # the project name
-project( kspwlo )
+project( alternative-routing-lib )
 
 # ==-----------------------------------------------------------------------== #
 #                         General configure section
@@ -32,19 +32,19 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -mtune=nat
 
 
 # ==-----------------------------------------------------------------------== #
-#                              kSPwLO Library
+#                      Alternative Routing Library
 # ==-----------------------------------------------------------------------== #
 
 # Find Boost dependencies
 find_package(Boost REQUIRED COMPONENTS graph program_options)
 
-set(KSPWLO_LIB_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/kspwlo/reorder_buffer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/impl/esx_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/kspwlo/graph_utils.cpp)
+set(ARLIB_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/arlib/reorder_buffer.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/arlib/details/esx_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/arlib/graph_utils.cpp)
 
-add_library(kspwlo_lib STATIC ${KSPWLO_LIB_SRC}) # Create target
-target_include_directories(kspwlo_lib
+add_library(arlib STATIC ${ARLIB_SRC}) # Create target
+target_include_directories(arlib
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
@@ -53,7 +53,7 @@ target_include_directories(kspwlo_lib
         $<INSTALL_INTERFACE:include>
     )
 
-target_link_libraries(kspwlo_lib
+target_link_libraries(arlib
     PUBLIC
         Boost::graph
     PRIVATE
@@ -61,17 +61,17 @@ target_link_libraries(kspwlo_lib
         stdc++fs  # std::filesystem
     )
 
-install(TARGETS kspwlo_lib EXPORT kspwloTargets
+install(TARGETS arlib EXPORT arlibTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include
     )
 
-install(EXPORT kspwloTargets
-    FILE kspwloTargets.cmake
-    NAMESPACE kspwlo::
-    DESTINATION lib/cmake/kspwlo
+install(EXPORT arlibTargets
+    FILE arlibTargets.cmake
+    NAMESPACE ar::
+    DESTINATION lib/cmake/arlib
     )
 
 # ==-----------------------------------------------------------------------== #
@@ -110,7 +110,7 @@ target_include_directories(tests
 
 target_link_libraries(tests
     PUBLIC
-        kspwlo_lib
+        arlib
         Catch
     )
 

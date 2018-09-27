@@ -7,15 +7,15 @@
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/bidirectional_dijkstra.hpp"
-#include "kspwlo/impl/kspwlo_impl.hpp"
-#include "kspwlo/visitor.hpp"
+#include <arlib/bidirectional_dijkstra.hpp>
+#include <arlib/details/arlib_utils.hpp>
+#include <arlib/visitor.hpp>
 
 #include <limits>
 #include <unordered_set>
 #include <vector>
 
-namespace boost {
+namespace arlib {
 template <typename Vertex, typename FPredecessorMap, typename BPredecessorMap,
           typename FDistanceMap, typename BDistanceMap, typename Length>
 bool pruning_policy(Vertex s, Vertex t, Vertex v, FPredecessorMap predecessor_f,
@@ -54,15 +54,16 @@ bool pruning_policy(Vertex s, Vertex t, Vertex v, FPredecessorMap predecessor_f,
   return false;
 }
 
-template <typename Graph,
-          typename Vertex = typename graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename Vertex = typename boost::graph_traits<
+                              Graph>::vertex_descriptor>
 Graph uninformed_bidirectional_pruner(const Graph &G, Vertex s, Vertex t,
                                       double tau) {
+  using namespace boost;
   using Length = typename property_traits<
       typename property_map<Graph, edge_weight_t>::type>::value_type;
   // Instantiate data structures
   auto weight_f = get(edge_weight, G);
-  auto distance_f_vec = std::vector<kspwlo::Length>(num_vertices(G), 6);
+  auto distance_f_vec = std::vector<Length>(num_vertices(G), 6);
   auto predecessor_f_vec =
       std::vector<Vertex>(vertices(G).first, vertices(G).second);
   auto vertex_id = get(vertex_index, G);
@@ -92,8 +93,8 @@ Graph uninformed_bidirectional_pruner(const Graph &G, Vertex s, Vertex t,
 
   auto pruned_G = Graph{G};
 
-  auto sp = kspwlo_impl::build_edge_list_from_dijkstra(s, t, predecessor_f);
-  auto final_distance = kspwlo_impl::compute_length_from_edges(sp, G);
+  auto sp = details::build_edge_list_from_dijkstra(s, t, predecessor_f);
+  auto final_distance = details::compute_length_from_edges(sp, G);
   for (auto [v_it, v_end] = pruning_visitor.get_pruned_vertices();
        v_it != v_end; ++v_it) {
     bool should_prune =
@@ -120,6 +121,6 @@ Graph uninformed_bidirectional_pruner(const Graph &G, Vertex s, Vertex t,
 
   return pruned_G;
 }
-} // namespace boost
+} // namespace arlib
 
 #endif

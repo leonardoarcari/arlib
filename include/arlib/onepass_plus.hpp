@@ -5,9 +5,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include <kspwlo/graph_utils.hpp>
-#include "kspwlo/impl/onepass_plus_impl.hpp"
+#include <arlib/details/onepass_plus_impl.hpp>
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -19,7 +19,7 @@
 /**
  * @brief Algorithms and utilities for Boost::Graph
  */
-namespace boost {
+namespace arlib {
 /**
  * @brief An implementation of OnePass+ k-shortest path with limited overlap for
  *        Boost::Graph.
@@ -42,41 +42,41 @@ namespace boost {
  * @return A vector of at maximum @p k alternative paths.
  */
 template <typename PropertyGraph,
-    typename Vertex =
-    typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<kspwlo::Path<PropertyGraph>>
-onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
-  // P_LO set of k paths
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
+                                              Vertex t, int k, double theta) {
+  using namespace boost;
+  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
   using Length = typename boost::property_traits<typename boost::property_map<
       PropertyGraph, boost::edge_weight_t>::type>::value_type;
   auto weight = get(edge_weight, G);
-  auto resPaths = std::vector<kspwlo::Path<PropertyGraph>>{};
-  auto resPathsEdges = std::vector<std::vector<kspwlo::Edge>>{};
+  auto resPaths = std::vector<Path<PropertyGraph>>{};
+  auto resPathsEdges = std::vector<std::vector<VPair>>{};
   auto resPathsLengths = std::vector<Length>{};
 
   // resEdges keeps track of the edges that make the paths in resPaths and which
   // path includes it.
-  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
   using resPathIndex = typename decltype(resPaths)::size_type;
   auto resEdges =
-      std::unordered_map<Edge, std::vector<resPathIndex>, hash<Edge>>{};
+      std::unordered_map<Edge, std::vector<resPathIndex>, boost::hash<Edge>>{};
 
   // Min-priority queue
-  using Label = kspwlo_impl::OnePassLabel<PropertyGraph>;
+  using Label = details::OnePassLabel<PropertyGraph>;
   using LabelPtr = std::unique_ptr<Label>;
-  auto Q = std::priority_queue<
-      Label *, std::vector<Label *>,
-      kspwlo_impl::OnePassPlusASComparator<PropertyGraph>>{};
+  auto Q =
+      std::priority_queue<Label *, std::vector<Label *>,
+                          details::OnePassPlusASComparator<PropertyGraph>>{};
   auto created_labels = std::vector<LabelPtr>{};
 
   // Skyline for dominance checkind (Lemma 2)
-  auto skyline = kspwlo_impl::SkylineContainer<PropertyGraph>{};
+  auto skyline = details::SkylineContainer<PropertyGraph>{};
 
   // Compute lower bounds for AStar
-  auto lower_bounds = kspwlo_impl::distance_from_target(G, t);
+  auto lower_bounds = details::distance_from_target(G, t);
 
   // Compute shortest path from s to t
-  auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
+  auto sp_path = details::compute_shortest_path(G, s, t);
   auto &sp = sp_path.graph();
 
   // P_LO <-- {shortest path p_0(s, t)};
@@ -91,7 +91,7 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   // For each edge in the candidate path, we check if it's already in any of the
   // resPaths. If not, we add it to resEdges. If yes, we keep track of which
   // path includes it.
-  kspwlo_impl::update_res_edges(sp, G, resEdges, paths_count);
+  details::update_res_edges(sp, G, resEdges, paths_count);
 
   // Initialize min-priority queue Q with <s, empty_set>
   auto init_label =
@@ -109,7 +109,7 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
     // might have been added to P_LO from the time this 'label' was pushed into
     // priority queue.
     if (label->is_outdated(paths_count - 1)) {
-      bool below_sim_threshold = kspwlo_impl::update_label_similarity(
+      bool below_sim_threshold = details::update_label_similarity(
           *label, G, resEdges, resPaths, weight, theta, paths_count - 1);
 
       label->set_last_check(paths_count - 1); // Update last check time step
@@ -139,7 +139,7 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
       // For each edge in the candidate path see if it's already in any of the
       // P_LO paths. If not, add it to the resEdges. If so, keep track of which
       // path includes it
-      kspwlo_impl::update_res_edges(tmpPath, G, resEdges, paths_count);
+      details::update_res_edges(tmpPath, G, resEdges, paths_count);
 
     } else { // Expand Search
       if (skyline.dominates(*label)) {
@@ -154,8 +154,8 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
         // Expand path
         auto c_edge = edge(node_n, *adj_it, G).first;
         auto c_label =
-            kspwlo_impl::expand_path(label, *adj_it, lower_bounds[*adj_it],
-                                     weight[c_edge], paths_count - 1);
+            details::expand_path(label, *adj_it, lower_bounds[*adj_it],
+                                 weight[c_edge], paths_count - 1);
 
         // Check for acyclicity
         bool acyclic = label->is_path_acyclic(*adj_it);
@@ -164,7 +164,7 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
           auto c_similarity_map = label->get_similarity_map();
 
           // Check Lemma 1 for similarity thresholding
-          bool below_sim_threshold = kspwlo_impl::is_below_sim_threshold(
+          bool below_sim_threshold = details::is_below_sim_threshold(
               c_edge, c_similarity_map, theta, resEdges, resPaths, weight);
 
           if (below_sim_threshold) {
@@ -188,6 +188,6 @@ onepass_plus(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta) {
   }
   return resPaths;
 }
-} // namespace boost
+} // namespace arlib
 
 #endif

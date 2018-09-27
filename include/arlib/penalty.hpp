@@ -5,9 +5,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include <kspwlo/graph_utils.hpp>
-#include "kspwlo/impl/penalty_impl.hpp"
+#include <arlib/details/penalty_impl.hpp>
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
 
 #include <queue>
 #include <unordered_map>
@@ -17,7 +17,7 @@
 /**
  * @brief Algorithms and utilities for Boost::Graph
  */
-namespace boost {
+namespace arlib {
 
 /**
  * @brief An implementation of Penalty method to compute alternative routes for
@@ -48,34 +48,36 @@ namespace boost {
  * @return A vector of at maximum @p k alternative paths.
  */
 template <typename Graph, typename Vertex = typename boost::graph_traits<
-    Graph>::vertex_descriptor>
-std::vector<kspwlo::Path<Graph>>
-penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
-           double r, int max_nb_updates, int max_nb_steps,
-           kspwlo::shortest_path_algorithm algorithm =
-           kspwlo::shortest_path_algorithm::dijkstra) {
+                              Graph>::vertex_descriptor>
+std::vector<Path<Graph>> penalty_ag(
+    const Graph &G, Vertex s, Vertex t, int k, double theta, double p, double r,
+    int max_nb_updates, int max_nb_steps,
+    shortest_path_algorithm algorithm = shortest_path_algorithm::dijkstra) {
+  using namespace boost;
   // P_LO set of k paths
   using Edge = typename graph_traits<Graph>::edge_descriptor;
-  auto resPaths = std::vector<kspwlo::Path<Graph>>{};
+  using Length = typename boost::property_traits<typename boost::property_map<
+      Graph, boost::edge_weight_t>::type>::value_type;
+  auto resPaths = std::vector<Path<Graph>>{};
 
   // Make a local weight map to avoid modifying existing graph.
   auto original_weight = get(edge_weight, G);
-  auto penalty = kspwlo_impl::penalty_functor{original_weight};
+  auto penalty = details::penalty_functor{original_weight};
 
   // Make shortest path algorithm function
   auto compute_shortest_path =
-      kspwlo_impl::build_shortest_path_fn(algorithm, G, original_weight);
+      details::build_shortest_path_fn(algorithm, G, original_weight);
 
   // Compute shortest path from s to t
-  auto distance_s = std::vector<kspwlo::Length>(num_vertices(G));
-  auto distance_t = std::vector<kspwlo::Length>(num_vertices(G));
-  auto sp = kspwlo_impl::dijkstra_shortest_path_two_ways(G, s, t, distance_s,
-                                                         distance_t);
+  auto distance_s = std::vector<Length>(num_vertices(G));
+  auto distance_t = std::vector<Length>(num_vertices(G));
+  auto sp =
+      details::dijkstra_shortest_path_two_ways(G, s, t, distance_s, distance_t);
   assert(sp);
 
   // P_LO <-- {shortest path p_0(s, t)};
   resPaths.emplace_back(build_graph_from_edges(*sp, G),
-                        kspwlo_impl::compute_length_from_edges(*sp, G));
+                        details::compute_length_from_edges(*sp, G));
 
   // If we need the shortest path only
   if (k == 1) {
@@ -86,9 +88,8 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
 
   // Penalize sp edges
-  kspwlo_impl::penalize_candidate_path(*sp, G, s, t, p, r, penalty, distance_s,
-                                       distance_t, penalty_bounds,
-                                       max_nb_updates);
+  details::penalize_candidate_path(*sp, G, s, t, p, r, penalty, distance_s,
+                                   distance_t, penalty_bounds, max_nb_updates);
 
   int step = 0;
   using Index = std::size_t;
@@ -96,15 +97,15 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
     auto p_tmp = compute_shortest_path(G, s, t, penalty);
 
     // Penalize p_tmp edges
-    kspwlo_impl::penalize_candidate_path(*p_tmp, G, s, t, p, r, penalty,
-                                         distance_s, distance_t, penalty_bounds,
-                                         max_nb_updates);
+    details::penalize_candidate_path(*p_tmp, G, s, t, p, r, penalty, distance_s,
+                                     distance_t, penalty_bounds,
+                                     max_nb_updates);
     ++step;
 
     // If p_tmp is sufficiently dissimilar to other alternative paths, accept it
     bool is_valid_path = true;
     for (const auto &alt_path : resPaths) {
-      if (kspwlo_impl::compute_similarity(*p_tmp, alt_path) > theta) {
+      if (details::compute_similarity(*p_tmp, alt_path) > theta) {
         is_valid_path = false;
         break;
       }
@@ -112,12 +113,12 @@ penalty_ag(const Graph &G, Vertex s, Vertex t, int k, double theta, double p,
 
     if (is_valid_path) {
       resPaths.emplace_back(build_graph_from_edges(*p_tmp, G),
-                            kspwlo_impl::compute_length_from_edges(*p_tmp, G));
+                            details::compute_length_from_edges(*p_tmp, G));
     }
   }
 
   return resPaths;
 }
-} // namespace boost
+} // namespace arlib
 
 #endif

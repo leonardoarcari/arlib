@@ -1,7 +1,9 @@
-#include "kspwlo/graph_utils.hpp"
+#include <arlib/graph_utils.hpp>
 
-namespace boost {
-std::string dump_edges_weight(const kspwlo::Graph &G) {
+#include <string>
+namespace arlib {
+template <typename Graph> std::string dump_edges_weight(const Graph &G) {
+  using namespace boost;
   auto ss = std::stringstream{};
   auto weight = get(edge_weight, G);
 
@@ -13,4 +15,4 @@ std::string dump_edges_weight(const kspwlo::Graph &G) {
 
   return ss.str();
 }
-} // namespace boost
+} // namespace arlib

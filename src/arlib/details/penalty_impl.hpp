@@ -9,8 +9,8 @@
 #include <boost/property_map/function_property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include "kspwlo/bidirectional_dijkstra.hpp"
-#include "kspwlo/graph_types.hpp"
+#include <arlib/bidirectional_dijkstra.hpp>
+#include <arlib/graph_types.hpp>
 
 #include <functional>
 #include <iostream>
@@ -19,10 +19,11 @@
 #include <unordered_set>
 #include <vector>
 
+namespace arlib {
 /**
  * @brief Implementations details of kSPwLO algorithms
  */
-namespace kspwlo_impl {
+namespace details {
 //===----------------------------------------------------------------------===//
 //                      Penalty algorithm types
 //===----------------------------------------------------------------------===//
@@ -180,16 +181,16 @@ private:
 template <
     typename Graph, typename PMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-constexpr std::function<std::optional<std::vector<kspwlo::Edge>>(
+constexpr std::function<std::optional<std::vector<VPair>>(
     const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
-build_shortest_path_fn(kspwlo::shortest_path_algorithm algorithm, const Graph &,
+build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
                        const PMap &) {
   switch (algorithm) {
-  case kspwlo::shortest_path_algorithm::dijkstra:
+  case shortest_path_algorithm::dijkstra:
     return [](const auto &G, auto s, auto t, auto &penalty) {
       return dijkstra_shortest_path(G, s, t, penalty);
     };
-  case kspwlo::shortest_path_algorithm::bidirectional_dijkstra:
+  case shortest_path_algorithm::bidirectional_dijkstra:
     return [](const auto &G, auto s, auto t, auto &penalty) {
       return bidirectional_dijkstra_shortest_path(G, s, t, penalty);
     };
@@ -219,10 +220,12 @@ build_shortest_path_fn(kspwlo::shortest_path_algorithm algorithm, const Graph &,
 template <
     typename Graph,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<
+        boost::reverse_graph<Graph>>::edge_descriptor,
     typename Length =
-    typename boost::property_traits<typename boost::property_map<
-        Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<kspwlo::Edge>>
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+std::optional<std::vector<VPair>>
 dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
                                 DistanceMap<Length> &distance_s,
                                 DistanceMap<Length> &distance_t) {
@@ -247,7 +250,7 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
   } else {
     // In case t could not be found from astar_search and target_found is not
     // thrown, return empty optional
-    return std::optional<std::vector<kspwlo::Edge>>{};
+    return std::optional<std::vector<VPair>>{};
   }
 
 } // namespace kspwlo_impl
@@ -275,9 +278,9 @@ template <
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
-    typename boost::property_traits<typename boost::property_map<
-        Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<kspwlo::Edge>>
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+std::optional<std::vector<VPair>>
 dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                        penalty_functor<PMap> &penalty) {
   using namespace boost;
@@ -301,7 +304,7 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
 
   // In case t could not be found from astar_search and target_found is not
   // thrown, return empty optional
-  return std::optional<std::vector<kspwlo::Edge>>{};
+  return std::optional<std::vector<VPair>>{};
 }
 
 template <
@@ -309,9 +312,9 @@ template <
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
-    typename boost::property_traits<typename boost::property_map<
-        Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<kspwlo::Edge>>
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+std::optional<std::vector<VPair>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      penalty_functor<PMap> &penalty) {
   using namespace boost;
@@ -333,9 +336,9 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   try {
     bidirectional_dijkstra(G, s, t, predecessor, distance, weight, rev_G,
                            rev_weight, rev_index);
-  } catch (kspwlo_impl::target_not_found &) {
+  } catch (details::target_not_found &) {
     // In case t could not be found return empty optional
-    return std::optional<std::vector<kspwlo::Edge>>{};
+    return std::optional<std::vector<VPair>>{};
   }
 
   auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
@@ -388,9 +391,9 @@ template <
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
     typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
-    typename boost::property_traits<typename boost::property_map<
-        Graph, boost::edge_weight_t>::type>::value_type>
-void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
+        typename boost::property_traits<typename boost::property_map<
+            Graph, boost::edge_weight_t>::type>::value_type>
+void penalize_candidate_path(const std::vector<VPair> &candidate,
                              const Graph &G, Vertex s, Vertex t, double p,
                              double r, penalty_functor<PMap> &penalty,
                              const DistanceMap &distance_s,
@@ -488,6 +491,7 @@ void penalize_candidate_path(const std::vector<kspwlo::Edge> &candidate,
     }
   }
 }
-} // namespace kspwlo_impl
+} // namespace details
+} // namespace arlib
 
 #endif

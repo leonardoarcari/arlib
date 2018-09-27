@@ -5,9 +5,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include <kspwlo/graph_utils.hpp>
-#include "kspwlo/impl/esx_impl.hpp"
+#include <arlib/details/esx_impl.hpp>
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
 
 #include <queue>
 #include <unordered_set>
@@ -16,7 +16,7 @@
 /**
  * @brief Algorithms and utilities for Boost::Graph
  */
-namespace boost {
+namespace arlib {
 /**
  * @brief An implementation of ESX k-shortest path with limited overlap for
  *        Boost::Graph.
@@ -39,19 +39,19 @@ namespace boost {
  * @return A list of at maximum @p k alternative paths.
  */
 template <typename PropertyGraph,
-    typename Vertex =
-    typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<kspwlo::Path<PropertyGraph>>
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+std::vector<Path<PropertyGraph>>
 esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
-    kspwlo::shortest_path_algorithm algorithm =
-    kspwlo::shortest_path_algorithm::astar) {
+    shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
+  using namespace boost;
   // P_LO set of k paths
   using Length = typename boost::property_traits<typename boost::property_map<
       PropertyGraph, boost::edge_weight_t>::type>::value_type;
-  auto resPaths = std::vector<kspwlo::Path<PropertyGraph>>{};
+  auto resPaths = std::vector<Path<PropertyGraph>>{};
 
   // Compute shortest path from s to t
-  auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
+  auto sp_path = details::compute_shortest_path(G, s, t);
   auto &sp = sp_path.graph();
 
   // P_LO <-- {shortest path p_0(s, t)};
@@ -66,25 +66,25 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
   using Priority = std::pair<Edge, int>;
   using EdgePriorityQueue =
-  std::priority_queue<Priority, std::vector<Priority>,
-                      kspwlo_impl::EdgePriorityComparator<Edge>>;
+      std::priority_queue<Priority, std::vector<Priority>,
+                          details::EdgePriorityComparator<Edge>>;
   auto edge_priorities = std::vector<EdgePriorityQueue>(k);
 
   // We keep a set of non-removable edges
-  auto dnr_edges = std::unordered_set<Edge, hash<Edge>>{};
+  auto dnr_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   // We keep a set of deleted-edges
-  auto deleted_edges = std::unordered_set<Edge, hash<Edge>>{};
+  auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   // Compute lower bounds for AStar
-  auto heuristic = kspwlo_impl::distance_heuristic<PropertyGraph, Length>(G, t);
+  auto heuristic = details::distance_heuristic<PropertyGraph, Length>(G, t);
 
   // Make shortest path algorithm function
-  auto compute_shortest_path = kspwlo_impl::build_shortest_path_fn(
+  auto compute_shortest_path = details::build_shortest_path_fn(
       algorithm, G, s, t, heuristic, deleted_edges);
 
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
-  kspwlo_impl::init_edge_priorities(sp, edge_priorities, 0, G, deleted_edges);
+  details::init_edge_priorities(sp, edge_priorities, 0, G, deleted_edges);
 
   auto overlaps = std::vector<double>(k, 0.0);
   overlaps[0] = 1.0; // Set p_c overlap with sp (itself) to 1
@@ -101,7 +101,7 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
       overlap_ratio = *max_it;
 
       // Check if finding a result is feasible
-      still_feasible = kspwlo_impl::check_feasibility(overlaps);
+      still_feasible = details::check_feasibility(overlaps);
       if (!still_feasible) {
         break; // Stop the algorithm
       }
@@ -127,7 +127,7 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
 
       // If shortest path did not find a path
       if (!p_tmp) {
-        kspwlo_impl::move_to_dnr(e_tmp, deleted_edges, dnr_edges);
+        details::move_to_dnr(e_tmp, deleted_edges, dnr_edges);
         continue;
       }
 
@@ -141,17 +141,16 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
         overlaps[p_max_idx] = 0;
       } else {
         overlaps[p_max_idx] =
-            kspwlo_impl::compute_similarity(*p_tmp, resPaths[p_max_idx]);
+            details::compute_similarity(*p_tmp, resPaths[p_max_idx]);
       }
 
       // Checking if the resulting path is valid
       bool candidate_is_valid =
-          kspwlo_impl::check_candidate_validity(*p_tmp, resPaths, theta);
+          details::check_candidate_validity(*p_tmp, resPaths, theta);
       if (candidate_is_valid) {
         // Add p_tmp to P_LO
-        resPaths.emplace_back(
-            build_graph_from_edges(*p_tmp, G),
-            kspwlo_impl::compute_length_from_edges(*p_tmp, G));
+        resPaths.emplace_back(build_graph_from_edges(*p_tmp, G),
+                              details::compute_length_from_edges(*p_tmp, G));
 
         // Set p_c overlap with itself to 1
         std::ptrdiff_t p_c_idx = resPaths.size() - 1;
@@ -159,8 +158,8 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
 
         // Initialize max-heap H_i with the priority of each edge of new
         // alternative path
-        kspwlo_impl::init_edge_priorities(*p_tmp, edge_priorities, p_c_idx, G,
-                                          deleted_edges);
+        details::init_edge_priorities(*p_tmp, edge_priorities, p_c_idx, G,
+                                      deleted_edges);
         break; // From inner while loop
       }
     }
@@ -168,6 +167,6 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
 
   return resPaths;
 }
-} // namespace boost
+} // namespace arlib
 
 #endif

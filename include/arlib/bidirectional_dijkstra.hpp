@@ -6,9 +6,9 @@
 #include <boost/graph/properties.hpp>
 #include <boost/graph/reverse_graph.hpp>
 
-#include "kspwlo/impl/bidirectional_dijkstra_impl.hpp"
-#include "kspwlo/impl/kspwlo_impl.hpp"
-#include "kspwlo/visitor.hpp"
+#include <arlib/details/arlib_utils.hpp>
+#include <arlib/details/bidirectional_dijkstra_impl.hpp>
+#include <arlib/visitor.hpp>
 
 #include <deque>
 #include <limits>
@@ -17,7 +17,7 @@
 /**
  * @brief Algorithms and utilities for Boost::Graph
  */
-namespace boost {
+namespace arlib {
 //===----------------------------------------------------------------------===//
 //                   Bidirectional Dijkstra algorithm
 //===----------------------------------------------------------------------===//
@@ -102,43 +102,43 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
   constexpr Length inf = std::numeric_limits<Length>::max();
 
   // Initialize distance structures
-  kspwlo_impl::init_distance_vector(G, distance);
-  kspwlo_impl::init_distance_vector(G_b, distance_b);
+  details::init_distance_vector(G, distance);
+  details::init_distance_vector(G_b, distance_b);
 
   // Initialize shortest path trees (forward and backward)
   predecessor[s] = s;
   predecessor_b[t] = t;
 
   // Init fringe structures
-  auto fringe = kspwlo_impl::Fringe<Vertex, Length>{};
-  auto fringe_b = kspwlo_impl::Fringe<Vertex, Length>{};
+  auto fringe = details::Fringe<Vertex, Length>{};
+  auto fringe_b = details::Fringe<Vertex, Length>{};
   fringe.push(std::make_pair(s, 0));
   fringe_b.push(std::make_pair(t, 0));
 
   // Init distances to nodes seen
-  auto seen = kspwlo_impl::Seen<Vertex, Length>{};
-  auto seen_b = kspwlo_impl::Seen<Vertex, Length>{};
+  auto seen = details::Seen<Vertex, Length>{};
+  auto seen_b = details::Seen<Vertex, Length>{};
   seen.insert({s, 0});
   seen_b.insert({t, 0});
 
-  using kspwlo_impl::BiDijkStepRes;
-  using kspwlo_impl::Direction;
+  using details::BiDijkStepRes;
+  using details::Direction;
 
   Length final_distance = inf;
   auto final_path = std::deque<Vertex>{};
   auto direction = Direction::backward;
   while (!fringe.empty() && !fringe_b.empty()) {
-    direction = kspwlo_impl::switch_direction(direction);
+    direction = details::switch_direction(direction);
     auto result = BiDijkStepRes::next;
 
     // Run a step
     if (direction == Direction::forward) {
-      result = kspwlo_impl::bi_dijkstra_step(
+      result = details::bi_dijkstra_step(
           G, s, t, predecessor, distance, weight, fringe, seen, predecessor_b,
           distance_b, fringe_b, seen_b, direction, final_distance, final_path,
           visitor);
     } else {
-      result = kspwlo_impl::bi_dijkstra_step(
+      result = details::bi_dijkstra_step(
           G_b, s, t, predecessor_b, distance_b, weight_b, fringe_b, seen_b,
           predecessor, distance, fringe, seen, direction, final_distance,
           final_path, visitor);
@@ -163,7 +163,7 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
 
   if (fringe.empty() || fringe_b.empty()) {
     if (final_path.empty()) {
-      throw kspwlo_impl::target_not_found{"No path found!"};
+      throw details::target_not_found{"No path found!"};
     } else {
       // Clean exit
       fill_predecessor(predecessor, final_path);
@@ -171,7 +171,7 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
     }
   } else {
     // Otherwise
-    throw kspwlo_impl::target_not_found{"No path found!"};
+    throw details::target_not_found{"No path found!"};
   }
 }
 
@@ -261,6 +261,6 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
   bidirectional_dijkstra(G, s, t, predecessor, distance, weight, G_b, weight_b,
                          index_map_b, visitor);
 }
-} // namespace boost
+} // namespace arlib
 
 #endif

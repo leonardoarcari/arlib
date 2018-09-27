@@ -1,11 +1,12 @@
 #ifndef TEST_UTILS_HPP
 #define TEST_UTILS_HPP
 
+#include <boost/graph/edge_list.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo_ref/algorithms/kspwlo.hpp"
+#include <kspwlo_ref/algorithms/kspwlo.hpp>
 
 #include <string_view>
 #include <vector>

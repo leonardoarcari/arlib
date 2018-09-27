@@ -5,8 +5,8 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/impl/kspwlo_impl.hpp"
+#include <arlib/details/arlib_utils.hpp>
+#include <arlib/graph_types.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -15,10 +15,11 @@
 #include <unordered_set>
 #include <vector>
 
+namespace arlib {
 /**
  * @brief Implementations details of kSPwLO algorithms
  */
-namespace kspwlo_impl {
+namespace details {
 
 //===----------------------------------------------------------------------===//
 //                    OnePass+ algorithm support classes
@@ -45,6 +46,7 @@ namespace kspwlo_impl {
  * @tparam Length The value type of an edge weight of Graph.
  */
 template <typename Graph,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
           typename Length =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type,
@@ -117,8 +119,8 @@ public:
       : node{node}, length{length}, lower_bound{lower_bound}, previous{nullptr},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
-  std::vector<kspwlo::Edge> get_path() const {
-    auto edge_set = std::vector<kspwlo::Edge>{};
+  std::vector<VPair> get_path() const {
+    auto edge_set = std::vector<VPair>{};
 
     auto v = node;
     auto prev = previous;
@@ -400,10 +402,10 @@ void update_res_edges(const Graph &candidate, const Graph &graph,
 }
 
 template <typename Graph, typename EdgeMap,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void update_res_edges(const std::vector<kspwlo::Edge> &candidate,
-                      const Graph &graph, EdgeMap &resEdges,
-                      resPathIndex paths_count) {
+void update_res_edges(const std::vector<Edge> &candidate, const Graph &graph,
+                      EdgeMap &resEdges, resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto &e : candidate) {
     auto edge_in_g = edge(e.first, e.second, graph).first;
@@ -480,7 +482,7 @@ bool is_below_sim_threshold(const Edge &c_edge,
   }
   return true;
 }
-
-} // namespace kspwlo_impl
+} // namespace details
+} // namespace arlib
 
 #endif

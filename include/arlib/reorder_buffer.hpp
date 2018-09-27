@@ -2,9 +2,9 @@
 #define KSPWLO_REORDER_BUFFER_HPP
 
 #include <algorithm>
-#include <kspwlo/impl/kspwlo_impl.hpp>
+#include <arlib/details/arlib_utils.hpp>
 
-namespace kspwlo {
+namespace arlib {
 class ReorderBuffer {
 public:
   /**
@@ -46,7 +46,7 @@ public:
       auto found = false;
       auto sims = std::vector<std::pair<double, ForwardIt>>{};
       for (auto it = std::next(cur); it != last; ++it) {
-        auto sim = kspwlo_impl::compute_similarity(*it, *cur);
+        auto sim = details::compute_similarity(*it, *cur);
         sims.emplace_back(sim, it);
         if (is_valid_candidate(first, cur, sim, theta)) {
           std::iter_swap(std::next(cur), it);
@@ -96,6 +96,6 @@ private:
     return is_valid;
   }
 };
-} // namespace kspwlo
+} // namespace arlib
 
 #endif // KSPWLO_REORDER_BUFFER_HPP

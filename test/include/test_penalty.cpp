@@ -4,11 +4,11 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/graph_utils.hpp"
-#include "kspwlo/impl/kspwlo_impl.hpp"
-#include "kspwlo/impl/penalty_impl.hpp"
-#include "kspwlo/penalty.hpp"
+#include "arlib/details/arlib_utils.hpp"
+#include "arlib/details/penalty_impl.hpp"
+#include "arlib/graph_types.hpp"
+#include "arlib/graph_utils.hpp"
+#include "arlib/penalty.hpp"
 #include "utils.hpp"
 
 #include <experimental/filesystem>
@@ -19,9 +19,10 @@
 
 TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;
@@ -32,7 +33,7 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   auto max_nb_steps = 100000;
 
   auto res_paths =
-      penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
+      arlib::penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
 
   REQUIRE(res_paths.size() == 3);
 
@@ -48,21 +49,22 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
 
 TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   using namespace boost;
-  using kspwlo::Vertex;
-  using Edge = typename graph_traits<kspwlo::Graph>::edge_descriptor;
+  using arlib::Vertex;
+  using Edge = typename graph_traits<arlib::Graph>::edge_descriptor;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
 
   // Candidate solution
-  auto candidate = std::vector<kspwlo::Edge>{{0, 3}, {3, 5}, {5, 6}};
+  auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
 
   // Distance maps
-  auto distance_s = std::vector<kspwlo::Length>{0, 5, 4, 3, 7, 6, 8};
-  auto distance_t = std::vector<kspwlo::Length>{8, 6, 7, 5, 2, 2, 0};
+  auto distance_s = std::vector<arlib::Length>{0, 5, 4, 3, 7, 6, 8};
+  auto distance_t = std::vector<arlib::Length>{8, 6, 7, 5, 2, 2, 0};
 
   // Weight map
   auto original_weight = get(edge_weight, G);
-  auto penalty = kspwlo_impl::penalty_functor{original_weight};
+  auto penalty = arlib::details::penalty_functor{original_weight};
 
   // Penalty bounds
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
@@ -74,11 +76,11 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
     auto r = 0.1;
     auto bound_limit = 1;
 
-    auto old_penalty = kspwlo_impl::penalty_functor{penalty};
+    auto old_penalty = arlib::details::penalty_functor{penalty};
 
-    kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
-                                         distance_s, distance_t, penalty_bounds,
-                                         bound_limit);
+    arlib::details::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
+                                            distance_s, distance_t,
+                                            penalty_bounds, bound_limit);
 
     // Keep track of candidate edges to exclude them from incoming/outgoing
     // edges update
@@ -150,11 +152,11 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
     penalty_bounds.insert({e1, bound_limit});
     penalty_bounds.insert({e2, bound_limit});
 
-    auto old_penalty = kspwlo_impl::penalty_functor{penalty};
+    auto old_penalty = arlib::details::penalty_functor{penalty};
 
-    kspwlo_impl::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
-                                         distance_s, distance_t, penalty_bounds,
-                                         bound_limit);
+    arlib::details::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
+                                            distance_s, distance_t,
+                                            penalty_bounds, bound_limit);
 
     // Weights must be left unchanged.
     REQUIRE(penalty[e1] == old_penalty[e1]);
@@ -164,23 +166,24 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
 TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Candidate solution
-  auto candidate = std::vector<kspwlo::Edge>{{0, 3}, {3, 5}, {5, 6}};
+  auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
 
   // Distance maps
-  auto distance_s = std::vector<kspwlo::Length>{0, 5, 4, 3, 7, 6, 8};
-  auto distance_t = std::vector<kspwlo::Length>{8, 6, 7, 5, 2, 2, 0};
+  auto distance_s = std::vector<arlib::Length>{0, 5, 4, 3, 7, 6, 8};
+  auto distance_t = std::vector<arlib::Length>{8, 6, 7, 5, 2, 2, 0};
 
-  auto test_distance_s = std::vector<kspwlo::Length>(num_vertices(G));
-  auto test_distance_t = std::vector<kspwlo::Length>(num_vertices(G));
+  auto test_distance_s = std::vector<arlib::Length>(num_vertices(G));
+  auto test_distance_t = std::vector<arlib::Length>(num_vertices(G));
 
-  kspwlo_impl::dijkstra_shortest_path_two_ways(G, s, t, test_distance_s,
-                                               test_distance_t);
+  arlib::details::dijkstra_shortest_path_two_ways(G, s, t, test_distance_s,
+                                                  test_distance_t);
 
   REQUIRE(distance_s == test_distance_s);
   REQUIRE(distance_t == test_distance_t);
@@ -189,22 +192,23 @@ TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
 TEST_CASE("Bidirectional dijkstra works with reverse penalty functor adaptor",
           "[penalty]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Make a local weight map to avoid modifying existing graph.
   auto original_weight = get(edge_weight, G);
-  auto penalty = kspwlo_impl::penalty_functor{original_weight};
+  auto penalty = arlib::details::penalty_functor{original_weight};
 
   // Forward Dijkstra sp
-  auto sp_forward = kspwlo_impl::dijkstra_shortest_path(G, s, t, penalty);
+  auto sp_forward = arlib::details::dijkstra_shortest_path(G, s, t, penalty);
   REQUIRE(sp_forward);
 
   // Bi-Dijkstra sp
   auto sp_bi =
-      kspwlo_impl::bidirectional_dijkstra_shortest_path(G, s, t, penalty);
+      arlib::details::bidirectional_dijkstra_shortest_path(G, s, t, penalty);
   REQUIRE(sp_bi);
 
   REQUIRE(*sp_forward == *sp_bi);
@@ -214,9 +218,10 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
           "unidirectional dijkstra",
           "[penalty]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;
@@ -227,10 +232,10 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
   auto max_nb_steps = 100000;
 
   auto res_paths_uni =
-      penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
+      arlib::penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
   auto res_paths_bi =
       penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps,
-                 kspwlo::shortest_path_algorithm::bidirectional_dijkstra);
+                 arlib::shortest_path_algorithm::bidirectional_dijkstra);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 

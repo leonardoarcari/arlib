@@ -4,9 +4,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/graph_utils.hpp"
-#include "kspwlo/onepass_plus.hpp"
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
+#include <arlib/onepass_plus.hpp>
 
 #include "utils.hpp"
 
@@ -33,8 +33,8 @@ template <typename Edge> std::vector<Edge> build_test_edges() {
                            Edge{3, 5}, Edge{4, 5}, Edge{4, 6}, Edge{5, 6}};
 }
 
-std::vector<kspwlo::Length> build_test_weights() {
-  return std::vector<kspwlo::Length>{6, 3, 4, 6, 5, 2, 3, 5, 3, 1, 3, 2};
+std::vector<arlib::Length> build_test_weights() {
+  return std::vector<arlib::Length>{6, 3, 4, 6, 5, 2, 3, 5, 3, 1, 3, 2};
 }
 
 template <typename PropertyGraph, typename Edge,
@@ -57,11 +57,11 @@ void require_correct_weights(const std::vector<Edge> &test_edges,
 }
 
 TEST_CASE("Boost::Graph can be built from .gr strings", "[graph_utils]") {
-  auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
+  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string{graph_gr});
 
   SECTION("Reading gr string builds a graph with same vertices") {
     using namespace boost;
-    using Vertex = graph_traits<kspwlo::Graph>::vertex_descriptor;
+    using Vertex = graph_traits<arlib::Graph>::vertex_descriptor;
 
     auto Vs = std::vector<Vertex>{vertices(G).first, vertices(G).second};
 
@@ -75,9 +75,9 @@ TEST_CASE("Boost::Graph can be built from .gr strings", "[graph_utils]") {
   SECTION("Reading gr string builds a graph with edges with correct weights",
           "[graph_utils]") {
     using namespace boost;
-    using kspwlo::Edge;
+    using arlib::VPair;
 
-    auto test_edges = build_test_edges<Edge>();
+    auto test_edges = build_test_edges<VPair>();
     auto test_weights = build_test_weights();
 
     REQUIRE(num_edges(G) == test_edges.size() * 2);
@@ -96,7 +96,7 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[graph_utils]") {
 
   // Parse file
   using namespace boost;
-  auto G_opt = read_graph_from_file<kspwlo::Graph>(path.string());
+  auto G_opt = arlib::read_graph_from_file<arlib::Graph>(path.string());
 
   SECTION("Reading existing gr files builds a graph with same vertices",
           "[graph_utils]") {
@@ -104,7 +104,7 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[graph_utils]") {
     REQUIRE(G_opt);
     auto G = *G_opt;
 
-    using Vertex = graph_traits<kspwlo::Graph>::vertex_descriptor;
+    using Vertex = graph_traits<arlib::Graph>::vertex_descriptor;
 
     auto Vs = std::vector<Vertex>{vertices(G).first, vertices(G).second};
 
@@ -122,9 +122,9 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[graph_utils]") {
     REQUIRE(G_opt);
     auto G = *G_opt;
 
-    using kspwlo::Edge;
+    using arlib::VPair;
 
-    auto test_edges = build_test_edges<Edge>();
+    auto test_edges = build_test_edges<VPair>();
     auto test_weights = build_test_weights();
 
     REQUIRE(num_edges(G) == test_edges.size() * 2);
@@ -136,7 +136,8 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[graph_utils]") {
     // File must not exist
     auto non_existing_path =
         fs::path("/xyz/bla/bla/come/on/cant/be/existing.gr");
-    G_opt = read_graph_from_file<kspwlo::Graph>(non_existing_path.string());
+    G_opt =
+        arlib::read_graph_from_file<arlib::Graph>(non_existing_path.string());
 
     REQUIRE(!G_opt);
   }
@@ -146,16 +147,16 @@ TEST_CASE("Building an AG from k alternative paths doesn't lose info",
           "[graph_utils]") {
   using namespace boost;
   // Build the graph
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
+  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string{graph_gr});
   auto weight = get(edge_weight, G);
 
   // Run kSPwLO
-  kspwlo::Vertex s = 0, t = 6;
-  auto res_paths = onepass_plus(G, s, t, 3, 0.5);
+  arlib::Vertex s = 0, t = 6;
+  auto res_paths = arlib::onepass_plus(G, s, t, 3, 0.5);
 
   // Build ground truth data
-  auto test_edges = std::vector<kspwlo::Edge>();
-  auto test_weights = std::vector<kspwlo::Length>();
+  auto test_edges = std::vector<arlib::VPair>();
+  auto test_weights = std::vector<arlib::Length>();
 
   for (auto &path : res_paths) {
     auto &path_g = path.graph();
