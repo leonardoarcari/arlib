@@ -9,7 +9,9 @@
 #include "arlib/graph_types.hpp"
 #include "arlib/graph_utils.hpp"
 #include "arlib/penalty.hpp"
+
 #include "utils.hpp"
+#include "test_types.hpp"
 
 #include <experimental/filesystem>
 #include <memory>
@@ -17,12 +19,13 @@
 
 #include <string_view>
 
+using namespace arlib::test;
+
 TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;
@@ -49,18 +52,17 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
 
 TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   using namespace boost;
-  using arlib::Vertex;
-  using Edge = typename graph_traits<arlib::Graph>::edge_descriptor;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   // Candidate solution
   auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
 
   // Distance maps
-  auto distance_s = std::vector<arlib::Length>{0, 5, 4, 3, 7, 6, 8};
-  auto distance_t = std::vector<arlib::Length>{8, 6, 7, 5, 2, 2, 0};
+  auto distance_s = std::vector<Length>{0, 5, 4, 3, 7, 6, 8};
+  auto distance_t = std::vector<Length>{8, 6, 7, 5, 2, 2, 0};
 
   // Weight map
   auto original_weight = get(edge_weight, G);
@@ -166,21 +168,20 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
 TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Candidate solution
   auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
 
   // Distance maps
-  auto distance_s = std::vector<arlib::Length>{0, 5, 4, 3, 7, 6, 8};
-  auto distance_t = std::vector<arlib::Length>{8, 6, 7, 5, 2, 2, 0};
+  auto distance_s = std::vector<Length>{0, 5, 4, 3, 7, 6, 8};
+  auto distance_t = std::vector<Length>{8, 6, 7, 5, 2, 2, 0};
 
-  auto test_distance_s = std::vector<arlib::Length>(num_vertices(G));
-  auto test_distance_t = std::vector<arlib::Length>(num_vertices(G));
+  auto test_distance_s = std::vector<Length>(num_vertices(G));
+  auto test_distance_t = std::vector<Length>(num_vertices(G));
 
   arlib::details::dijkstra_shortest_path_two_ways(G, s, t, test_distance_s,
                                                   test_distance_t);
@@ -192,10 +193,9 @@ TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
 TEST_CASE("Bidirectional dijkstra works with reverse penalty functor adaptor",
           "[penalty]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Make a local weight map to avoid modifying existing graph.
@@ -218,10 +218,9 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
           "unidirectional dijkstra",
           "[penalty]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;

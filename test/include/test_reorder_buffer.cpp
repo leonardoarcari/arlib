@@ -10,13 +10,15 @@
 
 #include "cittastudi_graph.hpp"
 #include "utils.hpp"
+#include "test_types.hpp"
+
+using namespace arlib::test;
 
 auto find_alternative_paths(int k = 3, double theta = 0.5) {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(cittastudi_gr));
+      arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
 
   Vertex s = 0, t = 20;
   auto p = 0.1;

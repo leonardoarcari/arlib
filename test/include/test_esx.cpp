@@ -5,6 +5,8 @@
 #include <boost/graph/properties.hpp>
 
 #include "utils.hpp"
+#include "test_types.hpp"
+
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/details/esx_impl.hpp>
 #include <arlib/esx.hpp>
@@ -20,13 +22,14 @@
 
 #include <string_view>
 
+using namespace arlib::test;
+
 TEST_CASE("Edge priority computation", "[esx]") {
   using namespace boost;
-  using arlib::Vertex;
   using arlib::details::compute_priority;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Compute shortest path from s to t
@@ -35,10 +38,10 @@ TEST_CASE("Edge priority computation", "[esx]") {
 
   // Compute lower bounds for AStar
   auto heuristic =
-      arlib::details::distance_heuristic<arlib::Graph, arlib::Length>(G, t);
+      arlib::details::distance_heuristic<Graph, Length>(G, t);
 
   // We keep a set of deleted-edges
-  using Edge = typename graph_traits<arlib::Graph>::edge_descriptor;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   // Check that (0, 3) was computed in shortest path
@@ -65,8 +68,8 @@ TEST_CASE("Edge priority computation", "[esx]") {
 
 TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string{graph_gr_esx});
-  arlib::Vertex s = 0, t = 6;
+      arlib::read_graph_from_string<Graph>(std::string{graph_gr_esx});
+  Vertex s = 0, t = 6;
   auto res = arlib::esx(G, s, t, 3, 0.5);
 
   // Create a new tmp file out of graph_gr_esx
@@ -118,10 +121,9 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
           "unidirectional dijkstra",
           "[esx]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;

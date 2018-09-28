@@ -6,6 +6,7 @@
 #include <boost/graph/reverse_graph.hpp>
 
 #include "utils.hpp"
+#include "test_types.hpp"
 #include <arlib/bidirectional_dijkstra.hpp>
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/graph_types.hpp>
@@ -17,21 +18,22 @@
 
 #include <string_view>
 
+using namespace arlib::test;
+
 TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
           "unidirectional dijkstra",
           "[bi_dijkstra") {
   using namespace boost;
-  using arlib::Vertex;
   using arlib::VPair;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
 
   // Bidirectional Dijkstra
   auto weight_bi = get(edge_weight, G);
-  auto distance_bi_vec = std::vector<arlib::Length>(num_vertices(G), 6);
+  auto distance_bi_vec = std::vector<Length>(num_vertices(G), 6);
   auto predecessor_bi_vec =
       std::vector<Vertex>(vertices(G).first, vertices(G).second);
   auto vertex_id = get(vertex_index, G);

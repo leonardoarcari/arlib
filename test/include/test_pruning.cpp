@@ -7,6 +7,8 @@
 
 #include "cittastudi_graph.hpp"
 #include "utils.hpp"
+#include "test_types.hpp"
+
 #include <arlib/graph_pruning.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
@@ -17,14 +19,15 @@
 
 #include <string_view>
 
+using namespace arlib::test;
+
 TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a small graph do "
           "not prune nodes",
           "[pruning]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
+      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   double tau = 1.0;
@@ -42,10 +45,9 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a real world "
           "network prunes nodes",
           "[pruning]") {
   using namespace boost;
-  using arlib::Vertex;
 
   auto G =
-      arlib::read_graph_from_string<arlib::Graph>(std::string(cittastudi_gr));
+      arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
 
   Vertex s = 0, t = 20;
   double tau = 1.0;

@@ -6,6 +6,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/graph/reverse_graph.hpp>
+#include <boost/graph/adjacency_list.hpp>
 
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
@@ -167,12 +168,12 @@ std::vector<length_type> distance_from_target(const Graph &G, Vertex t) {
 }
 
 template <typename Graph, typename PredecessorMap, typename Vertex,
-          typename length_type =
+          typename Length =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
 Path<Graph> build_path_from_dijkstra(const Graph &G, const PredecessorMap &p,
                                      Vertex s, Vertex t) {
-  length_type length = 0;
+  Length length = 0;
   auto weight = boost::get(boost::edge_weight, G);
   auto edge_list = std::vector<VPair>{};
 
