@@ -1,14 +1,15 @@
-#ifndef BOOST_KSPWLO_VISITOR_HPP
-#define BOOST_KSPWLO_VISITOR_HPP
+#ifndef ARLIB_VISITOR_HPP
+#define ARLIB_VISITOR_HPP
 
 #include <boost/graph/graph_concepts.hpp>
+
 #include <limits>
 #include <unordered_set>
 
 /**
  * @brief Algorithms and utilities for Boost::Graph
  */
-namespace boost {
+namespace arlib {
 //===----------------------------------------------------------------------===//
 //                    Bidirectional Dijkstra visitor
 //===----------------------------------------------------------------------===//
@@ -89,5 +90,5 @@ private:
   bool is_pruning_phase;
   std::unordered_set<Vertex, boost::hash<Vertex>> pruned_vertices;
 };
-} // namespace boost
+} // namespace arlib
 #endif

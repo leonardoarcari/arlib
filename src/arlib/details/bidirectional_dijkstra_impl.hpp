@@ -7,7 +7,7 @@
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include "kspwlo/visitor.hpp"
+#include <arlib/visitor.hpp>
 
 #include <deque>
 #include <iostream>
@@ -15,10 +15,11 @@
 #include <queue>
 #include <vector>
 
+namespace arlib {
 /**
  * @brief Implementations details of kSPwLO algorithms
  */
-namespace kspwlo_impl {
+namespace details {
 //===----------------------------------------------------------------------===//
 //                      Bidirectional Dijkstra types
 //===----------------------------------------------------------------------===//
@@ -160,7 +161,7 @@ BiDijkStepRes bi_dijkstra_step(
     OtherDistanceMap other_distance, Fringe<Vertex, Length> &other_fringe,
     Seen<Vertex, Length> &other_seen, Direction direction,
     Length &final_distance, std::deque<Vertex> &final_path,
-    boost::BiDijkstraVisitor<BiDijkstraVisitorImpl> &visitor) {
+    BiDijkstraVisitor<BiDijkstraVisitorImpl> &visitor) {
   constexpr Length inf = std::numeric_limits<Length>::max();
   // Extract closest node to expand
   const auto [v, dist] = fringe.top();
@@ -235,7 +236,7 @@ BiDijkStepRes bi_dijkstra_step(
   // Everything went fine, go with other direction
   return BiDijkStepRes::next;
 }
-
-} // namespace kspwlo_impl
+} // namespace details
+} // namespace arlib
 
 #endif

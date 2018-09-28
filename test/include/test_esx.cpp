@@ -4,15 +4,15 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/esx.hpp"
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/graph_utils.hpp"
-#include "kspwlo/impl/esx_impl.hpp"
-#include "kspwlo/impl/kspwlo_impl.hpp"
 #include "utils.hpp"
+#include <arlib/details/arlib_utils.hpp>
+#include <arlib/details/esx_impl.hpp>
+#include <arlib/esx.hpp>
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
 
-#include "kspwlo_ref/algorithms/kspwlo.hpp"
-#include "kspwlo_ref/exploration/graph_utils.hpp"
+#include <kspwlo_ref/algorithms/kspwlo.hpp>
+#include <kspwlo_ref/exploration/graph_utils.hpp>
 
 #include <experimental/filesystem>
 #include <memory>
@@ -22,22 +22,23 @@
 
 TEST_CASE("Edge priority computation", "[esx]") {
   using namespace boost;
-  using kspwlo::Vertex;
-  using kspwlo_impl::compute_priority;
+  using arlib::Vertex;
+  using arlib::details::compute_priority;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Compute shortest path from s to t
-  auto sp_path = kspwlo_impl::compute_shortest_path(G, s, t);
+  auto sp_path = arlib::details::compute_shortest_path(G, s, t);
   auto &sp = sp_path.graph();
 
   // Compute lower bounds for AStar
   auto heuristic =
-      kspwlo_impl::distance_heuristic<kspwlo::Graph, kspwlo::Length>(G, t);
+      arlib::details::distance_heuristic<arlib::Graph, arlib::Length>(G, t);
 
   // We keep a set of deleted-edges
-  using Edge = typename graph_traits<kspwlo::Graph>::edge_descriptor;
+  using Edge = typename graph_traits<arlib::Graph>::edge_descriptor;
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   // Check that (0, 3) was computed in shortest path
@@ -64,9 +65,9 @@ TEST_CASE("Edge priority computation", "[esx]") {
 
 TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   auto G =
-      boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr_esx});
-  kspwlo::Vertex s = 0, t = 6;
-  auto res = boost::esx(G, s, t, 3, 0.5);
+      arlib::read_graph_from_string<arlib::Graph>(std::string{graph_gr_esx});
+  arlib::Vertex s = 0, t = 6;
+  auto res = arlib::esx(G, s, t, 3, 0.5);
 
   // Create a new tmp file out of graph_gr_esx
   namespace fs = std::experimental::filesystem;
@@ -117,17 +118,18 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
           "unidirectional dijkstra",
           "[esx]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;
   double theta = 0.5;
 
-  auto res_paths_uni = boost::esx(G, s, t, 3, 0.5);
-  auto res_paths_bi = boost::esx(
-      G, s, t, 3, 0.5, kspwlo::shortest_path_algorithm::bidirectional_dijkstra);
+  auto res_paths_uni = arlib::esx(G, s, t, 3, 0.5);
+  auto res_paths_bi = arlib::esx(
+      G, s, t, 3, 0.5, arlib::shortest_path_algorithm::bidirectional_dijkstra);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 

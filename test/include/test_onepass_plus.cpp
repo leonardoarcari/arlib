@@ -4,14 +4,14 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/graph_utils.hpp"
-#include "kspwlo/impl/onepass_plus_impl.hpp"
-#include "kspwlo/onepass_plus.hpp"
 #include "utils.hpp"
+#include <arlib/details/onepass_plus_impl.hpp>
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
+#include <arlib/onepass_plus.hpp>
 
-#include "kspwlo_ref/algorithms/kspwlo.hpp"
-#include "kspwlo_ref/exploration/graph_utils.hpp"
+#include <kspwlo_ref/algorithms/kspwlo.hpp>
+#include <kspwlo_ref/exploration/graph_utils.hpp>
 
 #include <algorithm>
 #include <experimental/filesystem>
@@ -27,8 +27,8 @@ bool one_regression_path_have_edges(std::vector<Path> &, Graph &);
 //===----------------------------------------------------------------------===//
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepassplus]") {
-  using kspwlo::Edge;
-  using Label = kspwlo_impl::OnePassLabel<kspwlo::Graph>;
+  using arlib::VPair;
+  using Label = arlib::details::OnePassLabel<arlib::Graph>;
   auto s = std::make_unique<Label>(0, 0, 0, 0, 0);
   auto n1 = std::make_unique<Label>(1, 1, 1, s.get(), 1, 1);
   auto n2 = std::make_unique<Label>(2, 2, 2, n1.get(), 2, 1);
@@ -36,20 +36,20 @@ TEST_CASE("OnePassLabel builds a right path back to source", "[onepassplus]") {
 
   auto path = n3->get_path();
 
-  REQUIRE(std::find(std::begin(path), std::end(path), Edge{0, 1}) !=
+  REQUIRE(std::find(std::begin(path), std::end(path), VPair{0, 1}) !=
           std::end(path));
-  REQUIRE(std::find(std::begin(path), std::end(path), Edge{1, 2}) !=
+  REQUIRE(std::find(std::begin(path), std::end(path), VPair{1, 2}) !=
           std::end(path));
-  REQUIRE(std::find(std::begin(path), std::end(path), Edge{2, 3}) !=
+  REQUIRE(std::find(std::begin(path), std::end(path), VPair{2, 3}) !=
           std::end(path));
 }
 
 TEST_CASE("Computing distance from target", "[onepassplus]") {
   using namespace boost;
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr));
+  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr));
 
-  kspwlo::Vertex target = 6;
-  auto distance = kspwlo_impl::distance_from_target(G, target);
+  arlib::Vertex target = 6;
+  auto distance = arlib::details::distance_from_target(G, target);
 
   auto index = get(vertex_index, G);
   REQUIRE(distance[index[1]] == 6);
@@ -63,8 +63,8 @@ TEST_CASE("Computing distance from target", "[onepassplus]") {
 TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
   using namespace boost;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr));
-  auto predecessor = std::vector<kspwlo::Vertex>(num_vertices(G), 0);
+  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr));
+  auto predecessor = std::vector<arlib::Vertex>(num_vertices(G), 0);
   auto vertex_id = get(vertex_index, G);
   dijkstra_shortest_paths(
       G, vertex_id[0],
@@ -72,7 +72,7 @@ TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
                                                  vertex_id, vertex_id[0])));
 
   auto path =
-      kspwlo_impl::build_path_from_dijkstra(G, predecessor, 0, 6).graph();
+      arlib::details::build_path_from_dijkstra(G, predecessor, 0, 6).graph();
 
   REQUIRE(num_edges(path) == 3);
 
@@ -87,9 +87,9 @@ TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
 
 TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
           "[onepassplus]") {
-  auto G = boost::read_graph_from_string<kspwlo::Graph>(std::string{graph_gr});
-  kspwlo::Vertex s = 0, t = 6;
-  auto res = boost::onepass_plus(G, s, t, 3, 0.5);
+  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string{graph_gr});
+  arlib::Vertex s = 0, t = 6;
+  auto res = arlib::onepass_plus(G, s, t, 3, 0.5);
 
   // Create a new tmp file out of graph_gr
   namespace fs = std::experimental::filesystem;

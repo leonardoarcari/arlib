@@ -8,18 +8,19 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "kspwlo/bidirectional_dijkstra.hpp"
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/impl/kspwlo_impl.hpp"
+#include <arlib/bidirectional_dijkstra.hpp>
+#include <arlib/details/arlib_utils.hpp>
+#include <arlib/graph_types.hpp>
 
 #include <limits>
 #include <unordered_set>
 #include <utility>
 
+namespace arlib {
 /**
  * @brief Implementations details of kSPwLO algorithms
  */
-namespace kspwlo_impl {
+namespace details {
 
 //===----------------------------------------------------------------------===//
 //                      ESX algorithm support classes
@@ -114,7 +115,7 @@ public:
    * @param t The target vertex
    */
   distance_heuristic(const Graph &G, Vertex t) {
-    lower_bounds = kspwlo_impl::distance_from_target(G, t);
+    lower_bounds = distance_from_target(G, t);
   }
 
   /**
@@ -173,18 +174,17 @@ private:
 template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-constexpr std::function<std::optional<std::vector<kspwlo::Edge>>(
+constexpr std::function<std::optional<std::vector<VPair>>(
     const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
-build_shortest_path_fn(kspwlo::shortest_path_algorithm algorithm, const Graph &,
-                       Vertex, Vertex, const AStarHeuristic &,
-                       DeletedEdgeMap &) {
+build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &, Vertex,
+                       Vertex, const AStarHeuristic &, DeletedEdgeMap &) {
   switch (algorithm) {
-  case kspwlo::shortest_path_algorithm::astar:
+  case shortest_path_algorithm::astar:
     return [](const auto &G, auto s, auto t, const auto &heuristic,
               auto &deleted_edge_map) {
       return astar_shortest_path(G, s, t, heuristic, deleted_edge_map);
     };
-  case kspwlo::shortest_path_algorithm::bidirectional_dijkstra:
+  case shortest_path_algorithm::bidirectional_dijkstra:
     return [](const auto &G, auto s, auto t, const auto &heuristic,
               auto &deleted_edge_map) {
       return bidirectional_dijkstra_shortest_path(G, s, t, heuristic,
@@ -252,7 +252,7 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
 template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-std::optional<std::vector<kspwlo::Edge>>
+std::optional<std::vector<VPair>>
 astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                     const AStarHeuristic &heuristic,
                     DeletedEdgeMap &deleted_edge_map) {
@@ -276,7 +276,7 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
   }
   // In case t could not be found from astar_search and target_found is not
   // thrown, return empty optional
-  return std::optional<std::vector<kspwlo::Edge>>{};
+  return std::optional<std::vector<VPair>>{};
 }
 
 template <
@@ -285,7 +285,7 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<kspwlo::Edge>>
+std::optional<std::vector<VPair>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      const AStarHeuristic &,
                                      DeletedEdgeMap &deleted_edge_map) {
@@ -309,9 +309,9 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   try {
     bidirectional_dijkstra(filtered_G, s, t, predecessor, distance, weight,
                            rev_G, rev_weight, rev_index);
-  } catch (kspwlo_impl::target_not_found &) {
+  } catch (target_not_found &) {
     // In case t could not be found return empty optional
-    return std::optional<std::vector<kspwlo::Edge>>{};
+    return std::optional<std::vector<VPair>>{};
   }
 
   auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
@@ -401,7 +401,7 @@ int compute_priority(const Graph &G, const Edge &e,
         if (shortest_path_contains_edge(s_i, t_i, e, filtered_G, predecessor)) {
           ++priority;
         }
-      } catch (kspwlo_impl::target_not_found &ex) {
+      } catch (target_not_found &ex) {
         // In case t could not be found do nothing
         std::cout << "Caught exception: " << ex.what() << "\n";
       }
@@ -476,8 +476,9 @@ void init_edge_priorities(const Graph &alternative,
  * @param deleted_edges The set of edges to filter from @p G
  */
 template <typename PrioritiesVector, typename Graph, typename EdgeMap,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
           typename Index = typename PrioritiesVector::size_type>
-void init_edge_priorities(const std::vector<kspwlo::Edge> &alternative,
+void init_edge_priorities(const std::vector<Edge> &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
                           const Graph &G, const EdgeMap &deleted_edges) {
   for (const auto &[u, v] : alternative) {
@@ -511,10 +512,11 @@ bool check_feasibility(const std::vector<double> &overlaps);
  * alternative paths.
  * @return false Otherwise.
  */
-template <typename Graph>
-bool check_candidate_validity(
-    const std::vector<kspwlo::Edge> &candidate,
-    const std::vector<kspwlo::Path<Graph>> &alternatives, double theta) {
+template <typename Graph,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+bool check_candidate_validity(const std::vector<Edge> &candidate,
+                              const std::vector<Path<Graph>> &alternatives,
+                              double theta) {
   bool candidate_is_valid = true;
   for (const auto &alt_path : alternatives) {
     if (compute_similarity(candidate, alt_path) > theta) {
@@ -534,5 +536,6 @@ void move_to_dnr(Edge e,
   assert(deleted_edges.size() + 1 == old_size);
   dnr_edges.insert(e); // Mark e_tmp as do_not_remove
 }
-} // namespace kspwlo_impl
+} // namespace details
+} // namespace arlib
 #endif

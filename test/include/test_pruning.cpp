@@ -6,10 +6,10 @@
 #include <boost/graph/properties.hpp>
 
 #include "cittastudi_graph.hpp"
-#include "kspwlo/graph_pruning.hpp"
-#include "kspwlo/graph_types.hpp"
-#include "kspwlo/graph_utils.hpp"
 #include "utils.hpp"
+#include <arlib/graph_pruning.hpp>
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
 
 #include <experimental/filesystem>
 #include <memory>
@@ -21,14 +21,15 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a small graph do "
           "not prune nodes",
           "[pruning]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(graph_gr_esx));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   double tau = 1.0;
 
-  auto pruned_G = uninformed_bidirectional_pruner(G, s, t, tau);
+  auto pruned_G = arlib::uninformed_bidirectional_pruner(G, s, t, tau);
 
   std::cout << "*** Pruned graph ***\n|V| = " << num_vertices(pruned_G) << "\n";
   print_graph(pruned_G);
@@ -41,14 +42,15 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a real world "
           "network prunes nodes",
           "[pruning]") {
   using namespace boost;
-  using kspwlo::Vertex;
+  using arlib::Vertex;
 
-  auto G = read_graph_from_string<kspwlo::Graph>(std::string(cittastudi_gr));
+  auto G =
+      arlib::read_graph_from_string<arlib::Graph>(std::string(cittastudi_gr));
 
   Vertex s = 0, t = 20;
   double tau = 1.0;
 
-  auto pruned_G = uninformed_bidirectional_pruner(G, s, t, tau);
+  auto pruned_G = arlib::uninformed_bidirectional_pruner(G, s, t, tau);
 
   REQUIRE(num_edges(pruned_G) < num_edges(G));
 }

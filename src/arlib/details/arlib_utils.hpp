@@ -7,13 +7,15 @@
 #include <boost/graph/properties.hpp>
 #include <boost/graph/reverse_graph.hpp>
 
-#include "kspwlo/graph_types.hpp"
+#include <arlib/graph_types.hpp>
+#include <arlib/graph_utils.hpp>
 
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
-namespace kspwlo_impl {
+namespace arlib {
+namespace details {
 //===----------------------------------------------------------------------===//
 //                      kSPwLO algorithms support classes
 //===----------------------------------------------------------------------===//
@@ -68,10 +70,11 @@ bool exists_path_to(Vertex v, const DistMap &dist) {
  *         G)@f$
  */
 template <typename Graph,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
           typename Length =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
-Length compute_length_from_edges(const std::vector<kspwlo::Edge> &candidate,
+Length compute_length_from_edges(const std::vector<Edge> &candidate,
                                  const Graph &G) {
   using namespace boost;
   Length length = 0;
@@ -128,9 +131,10 @@ Length compute_length_from_edges(const Graph &candidate, const Graph &G) {
  * @param alt_path The alternative path @c p
  * @return The similarity between @c p' and @c p
  */
-template <typename Graph>
-double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
-                          const kspwlo::Path<Graph> &alt_path) {
+template <typename Graph,
+          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+double compute_similarity(const std::vector<Edge> &candidate,
+                          const Path<Graph> &alt_path) {
   double shared_length = static_cast<double>(
       compute_length_from_edges(candidate, alt_path.graph()));
 
@@ -138,8 +142,8 @@ double compute_similarity(const std::vector<kspwlo::Edge> &candidate,
 }
 
 template <typename Graph>
-double compute_similarity(const kspwlo::Path<Graph> &candidate,
-                          const kspwlo::Path<Graph> &alt_path) {
+double compute_similarity(const Path<Graph> &candidate,
+                          const Path<Graph> &alt_path) {
   double shared_length = static_cast<double>(
       compute_length_from_edges(candidate.graph(), alt_path.graph()));
 
@@ -166,12 +170,11 @@ template <typename Graph, typename PredecessorMap, typename Vertex,
           typename length_type =
               typename boost::property_traits<typename boost::property_map<
                   Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph> build_path_from_dijkstra(const Graph &G,
-                                             const PredecessorMap &p, Vertex s,
-                                             Vertex t) {
+Path<Graph> build_path_from_dijkstra(const Graph &G, const PredecessorMap &p,
+                                     Vertex s, Vertex t) {
   length_type length = 0;
   auto weight = boost::get(boost::edge_weight, G);
-  auto edge_list = std::vector<kspwlo::Edge>{};
+  auto edge_list = std::vector<VPair>{};
 
   auto current = t;
   while (current != s) {
@@ -193,7 +196,7 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-kspwlo::Path<Graph> compute_shortest_path(const Graph &G, Vertex s, Vertex t) {
+Path<Graph> compute_shortest_path(const Graph &G, Vertex s, Vertex t) {
   using namespace boost;
   auto sp_distances = std::vector<Length>(num_vertices(G));
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
@@ -227,9 +230,9 @@ kspwlo::Path<Graph> compute_shortest_path(const Graph &G, Vertex s, Vertex t) {
  * @return A vector of the shortest path edges from @p s to @p t.
  */
 template <typename Vertex, typename PredecessorMap>
-std::vector<kspwlo::Edge>
-build_edge_list_from_dijkstra(Vertex s, Vertex t, const PredecessorMap &p) {
-  auto edge_list = std::vector<kspwlo::Edge>{};
+std::vector<VPair> build_edge_list_from_dijkstra(Vertex s, Vertex t,
+                                                 const PredecessorMap &p) {
+  auto edge_list = std::vector<VPair>{};
 
   auto current = t;
   while (current != s) {
@@ -244,6 +247,7 @@ build_edge_list_from_dijkstra(Vertex s, Vertex t, const PredecessorMap &p) {
 
   return edge_list;
 }
-} // namespace kspwlo_impl
+} // namespace details
+} // namespace arlib
 
 #endif

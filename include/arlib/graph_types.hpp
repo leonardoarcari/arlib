@@ -5,15 +5,15 @@
 #include <iostream>
 #include <utility>
 
-namespace kspwlo {
+namespace arlib {
 using Graph =
     boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
                           boost::no_property,
                           boost::property<boost::edge_weight_t, double>>;
 using Vertex = boost::graph_traits<Graph>::vertex_descriptor;
-using Edge = std::pair<int, int>;
+using VPair = std::pair<int, int>;
 using Length = typename boost::property_traits<typename boost::property_map<
-    kspwlo::Graph, boost::edge_weight_t>::type>::value_type;
+    Graph, boost::edge_weight_t>::type>::value_type;
 
 template <typename Graph,
           typename length_type =
@@ -64,6 +64,6 @@ enum class shortest_path_algorithm {
   astar,
   bidirectional_dijkstra
 };
-} // namespace kspwlo
+} // namespace arlib
 
 #endif

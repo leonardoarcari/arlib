@@ -2,7 +2,7 @@
 .idea/
 **/cmake-build-*
 .vscode/
-kspwlolib_workspace.code-workspace
+arlib_workspace.code-workspace
 
 # CMake
 build/

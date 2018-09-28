@@ -11,13 +11,13 @@
 #include <unordered_set>
 #include <vector>
 
-#include "kspwlo/graph_types.hpp"
+#include <arlib/graph_types.hpp>
 
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-namespace boost {
+namespace arlib {
 template <typename PropertyGraph>
 PropertyGraph read_graph_from_string(const std::string &graph) {
   auto ss = std::stringstream{graph};
@@ -33,7 +33,7 @@ PropertyGraph read_graph_from_string(const std::string &graph) {
   line_s >> nb_nodes >> nb_edges;
 
   // Get edges and weights
-  auto edges = std::vector<kspwlo::Edge>{};
+  auto edges = std::vector<VPair>{};
   auto weights = std::vector<int>{};
 
   int s, t, w;
@@ -75,11 +75,12 @@ std::optional<PropertyGraph> read_graph_from_file(const std::string_view path) {
   return {read_graph_from_string<PropertyGraph>(buffer.str())};
 }
 
-std::string dump_edges_weight(const kspwlo::Graph &G);
+template <typename Graph> std::string dump_edges_weight(const Graph &G);
 
 template <typename Graph>
-Graph build_graph_from_edges(const std::vector<kspwlo::Edge> &edge_list,
+Graph build_graph_from_edges(const std::vector<VPair> &edge_list,
                              const Graph &G) {
+  using namespace boost;
   using Length = typename boost::property_traits<typename boost::property_map<
       Graph, boost::edge_weight_t>::type>::value_type;
   auto weight = get(edge_weight, G);
@@ -97,13 +98,14 @@ Graph build_graph_from_edges(const std::vector<kspwlo::Edge> &edge_list,
 }
 
 template <typename Graph>
-Graph build_AG(const std::vector<kspwlo::Path<Graph>> &paths, const Graph &g) {
+Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
+  using namespace boost;
   using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
   using Length = typename boost::property_traits<typename boost::property_map<
       Graph, boost::edge_weight_t>::type>::value_type;
 
   auto weight = get(edge_weight, g);
-  auto es = std::vector<kspwlo::Edge>{};
+  auto es = std::vector<VPair>{};
   auto weights = std::vector<Length>{};
   auto nodes = std::unordered_set<Vertex>{};
 
@@ -131,6 +133,6 @@ Graph build_AG(const std::vector<kspwlo::Path<Graph>> &paths, const Graph &g) {
 
   return Graph{std::begin(es), std::end(es), std::begin(weights), nodes.size()};
 }
-} // namespace boost
+} // namespace arlib
 
 #endif
