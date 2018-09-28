@@ -10,8 +10,8 @@
 #include "arlib/graph_utils.hpp"
 #include "arlib/penalty.hpp"
 
-#include "utils.hpp"
 #include "test_types.hpp"
+#include "utils.hpp"
 
 #include <experimental/filesystem>
 #include <memory>
@@ -24,8 +24,7 @@ using namespace arlib::test;
 TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   using namespace boost;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;
@@ -54,8 +53,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   // Candidate solution
   auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
@@ -169,8 +167,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
   using namespace boost;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Candidate solution
@@ -194,8 +191,7 @@ TEST_CASE("Bidirectional dijkstra works with reverse penalty functor adaptor",
           "[penalty]") {
   using namespace boost;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Make a local weight map to avoid modifying existing graph.
@@ -219,8 +215,7 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
           "[penalty]") {
   using namespace boost;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
   int k = 3;

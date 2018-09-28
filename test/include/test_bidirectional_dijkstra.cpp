@@ -5,8 +5,8 @@
 #include <boost/graph/properties.hpp>
 #include <boost/graph/reverse_graph.hpp>
 
-#include "utils.hpp"
 #include "test_types.hpp"
+#include "utils.hpp"
 #include <arlib/bidirectional_dijkstra.hpp>
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/graph_types.hpp>
@@ -26,8 +26,7 @@ TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
   using namespace boost;
   using arlib::VPair;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   Vertex s = 0, t = 6;
 

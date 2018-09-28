@@ -2,12 +2,27 @@
 #define GRAPH_TYPES_H
 
 #include <boost/graph/properties.hpp>
+//#include <boost/graph/graph_traits.hpp>
+//#include <boost/graph/graph_concepts.hpp>
 
 #include <iostream>
+#include <type_traits>
 #include <utility>
 
 namespace arlib {
 using VPair = std::pair<int, int>;
+
+template <typename G, typename = int>
+struct has_edge_weight : std::false_type {};
+
+template <typename G>
+struct has_edge_weight<
+    G, decltype((void)boost::property_traits<typename boost::property_map<
+                    G, boost::edge_weight_t>::type>::value_type,
+                0)> : std::true_type {};
+
+template <typename G>
+constexpr auto has_edge_weight_v = has_edge_weight<G>::value;
 
 template <typename Graph,
           typename Length =

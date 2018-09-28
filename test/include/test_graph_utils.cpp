@@ -4,12 +4,12 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+#include "test_types.hpp"
+#include "utils.hpp"
+
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
 #include <arlib/onepass_plus.hpp>
-
-#include "utils.hpp"
-#include "test_types.hpp"
 
 #include <algorithm>
 #include <experimental/filesystem>
@@ -139,8 +139,7 @@ TEST_CASE("Boost::Graph can be built from .gr files", "[graph_utils]") {
     // File must not exist
     auto non_existing_path =
         fs::path("/xyz/bla/bla/come/on/cant/be/existing.gr");
-    G_opt =
-        arlib::read_graph_from_file<Graph>(non_existing_path.string());
+    G_opt = arlib::read_graph_from_file<Graph>(non_existing_path.string());
 
     REQUIRE(!G_opt);
   }

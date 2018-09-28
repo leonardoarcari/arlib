@@ -1,5 +1,9 @@
 #include "catch.hpp"
 
+#include "cittastudi_graph.hpp"
+#include "test_types.hpp"
+#include "utils.hpp"
+
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
 #include <arlib/penalty.hpp>
@@ -8,17 +12,12 @@
 #include <chrono>
 #include <random>
 
-#include "cittastudi_graph.hpp"
-#include "utils.hpp"
-#include "test_types.hpp"
-
 using namespace arlib::test;
 
 auto find_alternative_paths(int k = 3, double theta = 0.5) {
   using namespace boost;
 
-  auto G =
-      arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
 
   Vertex s = 0, t = 20;
   auto p = 0.1;
@@ -60,7 +59,9 @@ TEST_CASE(
     std::cout << "[Path " << i << "]\n";
     for (std::size_t j = 0; j < i; ++j) {
       std::cout << "  Similarity with path " << j << ": "
-                << arlib::details::compute_similarity(paths[i], paths[j])
+                << arlib::details::compute_similarity(
+                       paths[i], paths[j],
+                       boost::get(boost::edge_weight, paths[j].graph()))
                 << "\n";
     }
   }

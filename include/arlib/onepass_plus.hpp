@@ -30,7 +30,7 @@ namespace arlib {
  * Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology
  * (EDBT) (2017)
  *
- * @tparam PropertyGraph A Boost::PropertyGraph having at least one edge
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
  *         property with tag boost::edge_weight_t.
  * @tparam Vertex A vertex of PropertyGraph.
  * @param G The graph.
@@ -41,17 +41,19 @@ namespace arlib {
  *
  * @return A vector of at maximum @p k alternative paths.
  */
-template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
-                                              Vertex t, int k, double theta) {
+template <
+    typename Graph, typename WeightMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
+                                      Vertex s, Vertex t, int k, double theta) {
   using namespace boost;
-  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
-  using Length = typename boost::property_traits<typename boost::property_map<
-      PropertyGraph, boost::edge_weight_t>::type>::value_type;
-  auto weight = get(edge_weight, G);
-  auto resPaths = std::vector<Path<PropertyGraph>>{};
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using Length = typename boost::property_traits<WeightMap>::value_type;
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  auto resPaths = std::vector<Path<Graph>>{};
   auto resPathsEdges = std::vector<std::vector<VPair>>{};
   auto resPathsLengths = std::vector<Length>{};
 
@@ -62,21 +64,21 @@ std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
       std::unordered_map<Edge, std::vector<resPathIndex>, boost::hash<Edge>>{};
 
   // Min-priority queue
-  using Label = details::OnePassLabel<PropertyGraph>;
+  using Label = details::OnePassLabel<Graph, Length>;
   using LabelPtr = std::unique_ptr<Label>;
   auto Q =
       std::priority_queue<Label *, std::vector<Label *>,
-                          details::OnePassPlusASComparator<PropertyGraph>>{};
+                          details::OnePassPlusASComparator<Graph, Length>>{};
   auto created_labels = std::vector<LabelPtr>{};
 
   // Skyline for dominance checkind (Lemma 2)
-  auto skyline = details::SkylineContainer<PropertyGraph>{};
+  auto skyline = details::SkylineContainer<Graph, Length>{};
 
   // Compute lower bounds for AStar
-  auto lower_bounds = details::distance_from_target(G, t);
+  auto lower_bounds = details::distance_from_target<Length>(G, t);
 
   // Compute shortest path from s to t
-  auto sp_path = details::compute_shortest_path(G, s, t);
+  auto sp_path = details::compute_shortest_path(G, weight, s, t);
   auto &sp = sp_path.graph();
 
   // P_LO <-- {shortest path p_0(s, t)};
@@ -187,6 +189,21 @@ std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
     }
   }
   return resPaths;
+}
+
+template <typename PropertyGraph,
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
+                                              Vertex t, int k, double theta) {
+  using namespace boost;
+  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT(
+      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
+
+  auto weight = get(edge_weight, G);
+  return onepass_plus(G, weight, s, t, k, theta);
 }
 } // namespace arlib
 

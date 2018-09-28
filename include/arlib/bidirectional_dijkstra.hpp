@@ -99,6 +99,15 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             BiDijkstraVisitor<BiDijkstraVisitorImpl> &visitor) {
   using namespace boost;
   using Length = typename property_traits<DistanceMap>::value_type;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using RevEdge =
+      typename graph_traits<boost::reverse_graph<Graph>>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<BackWeightMap, RevEdge>));
+
   constexpr Length inf = std::numeric_limits<Length>::max();
 
   // Initialize distance structures
@@ -209,7 +218,15 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             BackWeightMap weight_b, BackIndexMap index_map_b,
                             BiDijkstraVisitor<BiDijkstraVisitorImpl> &visitor) {
   using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using RevEdge =
+      typename graph_traits<boost::reverse_graph<Graph>>::edge_descriptor;
   using Length = typename property_traits<DistanceMap>::value_type;
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<BackWeightMap, RevEdge>));
 
   auto predecessor_b_vec =
       std::vector<Vertex>(vertices(G_b).first, vertices(G_b).second);
@@ -257,6 +274,16 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             PredecessorMap predecessor, DistanceMap distance,
                             WeightMap weight, const BackGraph &G_b,
                             BackWeightMap weight_b, BackIndexMap index_map_b) {
+  using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using RevEdge =
+      typename graph_traits<boost::reverse_graph<Graph>>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<BackWeightMap, RevEdge>));
+
   auto visitor = IdentityBiDijkstraVisitor{};
   bidirectional_dijkstra(G, s, t, predecessor, distance, weight, G_b, weight_b,
                          index_map_b, visitor);
