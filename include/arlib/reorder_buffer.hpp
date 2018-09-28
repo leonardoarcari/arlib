@@ -1,5 +1,5 @@
-#ifndef KSPWLO_REORDER_BUFFER_HPP
-#define KSPWLO_REORDER_BUFFER_HPP
+#ifndef ARLIB_REORDER_BUFFER_HPP
+#define ARLIB_REORDER_BUFFER_HPP
 
 #include <algorithm>
 #include <arlib/details/arlib_utils.hpp>

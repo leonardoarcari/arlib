@@ -1,5 +1,5 @@
-#ifndef BOOST_KSPWLO_VISITOR_HPP
-#define BOOST_KSPWLO_VISITOR_HPP
+#ifndef ARLIB_VISITOR_HPP
+#define ARLIB_VISITOR_HPP
 
 #include <boost/graph/graph_concepts.hpp>
 
