@@ -46,7 +46,8 @@ public:
       auto found = false;
       auto sims = std::vector<std::pair<double, ForwardIt>>{};
       for (auto it = std::next(cur); it != last; ++it) {
-        auto sim = details::compute_similarity(*it, *cur);
+        auto sim = details::compute_similarity(
+            *it, *cur, boost::get(boost::edge_weight, cur->graph()));
         sims.emplace_back(sim, it);
         if (is_valid_candidate(first, cur, sim, theta)) {
           std::iter_swap(std::next(cur), it);

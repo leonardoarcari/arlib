@@ -47,21 +47,24 @@ namespace arlib {
  *
  * @return A vector of at maximum @p k alternative paths.
  */
-template <typename Graph, typename Vertex = typename boost::graph_traits<
-                              Graph>::vertex_descriptor>
+template <
+    typename Graph, typename WeightMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
 std::vector<Path<Graph>> penalty_ag(
-    const Graph &G, Vertex s, Vertex t, int k, double theta, double p, double r,
-    int max_nb_updates, int max_nb_steps,
+    const Graph &G, WeightMap const &original_weight, Vertex s, Vertex t, int k,
+    double theta, double p, double r, int max_nb_updates, int max_nb_steps,
     shortest_path_algorithm algorithm = shortest_path_algorithm::dijkstra) {
   using namespace boost;
-  // P_LO set of k paths
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<typename boost::property_map<
       Graph, boost::edge_weight_t>::type>::value_type;
-  auto resPaths = std::vector<Path<Graph>>{};
 
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
+  auto resPaths = std::vector<Path<Graph>>{};
   // Make a local weight map to avoid modifying existing graph.
-  auto original_weight = get(edge_weight, G);
   auto penalty = details::penalty_functor{original_weight};
 
   // Make shortest path algorithm function
@@ -76,8 +79,9 @@ std::vector<Path<Graph>> penalty_ag(
   assert(sp);
 
   // P_LO <-- {shortest path p_0(s, t)};
-  resPaths.emplace_back(build_graph_from_edges(*sp, G),
-                        details::compute_length_from_edges(*sp, G));
+  resPaths.emplace_back(
+      build_graph_from_edges(*sp, G),
+      details::compute_length_from_edges(*sp, G, original_weight));
 
   // If we need the shortest path only
   if (k == 1) {
@@ -105,19 +109,39 @@ std::vector<Path<Graph>> penalty_ag(
     // If p_tmp is sufficiently dissimilar to other alternative paths, accept it
     bool is_valid_path = true;
     for (const auto &alt_path : resPaths) {
-      if (details::compute_similarity(*p_tmp, alt_path) > theta) {
+      if (details::compute_similarity(
+              *p_tmp, alt_path, get(edge_weight, alt_path.graph())) > theta) {
         is_valid_path = false;
         break;
       }
     }
 
     if (is_valid_path) {
-      resPaths.emplace_back(build_graph_from_edges(*p_tmp, G),
-                            details::compute_length_from_edges(*p_tmp, G));
+      resPaths.emplace_back(
+          build_graph_from_edges(*p_tmp, G),
+          details::compute_length_from_edges(*p_tmp, G, original_weight));
     }
   }
 
   return resPaths;
+}
+
+template <typename PropertyGraph,
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+std::vector<Path<PropertyGraph>> penalty_ag(
+    const PropertyGraph &G, Vertex s, Vertex t, int k, double theta, double p,
+    double r, int max_nb_updates, int max_nb_steps,
+    shortest_path_algorithm algorithm = shortest_path_algorithm::dijkstra) {
+  using namespace boost;
+  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT(
+      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
+
+  auto weight = get(edge_weight, G);
+  return penalty_ag(G, weight, s, t, k, theta, p, r, max_nb_updates,
+                    max_nb_steps, algorithm);
 }
 } // namespace arlib
 
