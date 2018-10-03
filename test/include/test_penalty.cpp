@@ -76,7 +76,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
     auto r = 0.1;
     auto bound_limit = 1;
 
-    auto old_penalty = arlib::details::penalty_functor{penalty};
+    auto old_penalty = penalty.clone();
 
     arlib::details::penalize_candidate_path(candidate, G, s, t, p, r, penalty,
                                             distance_s, distance_t,
