@@ -4,7 +4,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+#include "test_types.hpp"
 #include "utils.hpp"
+
 #include <arlib/details/onepass_plus_impl.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
@@ -19,8 +21,7 @@
 #include <memory>
 #include <string_view>
 
-template <typename Graph>
-bool one_regression_path_have_edges(std::vector<Path> &, Graph &);
+using namespace arlib::test;
 
 //===----------------------------------------------------------------------===//
 //                                Test cases
@@ -28,7 +29,7 @@ bool one_regression_path_have_edges(std::vector<Path> &, Graph &);
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepassplus]") {
   using arlib::VPair;
-  using Label = arlib::details::OnePassLabel<arlib::Graph>;
+  using Label = arlib::details::OnePassLabel<Graph, Length>;
   auto s = std::make_unique<Label>(0, 0, 0, 0, 0);
   auto n1 = std::make_unique<Label>(1, 1, 1, s.get(), 1, 1);
   auto n2 = std::make_unique<Label>(2, 2, 2, n1.get(), 2, 1);
@@ -46,10 +47,10 @@ TEST_CASE("OnePassLabel builds a right path back to source", "[onepassplus]") {
 
 TEST_CASE("Computing distance from target", "[onepassplus]") {
   using namespace boost;
-  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr));
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr));
 
-  arlib::Vertex target = 6;
-  auto distance = arlib::details::distance_from_target(G, target);
+  Vertex target = 6;
+  auto distance = arlib::details::distance_from_target<Length>(G, target);
 
   auto index = get(vertex_index, G);
   REQUIRE(distance[index[1]] == 6);
@@ -63,16 +64,17 @@ TEST_CASE("Computing distance from target", "[onepassplus]") {
 TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
   using namespace boost;
 
-  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string(graph_gr));
-  auto predecessor = std::vector<arlib::Vertex>(num_vertices(G), 0);
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr));
+  auto predecessor = std::vector<Vertex>(num_vertices(G), 0);
   auto vertex_id = get(vertex_index, G);
   dijkstra_shortest_paths(
       G, vertex_id[0],
       predecessor_map(make_iterator_property_map(std::begin(predecessor),
                                                  vertex_id, vertex_id[0])));
-
+  auto weight_G = get(edge_weight, G);
   auto path =
-      arlib::details::build_path_from_dijkstra(G, predecessor, 0, 6).graph();
+      arlib::details::build_path_from_dijkstra(G, weight_G, predecessor, 0, 6)
+          .graph();
 
   REQUIRE(num_edges(path) == 3);
 
@@ -87,8 +89,8 @@ TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
 
 TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
           "[onepassplus]") {
-  auto G = arlib::read_graph_from_string<arlib::Graph>(std::string{graph_gr});
-  arlib::Vertex s = 0, t = 6;
+  auto G = arlib::read_graph_from_string<Graph>(std::string{graph_gr});
+  Vertex s = 0, t = 6;
   auto res = arlib::onepass_plus(G, s, t, 3, 0.5);
 
   // Create a new tmp file out of graph_gr

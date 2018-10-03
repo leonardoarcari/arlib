@@ -114,9 +114,8 @@ public:
    * @param G The Graph on which to search
    * @param t The target vertex
    */
-  distance_heuristic(const Graph &G, Vertex t) {
-    lower_bounds = distance_from_target(G, t);
-  }
+  distance_heuristic(const Graph &G, Vertex t)
+      : lower_bounds{distance_from_target<CostType>(G, t)} {}
 
   /**
    * @param u The Vertex
@@ -519,7 +518,9 @@ bool check_candidate_validity(const std::vector<Edge> &candidate,
                               double theta) {
   bool candidate_is_valid = true;
   for (const auto &alt_path : alternatives) {
-    if (compute_similarity(candidate, alt_path) > theta) {
+    if (compute_similarity(candidate, alt_path,
+                           boost::get(boost::edge_weight, alt_path.graph())) >
+        theta) {
       candidate_is_valid = false;
       break;
     }

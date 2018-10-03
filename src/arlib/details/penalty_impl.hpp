@@ -112,6 +112,12 @@ public:
    */
   const Length &operator[](const Edge &e) const { return get_or_insert(e); }
 
+  penalty_functor clone() const {
+    auto pf = *this;
+    pf.penalties = std::make_shared<WeightMap<Edge, Length>>(*penalties);
+    return pf;
+  }
+
 private:
   PMap weight;
   mutable std::shared_ptr<WeightMap<Edge, Length>> penalties;

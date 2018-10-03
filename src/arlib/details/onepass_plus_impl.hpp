@@ -40,16 +40,12 @@ namespace details {
  * there exist a label attached to a node @c n' and an edge <tt>(n', n)</tt> in
  * Graph.
  *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
+ * @tparam Graph A Boost::Graph
  * @tparam Vertex A vertex of Graph.
  * @tparam Length The value type of an edge weight of Graph.
  */
-template <typename Graph,
+template <typename Graph, typename Length,
           typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-          typename Length =
-              typename boost::property_traits<typename boost::property_map<
-                  Graph, boost::edge_weight_t>::type>::value_type,
           typename Vertex =
               typename boost::graph_traits<Graph>::vertex_descriptor>
 class OnePassLabel {
@@ -96,7 +92,7 @@ public:
    * @param checked_at_step The current time step (i.e. the number of
    *        alternative paths currently computed)
    */
-  OnePassLabel(Vertex node, length_type length, length_type lower_bound,
+  OnePassLabel(Vertex node, Length length, Length lower_bound,
                OnePassLabel *previous, int k, int checked_at_step)
       : node{node}, length{length},
         lower_bound{lower_bound}, previous{previous},
@@ -114,7 +110,7 @@ public:
    * @param checked_at_step The current time step (i.e. the number of
    *        alternative paths currently computed)
    */
-  OnePassLabel(Vertex node, length_type length, length_type lower_bound, int k,
+  OnePassLabel(Vertex node, Length length, Length lower_bound, int k,
                int checked_at_step)
       : node{node}, length{length}, lower_bound{lower_bound}, previous{nullptr},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
@@ -241,9 +237,9 @@ public:
   }
 
 private:
-  template <typename Graph2>
+  template <typename Graph2, typename Length2>
   friend std::ostream &operator<<(std::ostream &os,
-                                  const OnePassLabel<Graph2> &label) {
+                                  const OnePassLabel<Graph2, Length2> &label) {
     os << "(node = " << label.node << ", length = " << label.length
        << ", lower_bound = " << label.lower_bound << ", k = " << label.k
        << ", checked_at_step = " << label.checked_at_step
@@ -266,16 +262,15 @@ private:
  * less than the similarity of @c l' with @c P_LO, then @c l' is dominated and
  * should be pruned.
  *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
+ * @tparam Graph A Boost::Graph
  * @tparam Vertex A vertex of Graph.
  */
-template <typename Graph,
+template <typename Graph, typename Length,
           typename Vertex =
               typename boost::graph_traits<Graph>::vertex_descriptor>
 class SkylineContainer {
 public:
-  using Label = OnePassLabel<Graph>;
+  using Label = OnePassLabel<Graph, Length>;
   using LabelPtr = Label *;
 
   /**
@@ -368,11 +363,10 @@ private:
  * A lower bound for the distance of the label from the target is used to decide
  * the ordering. The label with the lowest lower bound is the smallest.
  *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
+ * @tparam Graph A Boost::Graph
  */
-template <typename Graph> struct OnePassPlusASComparator {
-  using LabelPtr = OnePassLabel<Graph> *;
+template <typename Graph, typename Length> struct OnePassPlusASComparator {
+  using LabelPtr = OnePassLabel<Graph, Length> *;
 
   bool operator()(LabelPtr lhs, LabelPtr rhs) const {
     return lhs->get_lower_bound() > rhs->get_lower_bound();

@@ -27,7 +27,7 @@ namespace arlib {
  * Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology
  * (EDBT) (2017)
  *
- * @tparam PropertyGraph A Boost::PropertyGraph having at least one edge
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
  *         property with tag boost::edge_weight_t.
  * @tparam Vertex A vertex of PropertyGraph.
  * @param G The graph.
@@ -38,20 +38,24 @@ namespace arlib {
  *
  * @return A list of at maximum @p k alternative paths.
  */
-template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>>
-esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
+template <
+    typename Graph, typename WeightMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+std::vector<Path<Graph>>
+esx(const Graph &G, WeightMap const &weight, Vertex s, Vertex t, int k,
+    double theta,
     shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
   using namespace boost;
-  // P_LO set of k paths
-  using Length = typename boost::property_traits<typename boost::property_map<
-      PropertyGraph, boost::edge_weight_t>::type>::value_type;
-  auto resPaths = std::vector<Path<PropertyGraph>>{};
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using Length = typename boost::property_traits<WeightMap>::value_type;
 
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
+  auto resPaths = std::vector<Path<Graph>>{};
   // Compute shortest path from s to t
-  auto sp_path = details::compute_shortest_path(G, s, t);
+  auto sp_path = details::compute_shortest_path(G, weight, s, t);
   auto &sp = sp_path.graph();
 
   // P_LO <-- {shortest path p_0(s, t)};
@@ -63,7 +67,6 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
   }
 
   // Every max-heap H_i is associated with p_i
-  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
   using Priority = std::pair<Edge, int>;
   using EdgePriorityQueue =
       std::priority_queue<Priority, std::vector<Priority>,
@@ -77,7 +80,7 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   // Compute lower bounds for AStar
-  auto heuristic = details::distance_heuristic<PropertyGraph, Length>(G, t);
+  auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
 
   // Make shortest path algorithm function
   auto compute_shortest_path = details::build_shortest_path_fn(
@@ -140,8 +143,9 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
       if (edge_priorities[p_max_idx].empty()) {
         overlaps[p_max_idx] = 0;
       } else {
-        overlaps[p_max_idx] =
-            details::compute_similarity(*p_tmp, resPaths[p_max_idx]);
+        const auto &alt_path = resPaths[p_max_idx];
+        overlaps[p_max_idx] = details::compute_similarity(
+            *p_tmp, alt_path, get(edge_weight, alt_path.graph()));
       }
 
       // Checking if the resulting path is valid
@@ -149,8 +153,9 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
           details::check_candidate_validity(*p_tmp, resPaths, theta);
       if (candidate_is_valid) {
         // Add p_tmp to P_LO
-        resPaths.emplace_back(build_graph_from_edges(*p_tmp, G),
-                              details::compute_length_from_edges(*p_tmp, G));
+        resPaths.emplace_back(
+            build_graph_from_edges(*p_tmp, G),
+            details::compute_length_from_edges(*p_tmp, G, weight));
 
         // Set p_c overlap with itself to 1
         std::ptrdiff_t p_c_idx = resPaths.size() - 1;
@@ -166,6 +171,22 @@ esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
   }
 
   return resPaths;
+}
+
+template <typename PropertyGraph,
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+std::vector<Path<PropertyGraph>>
+esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
+    shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
+  using namespace boost;
+  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT(
+      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
+
+  auto weight = get(edge_weight, G);
+  return esx(G, weight, s, t, k, theta, algorithm);
 }
 } // namespace arlib
 
