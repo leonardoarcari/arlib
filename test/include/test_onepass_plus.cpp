@@ -29,19 +29,22 @@ using namespace arlib::test;
 
 TEST_CASE("OnePassLabel builds a right path back to source", "[onepassplus]") {
   using arlib::VPair;
+  using namespace boost;
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr));
   using Label = arlib::details::OnePassLabel<Graph, Length>;
+
   auto s = std::make_unique<Label>(0, 0, 0, 0, 0);
-  auto n1 = std::make_unique<Label>(1, 1, 1, s.get(), 1, 1);
-  auto n2 = std::make_unique<Label>(2, 2, 2, n1.get(), 2, 1);
-  auto n3 = std::make_unique<Label>(3, 3, 2, n2.get(), 3, 1);
+  auto n1 = std::make_unique<Label>(3, 1, 1, s.get(), 1, 1);
+  auto n2 = std::make_unique<Label>(5, 2, 2, n1.get(), 2, 1);
+  auto n3 = std::make_unique<Label>(6, 3, 2, n2.get(), 3, 1);
 
-  auto path = n3->get_path();
+  auto path = n3->get_path(G);
 
-  REQUIRE(std::find(std::begin(path), std::end(path), VPair{0, 1}) !=
+  REQUIRE(std::find(std::begin(path), std::end(path), edge(0, 3, G).first) !=
           std::end(path));
-  REQUIRE(std::find(std::begin(path), std::end(path), VPair{1, 2}) !=
+  REQUIRE(std::find(std::begin(path), std::end(path), edge(3, 5, G).first) !=
           std::end(path));
-  REQUIRE(std::find(std::begin(path), std::end(path), VPair{2, 3}) !=
+  REQUIRE(std::find(std::begin(path), std::end(path), edge(5, 6, G).first) !=
           std::end(path));
 }
 
@@ -91,7 +94,9 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
           "[onepassplus]") {
   auto G = arlib::read_graph_from_string<Graph>(std::string{graph_gr});
   Vertex s = 0, t = 6;
-  auto res = arlib::onepass_plus(G, s, t, 3, 0.5);
+  auto predecessors = arlib::multi_predecessor_map<Vertex>{};
+  arlib::onepass_plus(G, predecessors, s, t, 3, 0.5);
+  auto res = arlib::to_paths(predecessors, G, s, t);
 
   // Create a new tmp file out of graph_gr
   namespace fs = std::experimental::filesystem;

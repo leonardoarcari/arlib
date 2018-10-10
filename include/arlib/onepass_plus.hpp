@@ -42,24 +42,26 @@ namespace arlib {
  * @return A vector of at maximum @p k alternative paths.
  */
 template <
-    typename Graph, typename WeightMap,
+    typename Graph, typename WeightMap, typename MultiPredecessorMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
-                                      Vertex s, Vertex t, int k, double theta) {
+void onepass_plus(const Graph &G, WeightMap weight,
+                  MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
+                  double theta) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<WeightMap>::value_type;
 
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
   BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT(
+      (ReadablePropertyMapConcept<MultiPredecessorMap, Vertex>));
 
-  auto resPaths = std::vector<Path<Graph>>{};
-  auto resPathsEdges = std::vector<std::vector<VPair>>{};
-  auto resPathsLengths = std::vector<Length>{};
+  auto resPathsEdges = std::vector<std::vector<Edge>>{};
+  // auto resPathsLengths = std::vector<Length>{};
 
   // resEdges keeps track of the edges that make the paths in resPaths and which
   // path includes it.
-  using resPathIndex = typename decltype(resPaths)::size_type;
+  using resPathIndex = typename decltype(resPathsEdges)::size_type;
   auto resEdges =
       std::unordered_map<Edge, std::vector<resPathIndex>, boost::hash<Edge>>{};
 
@@ -78,22 +80,24 @@ std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
   auto lower_bounds = details::distance_from_target<Length>(G, t);
 
   // Compute shortest path from s to t
-  auto sp_path = details::compute_shortest_path(G, weight, s, t);
-  auto &sp = sp_path.graph();
+  auto [sp_path, sp_len] = details::compute_shortest_path(G, weight, s, t);
 
   // P_LO <-- {shortest path p_0(s, t)};
-  resPaths.push_back(sp_path);
+  resPathsEdges.push_back(sp_path);
+  // resPathsLengths.push_back(sp_len);
   resPathIndex paths_count = 1;
 
   // If we need the shortest path only
   if (k == 1) {
-    return resPaths;
+    details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(),
+                                    G, predecessors);
+    return;
   }
 
   // For each edge in the candidate path, we check if it's already in any of the
   // resPaths. If not, we add it to resEdges. If yes, we keep track of which
   // path includes it.
-  details::update_res_edges(sp, G, resEdges, paths_count);
+  details::update_res_edges(sp_path, resEdges, paths_count);
 
   // Initialize min-priority queue Q with <s, empty_set>
   auto init_label =
@@ -112,7 +116,7 @@ std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
     // priority queue.
     if (label->is_outdated(paths_count - 1)) {
       bool below_sim_threshold = details::update_label_similarity(
-          *label, G, resEdges, resPaths, weight, theta, paths_count - 1);
+          *label, G, resEdges, resPathsEdges, weight, theta, paths_count - 1);
 
       label->set_last_check(paths_count - 1); // Update last check time step
       if (!below_sim_threshold) {
@@ -123,25 +127,23 @@ std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
     // If we found the target node
     if (label->get_node() == t) {
       // Build the new k-th shortest path
-      resPathsEdges.push_back(label->get_path());
-      resPathsLengths.push_back(label->get_length());
+      resPathsEdges.push_back(label->get_path(G));
+      // resPathsLengths.push_back(label->get_length());
 
       auto &tmpPath = resPathsEdges.back();
       ++paths_count;
 
       if (static_cast<int>(paths_count) == k) { // we found k paths. End.
         // Add computed alternatives to resPaths
-        for (std::size_t i = 0; i < resPathsEdges.size(); ++i) {
-          resPaths.emplace_back(build_graph_from_edges(resPathsEdges[i], G),
-                                resPathsLengths[i]);
-        }
+        details::fill_multi_predecessor(resPathsEdges.begin(),
+                                        resPathsEdges.end(), G, predecessors);
         break;
       }
 
       // For each edge in the candidate path see if it's already in any of the
       // P_LO paths. If not, add it to the resEdges. If so, keep track of which
       // path includes it
-      details::update_res_edges(tmpPath, G, resEdges, paths_count);
+      details::update_res_edges(tmpPath, resEdges, paths_count);
 
     } else { // Expand Search
       if (skyline.dominates(*label)) {
@@ -167,7 +169,7 @@ std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
 
           // Check Lemma 1 for similarity thresholding
           bool below_sim_threshold = details::is_below_sim_threshold(
-              c_edge, c_similarity_map, theta, resEdges, resPaths, weight);
+              c_edge, c_similarity_map, theta, resEdges, resPathsEdges, weight);
 
           if (below_sim_threshold) {
             c_label->set_similarities(std::begin(c_similarity_map),
@@ -182,20 +184,16 @@ std::vector<Path<Graph>> onepass_plus(const Graph &G, WeightMap weight,
 
   if (static_cast<int>(paths_count) != k) {
     // Add computed alternatives to resPaths
-    using index = decltype(resPathsEdges.size());
-    for (index i = 0; i < resPathsEdges.size(); ++i) {
-      resPaths.emplace_back(build_graph_from_edges(resPathsEdges[i], G),
-                            resPathsLengths[i]);
-    }
+    details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(),
+                                    G, predecessors);
   }
-  return resPaths;
 }
 
-template <typename PropertyGraph,
+template <typename PropertyGraph, typename MultiPredecessorMap,
           typename Vertex =
               typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
-                                              Vertex t, int k, double theta) {
+void onepass_plus(const PropertyGraph &G, MultiPredecessorMap &predecessors,
+                  Vertex s, Vertex t, int k, double theta) {
   using namespace boost;
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
 
@@ -203,7 +201,7 @@ std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
       (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
 
   auto weight = get(edge_weight, G);
-  return onepass_plus(G, weight, s, t, k, theta);
+  onepass_plus(G, weight, predecessors, s, t, k, theta);
 }
 } // namespace arlib
 
