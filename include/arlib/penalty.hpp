@@ -48,11 +48,12 @@ namespace arlib {
  * @return A vector of at maximum @p k alternative paths.
  */
 template <
-    typename Graph, typename WeightMap,
+    typename Graph, typename WeightMap, typename MultiPredecessorMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-std::vector<Path<Graph>> penalty_ag(
-    const Graph &G, WeightMap const &original_weight, Vertex s, Vertex t, int k,
-    double theta, double p, double r, int max_nb_updates, int max_nb_steps,
+void penalty_ag(
+    const Graph &G, WeightMap const &original_weight,
+    MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k, double theta,
+    double p, double r, int max_nb_updates, int max_nb_steps,
     shortest_path_algorithm algorithm = shortest_path_algorithm::dijkstra) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
@@ -63,7 +64,9 @@ std::vector<Path<Graph>> penalty_ag(
   BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
 
   // P_LO set of k paths
-  auto resPaths = std::vector<Path<Graph>>{};
+  auto resPathsEdges = std::vector<std::vector<Edge>>{};
+  auto resEdges = std::vector<std::unordered_set<Edge, boost::hash<Edge>>>{};
+
   // Make a local weight map to avoid modifying existing graph.
   auto penalty = details::penalty_functor{original_weight};
 
@@ -79,13 +82,14 @@ std::vector<Path<Graph>> penalty_ag(
   assert(sp);
 
   // P_LO <-- {shortest path p_0(s, t)};
-  resPaths.emplace_back(
-      build_graph_from_edges(*sp, G),
-      details::compute_length_from_edges(*sp, G, original_weight));
+  resPathsEdges.push_back(*sp);
+  resEdges.emplace_back(sp->begin(), sp->end());
 
   // If we need the shortest path only
   if (k == 1) {
-    return resPaths;
+    details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(),
+                                    G, predecessors);
+    return;
   }
 
   // Initialize map for penalty bounds
@@ -97,7 +101,7 @@ std::vector<Path<Graph>> penalty_ag(
 
   int step = 0;
   using Index = std::size_t;
-  while (resPaths.size() < static_cast<Index>(k) && step < max_nb_steps) {
+  while (resPathsEdges.size() < static_cast<Index>(k) && step < max_nb_steps) {
     auto p_tmp = compute_shortest_path(G, s, t, penalty);
 
     // Penalize p_tmp edges
@@ -108,30 +112,32 @@ std::vector<Path<Graph>> penalty_ag(
 
     // If p_tmp is sufficiently dissimilar to other alternative paths, accept it
     bool is_valid_path = true;
-    for (const auto &alt_path : resPaths) {
-      if (details::compute_similarity(
-              *p_tmp, alt_path, get(edge_weight, alt_path.graph())) > theta) {
+    for (const auto &alt_path : resEdges) {
+      if (details::compute_similarity(*p_tmp, alt_path, original_weight) >
+          theta) {
         is_valid_path = false;
         break;
       }
     }
 
     if (is_valid_path) {
-      resPaths.emplace_back(
-          build_graph_from_edges(*p_tmp, G),
-          details::compute_length_from_edges(*p_tmp, G, original_weight));
+      resPathsEdges.push_back(*p_tmp);
+      resEdges.emplace_back(p_tmp->begin(), p_tmp->end());
     }
   }
 
-  return resPaths;
+  // Beforer returning, populate predecessors map
+  details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
+                                  predecessors);
 }
 
-template <typename PropertyGraph,
+template <typename PropertyGraph, typename MultiPredecessorMap,
           typename Vertex =
               typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>> penalty_ag(
-    const PropertyGraph &G, Vertex s, Vertex t, int k, double theta, double p,
-    double r, int max_nb_updates, int max_nb_steps,
+void penalty_ag(
+    const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
+    Vertex t, int k, double theta, double p, double r, int max_nb_updates,
+    int max_nb_steps,
     shortest_path_algorithm algorithm = shortest_path_algorithm::dijkstra) {
   using namespace boost;
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
@@ -140,8 +146,8 @@ std::vector<Path<PropertyGraph>> penalty_ag(
       (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
 
   auto weight = get(edge_weight, G);
-  return penalty_ag(G, weight, s, t, k, theta, p, r, max_nb_updates,
-                    max_nb_steps, algorithm);
+  penalty_ag(G, weight, predecessors, s, t, k, theta, p, r, max_nb_updates,
+             max_nb_steps, algorithm);
 }
 } // namespace arlib
 
