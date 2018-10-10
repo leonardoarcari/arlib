@@ -39,7 +39,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -mtune=nat
 find_package(Boost REQUIRED COMPONENTS graph program_options)
 
 set(ARLIB_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/arlib/reorder_buffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/arlib/details/esx_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/arlib/graph_utils.cpp)
 
@@ -98,7 +97,7 @@ set(TEST_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/model/graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/dijkstra.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/tools/astar.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/exploration/graph_utils.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/kspwlo_ref/exploration/graph_utils.cpp test/include/test_multi_predecessor_map.cpp)
 
 add_executable(tests ${TEST_SOURCES})
 target_include_directories(tests
