@@ -6,21 +6,21 @@
 
 #include <memory>
 #include <unordered_map>
-#include <vector>
 
 namespace arlib {
-template <typename Vertex, typename SequenceContainer = std::vector<Vertex>>
+template <typename Vertex, typename UnorderedAssociativeContainer =
+                               std::unordered_map<int, Vertex>>
 class multi_predecessor_map {
 public:
   using key_type = Vertex;
   using value_type =
-      std::remove_cv_t<std::remove_reference_t<SequenceContainer>>;
+      std::remove_cv_t<std::remove_reference_t<UnorderedAssociativeContainer>>;
   using reference = std::add_lvalue_reference_t<value_type>;
   using category = boost::readable_property_map_tag;
 
   multi_predecessor_map()
-      : _pmap{std::make_shared<std::unordered_map<Vertex, SequenceContainer,
-                                                  boost::hash<Vertex>>>()} {}
+      : _pmap{std::make_shared<std::unordered_map<
+            Vertex, UnorderedAssociativeContainer, boost::hash<Vertex>>>()} {}
   multi_predecessor_map(multi_predecessor_map const &other)
       : _pmap{other._pmap} {}
 
@@ -36,8 +36,8 @@ public:
                                                      Key const &k);
 
 private:
-  std::shared_ptr<
-      std::unordered_map<Vertex, SequenceContainer, boost::hash<Vertex>>>
+  std::shared_ptr<std::unordered_map<Vertex, UnorderedAssociativeContainer,
+                                     boost::hash<Vertex>>>
       _pmap;
 };
 

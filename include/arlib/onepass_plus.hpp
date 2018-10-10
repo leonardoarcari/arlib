@@ -203,21 +203,6 @@ void onepass_plus(const PropertyGraph &G, MultiPredecessorMap &predecessors,
   auto weight = get(edge_weight, G);
   onepass_plus(G, weight, predecessors, s, t, k, theta);
 }
-
-template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>> onepass_plus(const PropertyGraph &G, Vertex s,
-                                              Vertex t, int k, double theta) {
-  using namespace boost;
-  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
-
-  BOOST_CONCEPT_ASSERT(
-      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
-
-  auto weight = get(edge_weight, G);
-  return onepass_plus(G, weight, s, t, k, theta);
-}
 } // namespace arlib
 
 #endif

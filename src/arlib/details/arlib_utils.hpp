@@ -10,6 +10,7 @@
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
 
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -258,14 +259,13 @@ void fill_multi_predecessor(ForwardIt first, ForwardIt last, Graph const &G,
                             MultiPredecessorMap &pmap) {
   using namespace boost;
   for (auto it = first; it != last; ++it) {
+    auto n = std::distance(first, it);
     auto const &edge_list = *it;
     for (auto const &e : edge_list) {
       auto u = source(e, G);
       auto v = target(e, G);
       auto &preds = get(pmap, v);
-      if (std::find(preds.begin(), preds.end(), u) == preds.end()) {
-        preds.push_back(u);
-      }
+      preds.insert({n, u});
     }
   }
 }
