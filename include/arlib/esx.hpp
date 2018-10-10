@@ -39,12 +39,12 @@ namespace arlib {
  * @return A list of at maximum @p k alternative paths.
  */
 template <
-    typename Graph, typename WeightMap,
+    typename Graph, typename WeightMap, typename MultiPredecessorMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-std::vector<Path<Graph>>
-esx(const Graph &G, WeightMap const &weight, Vertex s, Vertex t, int k,
-    double theta,
-    shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
+void esx(const Graph &G, WeightMap const &weight,
+         MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
+         double theta,
+         shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<WeightMap>::value_type;
@@ -53,17 +53,26 @@ esx(const Graph &G, WeightMap const &weight, Vertex s, Vertex t, int k,
   BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
 
   // P_LO set of k paths
+  auto resPathsEdges = std::vector<std::vector<Edge>>{};
+  auto resEdges = std::vector<std::unordered_set<Edge, boost::hash<Edge>>>{};
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
   auto resPaths = std::vector<Path<Graph>>{};
   // Compute shortest path from s to t
-  auto sp_path = details::compute_shortest_path(G, weight, s, t);
-  auto &sp = sp_path.graph();
+  auto [sp_path, sp_len] = details::compute_shortest_path(G, weight, s, t);
 
   // P_LO <-- {shortest path p_0(s, t)};
-  resPaths.push_back(sp_path);
+  resPathsEdges.push_back(sp_path);
+  resEdges.emplace_back(sp_path.begin(), sp_path.end());
 
   // If we need the shortest path only
   if (k == 1) {
-    return resPaths;
+    details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(),
+                                    G, predecessors);
+    return;
   }
 
   // Every max-heap H_i is associated with p_i
@@ -87,13 +96,13 @@ esx(const Graph &G, WeightMap const &weight, Vertex s, Vertex t, int k,
       algorithm, G, s, t, heuristic, deleted_edges);
 
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
-  details::init_edge_priorities(sp, edge_priorities, 0, G, deleted_edges);
+  details::init_edge_priorities(sp_path, edge_priorities, 0, G, deleted_edges);
 
   auto overlaps = std::vector<double>(k, 0.0);
   overlaps[0] = 1.0; // Set p_c overlap with sp (itself) to 1
 
   bool still_feasible = true;
-  while (resPaths.size() < static_cast<std::size_t>(k) && still_feasible) {
+  while (resPathsEdges.size() < static_cast<std::size_t>(k) && still_feasible) {
     std::ptrdiff_t p_max_idx = 0;
     double overlap_ratio = 1.0;
 
@@ -143,22 +152,21 @@ esx(const Graph &G, WeightMap const &weight, Vertex s, Vertex t, int k,
       if (edge_priorities[p_max_idx].empty()) {
         overlaps[p_max_idx] = 0;
       } else {
-        const auto &alt_path = resPaths[p_max_idx];
-        overlaps[p_max_idx] = details::compute_similarity(
-            *p_tmp, alt_path, get(edge_weight, alt_path.graph()));
+        const auto &alt_path = resEdges[p_max_idx];
+        overlaps[p_max_idx] =
+            details::compute_similarity(*p_tmp, alt_path, weight);
       }
 
       // Checking if the resulting path is valid
       bool candidate_is_valid =
-          details::check_candidate_validity(*p_tmp, resPaths, theta);
+          details::check_candidate_validity(*p_tmp, resEdges, weight, theta);
       if (candidate_is_valid) {
         // Add p_tmp to P_LO
-        resPaths.emplace_back(
-            build_graph_from_edges(*p_tmp, G),
-            details::compute_length_from_edges(*p_tmp, G, weight));
+        resPathsEdges.emplace_back(*p_tmp);
+        resEdges.emplace_back(p_tmp->begin(), p_tmp->end());
 
         // Set p_c overlap with itself to 1
-        std::ptrdiff_t p_c_idx = resPaths.size() - 1;
+        std::ptrdiff_t p_c_idx = resPathsEdges.size() - 1;
         overlaps[p_c_idx] = 1.0;
 
         // Initialize max-heap H_i with the priority of each edge of new
@@ -170,7 +178,25 @@ esx(const Graph &G, WeightMap const &weight, Vertex s, Vertex t, int k,
     }
   }
 
-  return resPaths;
+  // Beforer returning, populate predecessors map
+  details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
+                                  predecessors);
+}
+
+template <typename PropertyGraph, typename MultiPredecessorMap,
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+void esx(const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
+         Vertex t, int k, double theta,
+         shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
+  using namespace boost;
+  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT(
+      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
+
+  auto weight = get(edge_weight, G);
+  esx(G, weight, predecessors, s, t, k, theta, algorithm);
 }
 
 template <typename PropertyGraph,

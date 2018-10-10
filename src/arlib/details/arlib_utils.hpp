@@ -70,20 +70,32 @@ bool exists_path_to(Vertex v, const DistMap &dist) {
  *         G)@f$
  */
 template <
-    typename Graph, typename GWeightMap,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+    typename ForwardIt, typename GWeightMap,
     typename Length = typename boost::property_traits<GWeightMap>::value_type>
-Length compute_length_from_edges(const std::vector<Edge> &candidate,
-                                 const Graph &G, GWeightMap const &weight) {
+Length compute_length_from_edges(ForwardIt first, ForwardIt last,
+                                 GWeightMap const &weight) {
+  Length length = 0;
+
+  for (auto it = first; it != last; ++it) {
+    length += weight[*it];
+  }
+
+  return length;
+}
+
+template <
+    typename GWeightMap, typename Edge,
+    typename Length = typename boost::property_traits<GWeightMap>::value_type>
+Length compute_shared_length(
+    const std::vector<Edge> &candidate,
+    std::unordered_set<Edge, boost::hash<Edge>> const &alt_path,
+    GWeightMap const &weight) {
   using namespace boost;
   Length length = 0;
 
-  for (const auto &[u, v] : candidate) {
-    auto egde_in_G = edge(u, v, G);
-    bool edge_is_shared = egde_in_G.second;
-
-    if (edge_is_shared) {
-      length += weight[egde_in_G.first];
+  for (const auto &e : candidate) {
+    if (auto search = alt_path.find(e); search != alt_path.end()) {
+      length += weight[e];
     }
   }
 
@@ -93,8 +105,8 @@ Length compute_length_from_edges(const std::vector<Edge> &candidate,
 template <
     typename Graph, typename GWeightMap,
     typename Length = typename boost::property_traits<GWeightMap>::value_type>
-Length compute_length_from_edges(const Graph &candidate, const Graph &G,
-                                 GWeightMap const &weight) {
+Length compute_shared_length(const Graph &candidate, const Graph &G,
+                             GWeightMap const &weight) {
   using namespace boost;
   Length length = 0;
 
@@ -112,31 +124,16 @@ Length compute_length_from_edges(const Graph &candidate, const Graph &G,
   return length;
 }
 
-/**
- * @brief Evaluates the similarity of a candidate path with respect to some
- * alterative path.
- *
- * This measure of similarity is the one from the reference paper, that is: let
- * @c p' be the candidate path and @c p some alternative path, then
- * @f[
- *   Sim(p', p) = \frac{\sum_{\left(n_x,n_y\right) \in p'\cap p} w_xy}{l(p)}
- * @f]
- *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
- * @param candidate The candidate path @c p'
- * @param alt_path The alternative path @c p
- * @return The similarity between @c p' and @c p
- */
-template <typename Graph, typename AltEdgeWeightMap,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
-double compute_similarity(const std::vector<Edge> &candidate,
-                          const Path<Graph> &alt_path,
-                          AltEdgeWeightMap const &weight) {
-  double shared_length = static_cast<double>(
-      compute_length_from_edges(candidate, alt_path.graph(), weight));
-
-  return shared_length / alt_path.length();
+template <typename Edge, typename AltEdgeWeightMap>
+double
+compute_similarity(const std::vector<Edge> &candidate,
+                   const std::unordered_set<Edge, boost::hash<Edge>> &alt_path,
+                   AltEdgeWeightMap const &weight) {
+  double shared_length =
+      static_cast<double>(compute_shared_length(candidate, alt_path, weight));
+  double alt_length = static_cast<double>(
+      compute_length_from_edges(alt_path.begin(), alt_path.end(), weight));
+  return shared_length / alt_length;
 }
 
 template <typename Graph, typename AltEdgeWeightMap>
@@ -144,7 +141,7 @@ double compute_similarity(const Path<Graph> &candidate,
                           const Path<Graph> &alt_path,
                           AltEdgeWeightMap const &weight) {
   double shared_length = static_cast<double>(
-      compute_length_from_edges(candidate.graph(), alt_path.graph(), weight));
+      compute_shared_length(candidate.graph(), alt_path.graph(), weight));
 
   return shared_length / alt_path.length();
 }
@@ -185,11 +182,52 @@ build_path_from_dijkstra(const Graph &G, EdgeWeightMap const &weight,
   return {build_graph_from_edges(edge_list, G), length};
 }
 
+/**
+ * @brief Builds a vector of kspwlo::Edge out of a PredecessorMap computed by a
+ * shortest path algorithm from @p s to @p t
+ *
+ * @tparam Vertex
+ * @tparam PredecessorMap
+ * @param s The source vertex
+ * @param t The target vertex
+ * @param p The PredecessorMap
+ * @return A vector of the shortest path edges from @p s to @p t.
+ */
+template <
+    typename Graph, typename PredecessorMap,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+std::vector<Edge> build_edge_list_from_dijkstra(Graph const &G, Vertex s,
+                                                Vertex t,
+                                                const PredecessorMap &p) {
+  auto edge_list = std::vector<Edge>{};
+
+  auto current = t;
+  while (current != s) {
+    auto u = p[current];
+    if (u == current) {
+      // Vertex 'current' is not reachable from source vertex
+      break;
+    }
+    auto [e, is_ok] = boost::edge(u, current, G);
+    assert(is_ok &&
+           "[arlib::details::build_edge_list_from_dijkstra] Edge not found.");
+    edge_list.push_back(e);
+    current = u;
+  }
+
+  return edge_list;
+}
+
 template <
     typename Graph, typename EdgeWeightMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-Path<Graph> compute_shortest_path(const Graph &G, EdgeWeightMap const &weight,
-                                  Vertex s, Vertex t) {
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+    typename Length =
+        typename boost::property_traits<EdgeWeightMap>::value_type>
+std::pair<std::vector<Edge>, Length>
+compute_shortest_path(const Graph &G, EdgeWeightMap const &weight, Vertex s,
+                      Vertex t) {
   using namespace boost;
   using Length = typename property_traits<EdgeWeightMap>::value_type;
   auto sp_distances = std::vector<Length>(num_vertices(G));
@@ -205,42 +243,32 @@ Path<Graph> compute_shortest_path(const Graph &G, EdgeWeightMap const &weight,
             .visitor(make_dijkstra_visitor(
                 make_target_visitor(t, on_examine_vertex{}))));
   } catch (target_found &tf) {
-    return build_path_from_dijkstra(G, weight, predecessor, s, t);
+    auto path = build_edge_list_from_dijkstra(G, s, t, predecessor);
+    auto len = compute_length_from_edges(path.begin(), path.end(), weight);
+    return {path, len};
   }
+
   // If target was not found, t is unreachable from s
   auto oss = std::ostringstream{};
   oss << "Vertex " << t << " is unreachable from " << s;
   throw target_not_found{oss.str()};
 }
 
-/**
- * @brief Builds a vector of kspwlo::Edge out of a PredecessorMap computed by a
- * shortest path algorithm from @p s to @p t
- *
- * @tparam Vertex
- * @tparam PredecessorMap
- * @param s The source vertex
- * @param t The target vertex
- * @param p The PredecessorMap
- * @return A vector of the shortest path edges from @p s to @p t.
- */
-template <typename Vertex, typename PredecessorMap>
-std::vector<VPair> build_edge_list_from_dijkstra(Vertex s, Vertex t,
-                                                 const PredecessorMap &p) {
-  auto edge_list = std::vector<VPair>{};
-
-  auto current = t;
-  while (current != s) {
-    auto u = p[current];
-    if (u == current) {
-      // Vertex 'current' is not reachable from source vertex
-      break;
+template <typename ForwardIt, typename Graph, typename MultiPredecessorMap>
+void fill_multi_predecessor(ForwardIt first, ForwardIt last, Graph const &G,
+                            MultiPredecessorMap &pmap) {
+  using namespace boost;
+  for (auto it = first; it != last; ++it) {
+    auto const &edge_list = *it;
+    for (auto const &e : edge_list) {
+      auto u = source(e, G);
+      auto v = target(e, G);
+      auto &preds = get(pmap, v);
+      if (std::find(preds.begin(), preds.end(), u) == preds.end()) {
+        preds.push_back(u);
+      }
     }
-    edge_list.emplace_back(u, current);
-    current = u;
   }
-
-  return edge_list;
 }
 } // namespace details
 } // namespace arlib

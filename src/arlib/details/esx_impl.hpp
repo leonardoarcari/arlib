@@ -172,8 +172,9 @@ private:
 
 template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-constexpr std::function<std::optional<std::vector<VPair>>(
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
 build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &, Vertex,
                        Vertex, const AStarHeuristic &, DeletedEdgeMap &) {
@@ -250,8 +251,9 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
  */
 template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-std::optional<std::vector<VPair>>
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+std::optional<std::vector<Edge>>
 astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                     const AStarHeuristic &heuristic,
                     DeletedEdgeMap &deleted_edge_map) {
@@ -270,21 +272,22 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      std::begin(predecessor), vertex_id, s))
                      .visitor(astar_target_visitor{t}));
   } catch (target_found &tf) {
-    auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+    auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
     return std::make_optional(edge_list);
   }
   // In case t could not be found from astar_search and target_found is not
   // thrown, return empty optional
-  return std::optional<std::vector<VPair>>{};
+  return std::optional<std::vector<Edge>>{};
 }
 
 template <
     typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<VPair>>
+std::optional<std::vector<Edge>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      const AStarHeuristic &,
                                      DeletedEdgeMap &deleted_edge_map) {
@@ -310,10 +313,10 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                            rev_G, rev_weight, rev_index);
   } catch (target_not_found &) {
     // In case t could not be found return empty optional
-    return std::optional<std::vector<VPair>>{};
+    return std::optional<std::vector<Edge>>{};
   }
 
-  auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+  auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
   return std::make_optional(edge_list);
 }
 
@@ -480,10 +483,9 @@ template <typename PrioritiesVector, typename Graph, typename EdgeMap,
 void init_edge_priorities(const std::vector<Edge> &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
                           const Graph &G, const EdgeMap &deleted_edges) {
-  for (const auto &[u, v] : alternative) {
-    auto edge_in_G = edge(u, v, G).first;
-    auto prio_e_i = compute_priority(G, edge_in_G, deleted_edges);
-    edge_priorities[alt_index].push(std::make_pair(edge_in_G, prio_e_i));
+  for (const auto &e : alternative) {
+    auto prio_e_i = compute_priority(G, e, deleted_edges);
+    edge_priorities[alt_index].push(std::make_pair(e, prio_e_i));
   }
 }
 
@@ -511,16 +513,15 @@ bool check_feasibility(const std::vector<double> &overlaps);
  * alternative paths.
  * @return false Otherwise.
  */
-template <typename Graph,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
-bool check_candidate_validity(const std::vector<Edge> &candidate,
-                              const std::vector<Path<Graph>> &alternatives,
-                              double theta) {
+template <typename Edge, typename WeightMap>
+bool check_candidate_validity(
+    const std::vector<Edge> &candidate,
+    const std::vector<std::unordered_set<Edge, boost::hash<Edge>>>
+        &alternatives,
+    WeightMap const &weight, double theta) {
   bool candidate_is_valid = true;
   for (const auto &alt_path : alternatives) {
-    if (compute_similarity(candidate, alt_path,
-                           boost::get(boost::edge_weight, alt_path.graph())) >
-        theta) {
+    if (compute_similarity(candidate, alt_path, weight) > theta) {
       candidate_is_valid = false;
       break;
     }

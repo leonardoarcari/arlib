@@ -50,7 +50,7 @@ TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
                                 rev, weight_b, vertex_id_b);
 
   auto sp_bi =
-      arlib::details::build_edge_list_from_dijkstra(s, t, predecessor_bi);
+      arlib::details::build_edge_list_from_dijkstra(G, s, t, predecessor_bi);
 
   // Unidirectional Dijkstra
   auto predecessor_uni =
@@ -59,15 +59,19 @@ TEST_CASE("Bidirectional Dijkstra finds the same shortest path of "
                           predecessor_map(make_iterator_property_map(
                               std::begin(predecessor_uni), vertex_id, s)));
   auto sp_uni =
-      arlib::details::build_edge_list_from_dijkstra(s, t, predecessor_uni);
+      arlib::details::build_edge_list_from_dijkstra(G, s, t, predecessor_uni);
 
   std::cout << "***** BiDirectional vs Unidirectional solutions*****\n";
-  for (auto [u, v] : sp_bi) {
+  for (auto e : sp_bi) {
+    auto u = source(e, G);
+    auto v = target(e, G);
     std::cout << "(" << u << ", " << v << ") ";
   }
   std::cout << "\n";
 
-  for (auto [u, v] : sp_uni) {
+  for (auto e : sp_uni) {
+    auto u = source(e, G);
+    auto v = target(e, G);
     std::cout << "(" << u << ", " << v << ") ";
   }
   std::cout << "\n";

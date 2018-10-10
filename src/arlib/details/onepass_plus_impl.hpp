@@ -115,14 +115,17 @@ public:
       : node{node}, length{length}, lower_bound{lower_bound}, previous{nullptr},
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
-  std::vector<VPair> get_path() const {
-    auto edge_set = std::vector<VPair>{};
+  std::vector<Edge> get_path(Graph const &G) const {
+    auto edge_set = std::vector<Edge>{};
 
     auto v = node;
     auto prev = previous;
     while (prev != nullptr) {
       auto u = prev->node;
-      edge_set.emplace_back(u, v);
+      auto [e, is_ok] = boost::edge(u, v, G);
+      assert(is_ok &&
+             "[arlib::details::OnePassLabel::get_path] Edge not found.");
+      edge_set.push_back(e);
 
       // Shift label pointer back
       v = u;
@@ -395,20 +398,18 @@ void update_res_edges(const Graph &candidate, const Graph &graph,
   }
 }
 
-template <typename Graph, typename EdgeMap,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+template <typename EdgeMap, typename Edge,
           typename resPathIndex = typename EdgeMap::mapped_type::size_type>
-void update_res_edges(const std::vector<Edge> &candidate, const Graph &graph,
-                      EdgeMap &resEdges, resPathIndex paths_count) {
+void update_res_edges(const std::vector<Edge> &candidate, EdgeMap &resEdges,
+                      resPathIndex paths_count) {
   using mapped_type = typename EdgeMap::mapped_type;
   for (auto &e : candidate) {
-    auto edge_in_g = edge(e.first, e.second, graph).first;
 
-    auto search = resEdges.find(edge_in_g);
+    auto search = resEdges.find(e);
     if (search != std::end(resEdges)) { // edge found
       search->second.push_back(paths_count - 1);
     } else { // new edge, add it to resEdges
-      resEdges.insert(std::make_pair(edge_in_g, mapped_type{paths_count - 1}));
+      resEdges.insert(std::make_pair(e, mapped_type{paths_count - 1}));
     }
   }
 }
@@ -417,25 +418,26 @@ template <typename Label, typename Graph, typename EdgesMap, typename PathsMap,
           typename WeightMap>
 bool update_label_similarity(Label &label, const Graph &G,
                              const EdgesMap &resEdges, const PathsMap &resPaths,
-                             WeightMap &weight, double theta, int step) {
+                             WeightMap &weight, double theta,
+                             std::size_t step) {
   using namespace boost;
   bool below_sim_threshold = true;
-  auto tmpPath = label.get_path();
+  auto tmpPath = label.get_path(G);
   for (auto &e : tmpPath) {
-    auto edge_in_g = edge(e.first, e.second, G).first;
-    auto search = resEdges.find(edge_in_g);
+    auto search = resEdges.find(e);
     // if tmpPath share an edge with any k-th shortest path, update the
     // overlapping factor
     if (search != std::end(resEdges)) {
       for (auto index : search->second) {
-        if (static_cast<int>(index) > label.last_check() &&
-            static_cast<int>(index) < step) {
-          label.get_similarity_with(index) += weight[edge_in_g];
+        if (static_cast<int>(index) > label.last_check() && index < step) {
+          label.get_similarity_with(index) += weight[e];
 
           // Check Lemma 1. The similarity between the candidate path and
           // all the other k-shortest-paths must be less then theta
-          if (label.get_similarity_with(index) / resPaths[step].length() >
-              theta) {
+          auto const &alt_path = resPaths[step];
+          auto alt_len = compute_length_from_edges(alt_path.begin(),
+                                                   alt_path.end(), weight);
+          if (label.get_similarity_with(index) / alt_len > theta) {
             below_sim_threshold = false;
             break;
           }
@@ -468,7 +470,10 @@ bool is_below_sim_threshold(const Edge &c_edge,
     auto &res_paths_with_c_edge = search->second;
     for (auto index : res_paths_with_c_edge) {
       similarity_map[index] += weight[c_edge];
-      auto similarity = similarity_map[index] / resPaths[index].length();
+      auto const &alt_path = resPaths[index];
+      auto alt_len =
+          compute_length_from_edges(alt_path.begin(), alt_path.end(), weight);
+      auto similarity = similarity_map[index] / alt_len;
       if (similarity > theta) {
         return false;
       }

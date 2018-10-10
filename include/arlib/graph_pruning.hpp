@@ -102,8 +102,9 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
 
   auto pruned_G = Graph{G};
 
-  auto sp = details::build_edge_list_from_dijkstra(s, t, predecessor_f);
-  auto final_distance = details::compute_length_from_edges(sp, G, weight_f);
+  auto sp = details::build_edge_list_from_dijkstra(G, s, t, predecessor_f);
+  auto final_distance =
+      details::compute_length_from_edges(sp.begin(), sp.end(), weight_f);
   for (auto [v_it, v_end] = pruning_visitor.get_pruned_vertices();
        v_it != v_end; ++v_it) {
     bool should_prune =

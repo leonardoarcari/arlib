@@ -6,6 +6,7 @@
 #include <iostream>
 #include <optional>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -132,6 +133,59 @@ Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
   }
 
   return Graph{std::begin(es), std::end(es), std::begin(weights), nodes.size()};
+}
+
+namespace details {
+template <typename Graph, typename Vertex = typename boost::graph_traits<
+                              Graph>::vertex_descriptor>
+Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
+  using namespace boost;
+  using Length = typename property_traits<
+      typename property_map<Graph, edge_weight_t>::type>::value_type;
+
+  auto edge_list = std::vector<VPair>{};
+  auto u = *path.begin();
+  auto W = get(edge_weight, G);
+  auto len = Length{};
+
+  for (auto it = std::next(std::begin(path)); it != std::end(path); ++it) {
+    auto v = *it;
+    auto [e, is_ok] = edge(u, v, G);
+    assert(is_ok && "[arlib::details::build_path_from] Edge not found.");
+    auto weight = W[e];
+    len += weight;
+    edge_list.emplace_back(u, v);
+    u = v;
+  }
+
+  return {build_graph_from_edges(edge_list, G), len};
+}
+} // namespace details
+
+template <typename Graph, typename Vertex = typename boost::graph_traits<
+                              Graph>::vertex_descriptor>
+std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
+                                  Graph const &G, Vertex s, Vertex t) {
+  auto res = std::vector<Path<Graph>>{};
+  auto Q = std::stack<std::vector<Vertex>>{};
+  Q.push({t});
+
+  while (!Q.empty()) {
+    auto path = std::move(Q.top());
+    Q.pop();
+    if (path.front() != s) {
+      auto const &preds = get(pmap, path.front());
+      for (auto const &p : preds) {
+        auto path_prime = path;
+        path_prime.insert(path_prime.begin(), p);
+        Q.push(std::move(path_prime));
+      }
+    } else {
+      res.push_back(details::build_path_from(path, G));
+    }
+  }
+
+  return res;
 }
 } // namespace arlib
 

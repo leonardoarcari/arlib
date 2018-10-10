@@ -186,8 +186,9 @@ private:
 
 template <
     typename Graph, typename PMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-constexpr std::function<std::optional<std::vector<VPair>>(
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
 build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
                        const PMap &) {
@@ -226,12 +227,11 @@ build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
 template <
     typename Graph,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<
-        boost::reverse_graph<Graph>>::edge_descriptor,
+    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<VPair>>
+std::optional<std::vector<Edge>>
 dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
                                 DistanceMap<Length> &distance_s,
                                 DistanceMap<Length> &distance_t) {
@@ -245,7 +245,7 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
                           distance_map(&distance_s[0])
                               .predecessor_map(make_iterator_property_map(
                                   std::begin(predecessor), vertex_id, s)));
-  auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+  auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
 
   // Backward step
   auto rev_G = make_reverse_graph(G);
@@ -256,7 +256,7 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
   } else {
     // In case t could not be found from astar_search and target_found is not
     // thrown, return empty optional
-    return std::optional<std::vector<VPair>>{};
+    return std::optional<std::vector<Edge>>{};
   }
 
 } // namespace kspwlo_impl
@@ -286,7 +286,7 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<VPair>>
+std::optional<std::vector<Edge>>
 dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                        penalty_functor<PMap> &penalty) {
   using namespace boost;
@@ -304,13 +304,13 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
             .visitor(make_dijkstra_visitor(
                 make_target_visitor(t, on_examine_vertex{}))));
   } catch (target_found tf) {
-    auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+    auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
     return std::make_optional(edge_list);
   }
 
   // In case t could not be found from astar_search and target_found is not
   // thrown, return empty optional
-  return std::optional<std::vector<VPair>>{};
+  return std::optional<std::vector<Edge>>{};
 }
 
 template <
@@ -320,7 +320,7 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-std::optional<std::vector<VPair>>
+std::optional<std::vector<Edge>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      penalty_functor<PMap> &penalty) {
   using namespace boost;
@@ -344,10 +344,10 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                            rev_weight, rev_index);
   } catch (details::target_not_found &) {
     // In case t could not be found return empty optional
-    return std::optional<std::vector<VPair>>{};
+    return std::optional<std::vector<Edge>>{};
   }
 
-  auto edge_list = build_edge_list_from_dijkstra(s, t, predecessor);
+  auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
   return std::make_optional(edge_list);
 }
 
@@ -399,9 +399,9 @@ template <
     typename Length =
         typename boost::property_traits<typename boost::property_map<
             Graph, boost::edge_weight_t>::type>::value_type>
-void penalize_candidate_path(const std::vector<VPair> &candidate,
-                             const Graph &G, Vertex s, Vertex t, double p,
-                             double r, penalty_functor<PMap> &penalty,
+void penalize_candidate_path(const std::vector<Edge> &candidate, const Graph &G,
+                             Vertex s, Vertex t, double p, double r,
+                             penalty_functor<PMap> &penalty,
                              const DistanceMap &distance_s,
                              const DistanceMap &distance_t,
                              PenBoundsMap<Edge> &penalty_bounds,
@@ -413,9 +413,7 @@ void penalize_candidate_path(const std::vector<VPair> &candidate,
   auto candidate_vertices = std::unordered_set<Vertex, boost::hash<Vertex>>{};
   auto candidate_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
-  for (const auto &[u_c, v_c] : candidate) {
-    auto [e, is_valid] = edge(u_c, v_c, G);
-    assert(is_valid);
+  for (const auto &e : candidate) {
     candidate_edges.insert(e);
 
     auto u = source(e, G);

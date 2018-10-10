@@ -1,5 +1,8 @@
 #include "catch.hpp"
 
+#include "test_types.hpp"
+#include "utils.hpp"
+
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
@@ -9,9 +12,6 @@
 #include "arlib/graph_types.hpp"
 #include "arlib/graph_utils.hpp"
 #include "arlib/penalty.hpp"
-
-#include "test_types.hpp"
-#include "utils.hpp"
 
 #include <experimental/filesystem>
 #include <memory>
@@ -34,8 +34,10 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   auto bound_limit = 10;
   auto max_nb_steps = 100000;
 
-  auto res_paths =
-      arlib::penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
+  auto predecessors = arlib::multi_predecessor_map<Vertex>{};
+  arlib::penalty_ag(G, predecessors, s, t, k, theta, p, r, bound_limit,
+                    max_nb_steps);
+  auto res_paths = arlib::to_paths(predecessors, G, s, t);
 
   REQUIRE(res_paths.size() == 3);
 
@@ -56,7 +58,8 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
   auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
 
   // Candidate solution
-  auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
+  auto candidate = std::vector<Edge>{edge(0, 3, G).first, edge(3, 5, G).first,
+                                     edge(5, 6, G).first};
 
   // Distance maps
   auto distance_s = std::vector<Length>{0, 5, 4, 3, 7, 6, 8};
@@ -88,10 +91,7 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
     auto candidate_vertices = std::unordered_set<Vertex, boost::hash<Vertex>>{};
 
     // Candidate path weights have been updated
-    for (auto [u_c, v_c] : candidate) {
-      auto [e, is_valid] = edge(u_c, v_c, G);
-      REQUIRE(is_valid);
-
+    for (auto e : candidate) {
       candidate_edges.insert(e);
 
       auto u = source(e, G);
@@ -166,12 +166,14 @@ TEST_CASE("Graph penalization follows specifications", "[penalty]") {
 
 TEST_CASE("Two-ways dijkstra computes right distance maps", "[penalty]") {
   using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
 
   auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
   Vertex s = 0, t = 6;
 
   // Candidate solution
-  auto candidate = std::vector<arlib::VPair>{{0, 3}, {3, 5}, {5, 6}};
+  auto candidate = std::vector<Edge>{edge(0, 3, G).first, edge(3, 5, G).first,
+                                     edge(5, 6, G).first};
 
   // Distance maps
   auto distance_s = std::vector<Length>{0, 5, 4, 3, 7, 6, 8};
@@ -225,11 +227,16 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
   auto bound_limit = 10;
   auto max_nb_steps = 100000;
 
-  auto res_paths_uni =
-      arlib::penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps);
-  auto res_paths_bi =
-      penalty_ag(G, s, t, k, theta, p, r, bound_limit, max_nb_steps,
-                 arlib::shortest_path_algorithm::bidirectional_dijkstra);
+  auto predecessors_uni = arlib::multi_predecessor_map<Vertex>{};
+  arlib::penalty_ag(G, predecessors_uni, s, t, k, theta, p, r, bound_limit,
+                    max_nb_steps);
+  auto res_paths_uni = arlib::to_paths(predecessors_uni, G, s, t);
+
+  auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
+  penalty_ag(G, predecessors_bi, s, t, k, theta, p, r, bound_limit,
+             max_nb_steps,
+             arlib::shortest_path_algorithm::bidirectional_dijkstra);
+  auto res_paths_bi = arlib::to_paths(predecessors_bi, G, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 
