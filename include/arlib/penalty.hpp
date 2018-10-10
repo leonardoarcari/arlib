@@ -154,24 +154,6 @@ void penalty_ag(
   penalty_ag(G, weight, predecessors, s, t, k, theta, p, r, max_nb_updates,
              max_nb_steps, algorithm);
 }
-
-template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>> penalty_ag(
-    const PropertyGraph &G, Vertex s, Vertex t, int k, double theta, double p,
-    double r, int max_nb_updates, int max_nb_steps,
-    shortest_path_algorithm algorithm = shortest_path_algorithm::dijkstra) {
-  using namespace boost;
-  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
-
-  BOOST_CONCEPT_ASSERT(
-      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
-
-  auto weight = get(edge_weight, G);
-  return penalty_ag(G, weight, s, t, k, theta, p, r, max_nb_updates,
-                    max_nb_steps, algorithm);
-}
 } // namespace arlib
 
 #endif
