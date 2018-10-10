@@ -24,6 +24,15 @@
 
 using namespace arlib::test;
 
+template <typename ForwardIt, typename Edge>
+bool contains(ForwardIt first, ForwardIt last, Edge e) {
+  if (auto search = std::find(first, last, e); search != last) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 TEST_CASE("Edge priority computation", "[esx]") {
   using namespace boost;
   using arlib::details::compute_priority;
@@ -33,8 +42,8 @@ TEST_CASE("Edge priority computation", "[esx]") {
 
   // Compute shortest path from s to t
   auto weight_map = get(edge_weight, G);
-  auto sp_path = arlib::details::compute_shortest_path(G, weight_map, s, t);
-  auto &sp = sp_path.graph();
+  auto [sp_path, sp_len] =
+      arlib::details::compute_shortest_path(G, weight_map, s, t);
 
   // Compute lower bounds for AStar
   auto heuristic = arlib::details::distance_heuristic<Graph, Length>(G, t);
@@ -44,21 +53,21 @@ TEST_CASE("Edge priority computation", "[esx]") {
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   // Check that (0, 3) was computed in shortest path
-  REQUIRE(edge(0, 3, sp).second);
+  REQUIRE(contains(sp_path.begin(), sp_path.end(), edge(0, 3, G).first));
   auto s_n3 = edge(0, 3, G).first;
 
   int prio_s_n3 = compute_priority(G, s_n3, deleted_edges);
   REQUIRE(prio_s_n3 == 0);
 
   // Check that (3, 5) was computed in shortest path
-  REQUIRE(edge(3, 5, sp).second);
+  REQUIRE(contains(sp_path.begin(), sp_path.end(), edge(3, 5, G).first));
   auto n3_n5 = edge(3, 5, G).first;
 
   int prio_n3_n5 = compute_priority(G, n3_n5, deleted_edges);
   REQUIRE(prio_n3_n5 == 3);
 
   // Check that (5, 6) was computed in shortest path
-  REQUIRE(edge(5, 6, sp).second);
+  REQUIRE(contains(sp_path.begin(), sp_path.end(), edge(5, 6, G).first));
   auto n5_t = edge(5, 6, G).first;
 
   int prio_n5_t = compute_priority(G, n5_t, deleted_edges);
@@ -68,7 +77,9 @@ TEST_CASE("Edge priority computation", "[esx]") {
 TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   auto G = arlib::read_graph_from_string<Graph>(std::string{graph_gr_esx});
   Vertex s = 0, t = 6;
-  auto res = arlib::esx(G, s, t, 3, 0.5);
+  auto predecessors = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors, s, t, 3, 0.5);
+  auto res = arlib::to_paths(predecessors, G, s, t);
 
   // Create a new tmp file out of graph_gr_esx
   namespace fs = std::experimental::filesystem;
@@ -126,9 +137,14 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
   int k = 3;
   double theta = 0.5;
 
-  auto res_paths_uni = arlib::esx(G, s, t, 3, 0.5);
-  auto res_paths_bi = arlib::esx(
-      G, s, t, 3, 0.5, arlib::shortest_path_algorithm::bidirectional_dijkstra);
+  auto predecessors_uni = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors_uni, s, t, 3, 0.5);
+  auto res_paths_uni = arlib::to_paths(predecessors_uni, G, s, t);
+
+  auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors_bi, s, t, 3, 0.5,
+             arlib::shortest_path_algorithm::bidirectional_dijkstra);
+  auto res_paths_bi = arlib::to_paths(predecessors_bi, G, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 
