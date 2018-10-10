@@ -56,6 +56,11 @@ void esx(const Graph &G, WeightMap const &weight,
   auto resPathsEdges = std::vector<std::vector<Edge>>{};
   auto resEdges = std::vector<std::unordered_set<Edge, boost::hash<Edge>>>{};
 
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
+  auto resPaths = std::vector<Path<Graph>>{};
   // Compute shortest path from s to t
   auto [sp_path, sp_len] = details::compute_shortest_path(G, weight, s, t);
 
@@ -192,6 +197,22 @@ void esx(const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
 
   auto weight = get(edge_weight, G);
   esx(G, weight, predecessors, s, t, k, theta, algorithm);
+}
+
+template <typename PropertyGraph,
+          typename Vertex =
+              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+std::vector<Path<PropertyGraph>>
+esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
+    shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
+  using namespace boost;
+  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
+
+  BOOST_CONCEPT_ASSERT(
+      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
+
+  auto weight = get(edge_weight, G);
+  return esx(G, weight, s, t, k, theta, algorithm);
 }
 } // namespace arlib
 

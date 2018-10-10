@@ -229,6 +229,7 @@ std::pair<std::vector<Edge>, Length>
 compute_shortest_path(const Graph &G, EdgeWeightMap const &weight, Vertex s,
                       Vertex t) {
   using namespace boost;
+  using Length = typename property_traits<EdgeWeightMap>::value_type;
   auto sp_distances = std::vector<Length>(num_vertices(G));
   auto predecessor = std::vector<Vertex>(num_vertices(G), s);
   auto vertex_id = get(vertex_index, G);
