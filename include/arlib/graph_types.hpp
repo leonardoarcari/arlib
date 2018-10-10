@@ -1,16 +1,16 @@
 #ifndef GRAPH_TYPES_H
 #define GRAPH_TYPES_H
 
+#include <arlib/multi_predecessor_map.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
-//#include <boost/graph/graph_traits.hpp>
-//#include <boost/graph/graph_concepts.hpp>
 
 #include <iostream>
 #include <type_traits>
 #include <utility>
 
 namespace arlib {
-using VPair = std::pair<int, int>;
+using VPair = std::pair<long unsigned int, long unsigned int>;
 
 template <typename G, typename = int>
 struct has_edge_weight : std::false_type {};
@@ -75,6 +75,7 @@ enum class shortest_path_algorithm {
   astar,
   bidirectional_dijkstra
 };
+
 } // namespace arlib
 
 #endif
