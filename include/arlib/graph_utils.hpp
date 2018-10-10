@@ -167,18 +167,23 @@ template <typename Graph, typename Vertex = typename boost::graph_traits<
 std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
                                   Graph const &G, Vertex s, Vertex t) {
   auto res = std::vector<Path<Graph>>{};
-  auto Q = std::stack<std::vector<Vertex>>{};
-  Q.push({t});
+  auto Q = std::stack<std::pair<int, std::vector<Vertex>>>{};
+  for (auto const &[k_th, v] : get(pmap, t)) {
+    Q.push({k_th, {t}});
+  }
 
   while (!Q.empty()) {
-    auto path = std::move(Q.top());
+    auto [k_th, path] = std::move(Q.top());
     Q.pop();
     if (path.front() != s) {
       auto const &preds = get(pmap, path.front());
-      for (auto const &p : preds) {
-        auto path_prime = path;
-        path_prime.insert(path_prime.begin(), p);
-        Q.push(std::move(path_prime));
+      // Stack a pair only for predecessor of same k_th
+      for (auto const &[k_prime, pred] : preds) {
+        if (k_prime == k_th) {
+          auto path_prime = path;
+          path_prime.insert(path_prime.begin(), pred);
+          Q.push({k_prime, std::move(path_prime)});
+        }
       }
     } else {
       res.push_back(details::build_path_from(path, G));

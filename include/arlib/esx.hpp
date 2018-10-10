@@ -198,22 +198,6 @@ void esx(const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
   auto weight = get(edge_weight, G);
   esx(G, weight, predecessors, s, t, k, theta, algorithm);
 }
-
-template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-std::vector<Path<PropertyGraph>>
-esx(const PropertyGraph &G, Vertex s, Vertex t, int k, double theta,
-    shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {
-  using namespace boost;
-  using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
-
-  BOOST_CONCEPT_ASSERT(
-      (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
-
-  auto weight = get(edge_weight, G);
-  return esx(G, weight, s, t, k, theta, algorithm);
-}
 } // namespace arlib
 
 #endif
