@@ -75,11 +75,9 @@ TEST_CASE("Computing path from dijkstra_shortest_paths", "[onepassplus]") {
       predecessor_map(make_iterator_property_map(std::begin(predecessor),
                                                  vertex_id, vertex_id[0])));
   auto weight_G = get(edge_weight, G);
-  auto path =
-      arlib::details::build_path_from_dijkstra(G, weight_G, predecessor, 0, 6)
-          .graph();
-
-  REQUIRE(num_edges(path) == 3);
+  auto path = arlib::details::build_path_from_dijkstra(G, weight_G, predecessor,
+                                                       0lu, 6lu)
+                  .graph();
 
   auto weight = get(edge_weight, path);
   REQUIRE(edge(0, 3, path).second);

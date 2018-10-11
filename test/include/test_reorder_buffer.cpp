@@ -14,10 +14,8 @@
 
 using namespace arlib::test;
 
-auto find_alternative_paths(int k = 3, double theta = 0.5) {
+auto find_alternative_paths(Graph const &G, int k = 3, double theta = 0.5) {
   using namespace boost;
-
-  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
 
   Vertex s = 0, t = 20;
   auto p = 0.1;
@@ -33,7 +31,8 @@ auto find_alternative_paths(int k = 3, double theta = 0.5) {
 }
 
 TEST_CASE("ReorderBuffer::by_length sorts on path length") {
-  auto paths = find_alternative_paths();
+  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
+  auto paths = find_alternative_paths(G, 3, 0.5);
 
   // Shuffle paths
   std::random_device rd;
@@ -49,12 +48,13 @@ TEST_CASE("ReorderBuffer::by_length sorts on path length") {
 
 TEST_CASE(
     "ReorderBuffer::by_relative_similarity sorts on similarity thresholds") {
-  auto paths = find_alternative_paths(10, 0.999999);
+  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
+  auto paths = find_alternative_paths(G, 10, 0.999999);
 
   // Sort by length
   arlib::ReorderBuffer::by_length(paths.begin(), paths.end());
   // Sort on similarity thresholds
-  arlib::ReorderBuffer::by_relative_similarity(paths.begin(), paths.end(), 5,
+  arlib::ReorderBuffer::by_relative_similarity(G, paths.begin(), paths.end(), 5,
                                                0.5);
   for (std::size_t i = 1; i < paths.size(); ++i) {
     std::cout << "[Path " << i << "]\n";
@@ -69,18 +69,20 @@ TEST_CASE(
 }
 
 TEST_CASE("Penalty+Reordering runs faster than Plain Penalty") {
+  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
+
   auto t1 = std::chrono::steady_clock::now();
-  auto plain_penalty = find_alternative_paths(5, 0.5);
+  auto plain_penalty = find_alternative_paths(G, 5, 0.5);
   auto t2 = std::chrono::steady_clock::now();
 
   auto t3 = std::chrono::steady_clock::now();
-  auto paths = find_alternative_paths(10, 0.999999);
+  auto paths = find_alternative_paths(G, 10, 0.999999);
 
   // Sort by length
   arlib::ReorderBuffer::by_length(paths.begin(), paths.end());
 
   // Sort on similarity thresholds
-  arlib::ReorderBuffer::by_relative_similarity(paths.begin(), paths.end(), 5,
+  arlib::ReorderBuffer::by_relative_similarity(G, paths.begin(), paths.end(), 5,
                                                0.5);
   auto t4 = std::chrono::steady_clock::now();
 
