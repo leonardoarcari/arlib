@@ -69,7 +69,7 @@ TEST_CASE("to_paths builds correct vector<Path> from multi_predecessor_map") {
                         {edge(0, 2, G).first, edge(2, 3, G).first,
                          edge(3, 5, G).first, edge(5, 6, G).first});
 
-  auto paths = arlib::to_paths(pmap, G, 0lu, 6lu);
+  auto paths = arlib::to_paths(G, pmap, 0lu, 6lu);
 
   REQUIRE(paths.size() == 2);
 

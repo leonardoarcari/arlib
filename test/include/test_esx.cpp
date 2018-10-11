@@ -79,7 +79,7 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   Vertex s = 0, t = 6;
   auto predecessors = arlib::multi_predecessor_map<Vertex>{};
   arlib::esx(G, predecessors, s, t, 3, 0.5);
-  auto res = arlib::to_paths(predecessors, G, s, t);
+  auto res = arlib::to_paths(G, predecessors, s, t);
 
   // Create a new tmp file out of graph_gr_esx
   namespace fs = std::experimental::filesystem;
@@ -139,12 +139,12 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
 
   auto predecessors_uni = arlib::multi_predecessor_map<Vertex>{};
   arlib::esx(G, predecessors_uni, s, t, 3, 0.5);
-  auto res_paths_uni = arlib::to_paths(predecessors_uni, G, s, t);
+  auto res_paths_uni = arlib::to_paths(G, predecessors_uni, s, t);
 
   auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
   arlib::esx(G, predecessors_bi, s, t, 3, 0.5,
              arlib::shortest_path_algorithm::bidirectional_dijkstra);
-  auto res_paths_bi = arlib::to_paths(predecessors_bi, G, s, t);
+  auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
 
