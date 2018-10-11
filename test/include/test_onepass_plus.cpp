@@ -94,7 +94,7 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
   Vertex s = 0, t = 6;
   auto predecessors = arlib::multi_predecessor_map<Vertex>{};
   arlib::onepass_plus(G, predecessors, s, t, 3, 0.5);
-  auto res = arlib::to_paths(predecessors, G, s, t);
+  auto res = arlib::to_paths(G, predecessors, s, t);
 
   // Create a new tmp file out of graph_gr
   namespace fs = std::experimental::filesystem;

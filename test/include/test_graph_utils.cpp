@@ -156,7 +156,7 @@ TEST_CASE("Building an AG from k alternative paths doesn't lose info",
   Vertex s = 0, t = 6;
   auto predecessors = arlib::multi_predecessor_map<Vertex>{};
   arlib::onepass_plus(G, predecessors, s, t, 3, 0.5);
-  auto res_paths = arlib::to_paths(predecessors, G, s, t);
+  auto res_paths = arlib::to_paths(G, predecessors, s, t);
 
   // Build ground truth data
   auto test_edges = std::vector<arlib::VPair>();

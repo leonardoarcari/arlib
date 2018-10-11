@@ -187,9 +187,9 @@ Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
 template <
     typename Graph, typename WeightMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
-                                  Graph const &G, WeightMap const &weight,
-                                  Vertex s, Vertex t) {
+std::vector<Path<Graph>> to_paths(Graph const &G,
+                                  multi_predecessor_map<Vertex> &pmap,
+                                  WeightMap const &weight, Vertex s, Vertex t) {
   auto res = std::vector<Path<Graph>>{};
   auto Q = std::stack<std::pair<int, std::vector<Vertex>>>{};
   for (auto const &[k_th, v] : get(pmap, t)) {
@@ -219,14 +219,15 @@ std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
 
 template <typename Graph, typename Vertex = typename boost::graph_traits<
                               Graph>::vertex_descriptor>
-std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
-                                  Graph const &G, Vertex s, Vertex t) {
+std::vector<Path<Graph>> to_paths(Graph const &G,
+                                  multi_predecessor_map<Vertex> &pmap, Vertex s,
+                                  Vertex t) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   BOOST_CONCEPT_ASSERT((PropertyGraphConcept<Graph, Edge, edge_weight_t>));
 
   auto weight = get(edge_weight, G);
-  return to_paths(pmap, G, weight, s, t);
+  return to_paths(G, pmap, weight, s, t);
 }
 } // namespace arlib
 
