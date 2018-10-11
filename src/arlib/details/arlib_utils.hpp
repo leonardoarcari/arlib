@@ -2,6 +2,7 @@
 #define KSPWLO_IMPL_HPP
 
 #include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
@@ -111,7 +112,7 @@ Length compute_shared_length(const Graph &candidate, const Graph &G,
   using namespace boost;
   Length length = 0;
 
-  for (auto [it, end] = edges(candidate); it != end; ++it) {
+  for (auto [it, last] = edges(candidate); it != last; ++it) {
     auto u = source(*it, candidate);
     auto v = target(*it, candidate);
     auto egde_in_G = edge(u, v, G);
@@ -141,8 +142,10 @@ template <typename Graph, typename AltEdgeWeightMap>
 double compute_similarity(const Path<Graph> &candidate,
                           const Path<Graph> &alt_path,
                           AltEdgeWeightMap const &weight) {
+  auto const &candidate_g = candidate.graph();
+  auto const &alt_path_g = alt_path.graph();
   double shared_length = static_cast<double>(
-      compute_shared_length(candidate.graph(), alt_path.graph(), weight));
+      compute_shared_length(candidate_g, alt_path_g, weight));
 
   return shared_length / alt_path.length();
 }
@@ -166,21 +169,32 @@ Path<Graph>
 build_path_from_dijkstra(const Graph &G, EdgeWeightMap const &weight,
                          const PredecessorMap &p, Vertex s, Vertex t) {
   using Length = typename boost::property_traits<EdgeWeightMap>::value_type;
-  Length length = 0;
-  auto edge_list = std::vector<VPair>{};
+  using Edge = typename boost::graph_traits<Graph>::edge_descriptor;
 
+  auto length = Length{};
+  auto path_es = std::unordered_set<Edge, boost::hash<Edge>>{};
+  auto path_vs = std::unordered_set<Vertex, boost::hash<Vertex>>{};
+
+  path_vs.insert(t);
   auto current = t;
   while (current != s) {
     auto u = p[current];
-    edge_list.emplace_back(u, current);
+    path_vs.insert(u);
 
     auto edge_in_G = boost::edge(u, current, G).first;
-
     length += weight[edge_in_G];
+    path_es.insert(edge_in_G);
     current = u;
   }
 
-  return {build_graph_from_edges(edge_list, G), length};
+  auto edge_pred = alternative_path_edges{std::move(path_es)};
+  auto vertex_pred = alternative_path_vertices{std::move(path_vs)};
+  using FilteredGraph =
+      boost::filtered_graph<Graph, alternative_path_edges<Edge>,
+                            alternative_path_vertices<Vertex>>;
+  auto fg = std::make_shared<FilteredGraph>(G, edge_pred, vertex_pred);
+  return Path{fg, length};
+  // return {build_graph_from_edges(edge_list, G), length};
 }
 
 /**

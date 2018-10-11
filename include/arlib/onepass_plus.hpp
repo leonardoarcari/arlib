@@ -57,7 +57,6 @@ void onepass_plus(const Graph &G, WeightMap weight,
       (ReadablePropertyMapConcept<MultiPredecessorMap, Vertex>));
 
   auto resPathsEdges = std::vector<std::vector<Edge>>{};
-  // auto resPathsLengths = std::vector<Length>{};
 
   // resEdges keeps track of the edges that make the paths in resPaths and which
   // path includes it.

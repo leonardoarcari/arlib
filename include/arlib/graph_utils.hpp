@@ -14,6 +14,7 @@
 
 #include <arlib/graph_types.hpp>
 
+#include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
@@ -136,36 +137,59 @@ Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
 }
 
 namespace details {
-template <typename Graph, typename Vertex = typename boost::graph_traits<
-                              Graph>::vertex_descriptor>
-Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
+template <
+    typename Graph, typename WeightMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G,
+                            WeightMap const &W) {
   using namespace boost;
   using Length = typename property_traits<
       typename property_map<Graph, edge_weight_t>::type>::value_type;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
 
-  auto edge_list = std::vector<VPair>{};
   auto u = *path.begin();
-  auto W = get(edge_weight, G);
   auto len = Length{};
 
+  auto path_es = std::unordered_set<Edge, boost::hash<Edge>>{};
   for (auto it = std::next(std::begin(path)); it != std::end(path); ++it) {
     auto v = *it;
     auto [e, is_ok] = edge(u, v, G);
     assert(is_ok && "[arlib::details::build_path_from] Edge not found.");
     auto weight = W[e];
     len += weight;
-    edge_list.emplace_back(u, v);
+    path_es.insert(e);
     u = v;
   }
 
-  return {build_graph_from_edges(edge_list, G), len};
+  auto path_vs = std::unordered_set<Vertex, boost::hash<Vertex>>{path.cbegin(),
+                                                                 path.cend()};
+  auto edge_pred = alternative_path_edges{std::move(path_es)};
+  auto vertex_pred = alternative_path_vertices{std::move(path_vs)};
+  using FilteredGraph = filtered_graph<Graph, alternative_path_edges<Edge>,
+                                       alternative_path_vertices<Vertex>>;
+  auto fg = std::make_shared<FilteredGraph>(G, edge_pred, vertex_pred);
+  return Path{fg, len};
 }
-} // namespace details
 
 template <typename Graph, typename Vertex = typename boost::graph_traits<
                               Graph>::vertex_descriptor>
+Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
+  using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  BOOST_CONCEPT_ASSERT((PropertyGraphConcept<Graph, Edge, edge_weight_t>));
+
+  auto W = get(edge_weight, G);
+  return build_path_from(path, G, W);
+}
+
+} // namespace details
+
+template <
+    typename Graph, typename WeightMap,
+    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
 std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
-                                  Graph const &G, Vertex s, Vertex t) {
+                                  Graph const &G, WeightMap const &weight,
+                                  Vertex s, Vertex t) {
   auto res = std::vector<Path<Graph>>{};
   auto Q = std::stack<std::pair<int, std::vector<Vertex>>>{};
   for (auto const &[k_th, v] : get(pmap, t)) {
@@ -186,11 +210,23 @@ std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
         }
       }
     } else {
-      res.push_back(details::build_path_from(path, G));
+      res.push_back(details::build_path_from(path, G, weight));
     }
   }
 
   return res;
+}
+
+template <typename Graph, typename Vertex = typename boost::graph_traits<
+                              Graph>::vertex_descriptor>
+std::vector<Path<Graph>> to_paths(multi_predecessor_map<Vertex> &pmap,
+                                  Graph const &G, Vertex s, Vertex t) {
+  using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  BOOST_CONCEPT_ASSERT((PropertyGraphConcept<Graph, Edge, edge_weight_t>));
+
+  auto weight = get(edge_weight, G);
+  return to_paths(pmap, G, weight, s, t);
 }
 } // namespace arlib
 
