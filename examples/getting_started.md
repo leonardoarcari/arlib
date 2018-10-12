@@ -124,8 +124,9 @@ With line
 auto predecessors = arlib::multi_predecessor_map<Vertex>{};
 ```
 
-we instantiate a `multi_predecessor_map`. `multi_predecessor_map` models the
-`ReadablePropertyMap` concept. Its `key_type` is the same as the vertex 
+we instantiate a `multi_predecessor_map`. It models the
+`ReadablePropertyMap` concept and we use it to keep track of the predecessors of
+each vertex in the alternative routes. Its `key_type` is the same as the vertex 
 descriptor of the graph. The `value_type` is an `UnorderedAssociativeContainer`,
 like `std::unordered_map`, such that each entry maps an `int` to a vertex
 descriptor. The `int` value represents the index of the alternative path,
@@ -146,7 +147,7 @@ we effectively run OnePass+ algorithm to compute the alternative routes, which
 are recorded in `predecessors`, just like you are used to in Boost.Graph's
 `dijkstra_shortest_paths` algorithm.
 
-In ARLib we make one step further. We are interested in actually query the
+In ARLib we make one step further. We are interested in actually querying the
 alternative routes that we found. Therefore, we provide a function to decode the
 `multi_predecessor_map` into a sequence of views on the paths.
 
@@ -219,15 +220,15 @@ n3 -- n1
 --------
 ```
 
-### Next steps
+### 3. Next steps
 Congratulations! You found your first set of alternative routes! If you want to
 know more check the following resources out:
- - [Bidirectional Pruning] - *a pre-processing algorithm that reduces the
+ - [Uninformed Bidirectional Pruner] - *a pre-processing algorithm that reduces the
    complexity of your graph to speed-up the alternative routing*
  - [Documentation] - *for a full list of the algorithms shipped by ARLib*
 
  
-### References
+### 4. References
 | Algorithm | Paper |
 |---------- | ----- |
 | OnePass+  | Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and UlfLeser, Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology (EDBT) (2017)
@@ -238,4 +239,4 @@ know more check the following resources out:
 [Dijkstra's algorithm]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 [Graph Concepts]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/graph_concepts.html
 [Property Maps]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/using_property_maps.html
-[Section 2.1]: 
+[Section 2.1]: #21-introducing-multi_predecessor_map
