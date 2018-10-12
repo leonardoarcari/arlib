@@ -117,16 +117,11 @@ enable_testing(true)
 add_test(NAME tests COMMAND tests)
 
 # ==-----------------------------------------------------------------------== #
-#                                  Examples
-# ==-----------------------------------------------------------------------== #
-
-add_executable(getting_started examples/src/getting_started.cpp)
-target_link_libraries(getting_started PUBLIC arlib)
-
-# ==-----------------------------------------------------------------------== #
 #                                   Other
 # ==-----------------------------------------------------------------------== #
 
 # Documentation
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 
+# Examples
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/examples")
