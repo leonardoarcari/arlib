@@ -1,6 +1,6 @@
 # Getting started
-In this document we provide an introduction to **ARLib**, an alternative routing
-library for [Boost.Graph]. *Alternative routing* is defined as the  problem of
+In this document, we provide an introduction to **ARLib**, an alternative routing
+library for [Boost.Graph]. *Alternative routing* is defined as the problem of
 finding a number *k* of *s-t* paths in a graph *G*. While the problem of finding
 **the** shortest *s-t* path in a graph has well-known, efficient solutions (most
 notably the [Dijkstra's algorithm]), finding several *s-t* paths introduces a 
@@ -157,7 +157,7 @@ In line
 auto alt_routes = arlib::to_paths(G, predecessors, weight, s, t);
 ```
 
-with call `arlib::to_paths` to build such sequence. `alt_routes` is a
+with call `arlib::to_paths` to build such a sequence. `alt_routes` is a
 `std::vector` of `arlib::Path`. `arlib::Path` is nothing more than a wrapper
 around a `boost::filtered_graph` of the input graph. Doing so allow us to return
 paths that are fast-to-build and easy-to-query because `boost::filtered_graph`
@@ -223,6 +223,7 @@ n3 -- n1
 ### 3. Next steps
 Congratulations! You found your first set of alternative routes! If you want to
 know more check the following resources out:
+ - [Include ARLib in your CMake project][cmake-example]
  - [Uninformed Bidirectional Pruner] - *a pre-processing algorithm that reduces the
    complexity of your graph to speed-up the alternative routing*
  - [Documentation] - *for a full list of the algorithms shipped by ARLib*
@@ -240,3 +241,4 @@ know more check the following resources out:
 [Graph Concepts]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/graph_concepts.html
 [Property Maps]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/using_property_maps.html
 [Section 2.1]: #21-introducing-multi_predecessor_map
+[cmake-example]: include_in_cmake_project.md

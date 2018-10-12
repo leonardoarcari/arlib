@@ -35,7 +35,7 @@ Moreover, the following algorithms are also available:
 ### Getting  started
 
 If you want to use this library, please check the following resources
- - Include ARLib in your CMake project
+ - [Include ARLib in your CMake project](examples/include_in_cmake_project.md)
  - [Tutorial](examples/getting_started.md)
  - Documentation
 
