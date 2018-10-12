@@ -31,13 +31,17 @@ std::vector<arlib::Path<Graph>> get_alternative_routes(Graph const &G, Vertex s,
   return alt_routes;
 }
 
-void print_path(arlib::Path<Graph> const& path, std::vector<std::string> const& name) {
+void print_path(arlib::Path<Graph> const &path,
+                std::vector<std::string> const &name) {
+  using namespace boost;
+
+  // Care to always get a reference to avoid undesired copy-constructed graphs
   auto &path_g = path.graph();
-  for (auto [v_it, v_end] = boost::vertices(path_g); v_it != v_end; ++v_it) {
-    for (auto [first, last] = boost::out_edges(*v_it, path_g); first != last;
-         ++first) {
-      std::cout << name[boost::source(*first, path_g)] << " -- "
-                << name[boost::target(*first, path_g)] << "\n";
+
+  for (auto [v_it, v_end] = vertices(path_g); v_it != v_end; ++v_it) {
+    for (auto [e_it, e_end] = out_edges(*v_it, path_g); e_it != e_end; ++e_it) {
+      std::cout << name[source(*e_it, path_g)] << " -- "
+                << name[target(*e_it, path_g)] << "\n";
     }
   }
 }
