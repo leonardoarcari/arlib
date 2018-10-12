@@ -1,6 +1,6 @@
 # Getting started
-In this document we provide an introduction to **ARLib**, an alternative routing
-library for [Boost.Graph]. *Alternative routing* is defined as the  problem of
+In this document, we provide an introduction to **ARLib**, an alternative routing
+library for [Boost.Graph]. *Alternative routing* is defined as the problem of
 finding a number *k* of *s-t* paths in a graph *G*. While the problem of finding
 **the** shortest *s-t* path in a graph has well-known, efficient solutions (most
 notably the [Dijkstra's algorithm]), finding several *s-t* paths introduces a 
@@ -157,7 +157,7 @@ In line
 auto alt_routes = arlib::to_paths(G, predecessors, weight, s, t);
 ```
 
-with call `arlib::to_paths` to build such sequence. `alt_routes` is a
+with call `arlib::to_paths` to build such a sequence. `alt_routes` is a
 `std::vector` of `arlib::Path`. `arlib::Path` is nothing more than a wrapper
 around a `boost::filtered_graph` of the input graph. Doing so allow us to return
 paths that are fast-to-build and easy-to-query because `boost::filtered_graph`
