@@ -223,6 +223,7 @@ n3 -- n1
 ### 3. Next steps
 Congratulations! You found your first set of alternative routes! If you want to
 know more check the following resources out:
+ - [Include ARLib in your CMake project][cmake-example]
  - [Uninformed Bidirectional Pruner] - *a pre-processing algorithm that reduces the
    complexity of your graph to speed-up the alternative routing*
  - [Documentation] - *for a full list of the algorithms shipped by ARLib*
@@ -240,3 +241,4 @@ know more check the following resources out:
 [Graph Concepts]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/graph_concepts.html
 [Property Maps]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/using_property_maps.html
 [Section 2.1]: #21-introducing-multi_predecessor_map
+[cmake-example]: include_in_cmake_project.md
