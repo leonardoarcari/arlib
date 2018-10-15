@@ -22,7 +22,9 @@ addons:
     packages:
       - g++-8
       - doxygen
+      - llvm-7-dev
       - libclang-7-dev
+      - clang-7
       - boost1.67
       - graphviz
 
