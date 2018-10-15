@@ -1,0 +1,49 @@
+language: cpp
+dist: trusty
+sudo: required
+os: linux
+
+branches:
+  except:
+    - gh-pages
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-7
+      - sourceline: 'ppa:mhier/libboost-latest'
+    packages:
+      - g++-8
+      - clang-7
+      - boost1.67
+      - doxygen
+      - doxygen-doc
+      - doxygen-latex
+      - doxygen-gui
+      - graphviz
+
+before_install:
+  - wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
+  - sudo mkdir -p /opt/cmake
+  - sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
+  - export PATH=/opt/cmake/bin:$PATH
+
+script:
+  - mkdir -p ${TRAVIS_BUILD_DIR}/build
+  - cd ${TRAVIS_BUILD_DIR}/build
+  - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 ${TRAVIS_BUILD_DIR}
+  - make tests -j4
+  - ./tests
+
+after_success:
+  - cd ${TRAVIS_BUILD_DIR}/build
+  - make doc
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  local_dir: ${TRAVIS_BUILD_DIR}/build/doc/html
+  github_token: $GH_REPO_TOKEN
+  on:
+    branch: master
