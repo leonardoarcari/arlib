@@ -1,0 +1,23 @@
+language: cpp
+dist: trusty
+sudo: false
+os: linux
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - boost-latest
+      - sourceline: 'ppa:mhier/libboost-latest'
+    packages:
+      - g++8
+      - cmake-data
+      - cmake
+      - boost1.67
+
+script:
+  - mkdir -p ${TRAVIS_BUILD_DIR}/build
+  - cd ${TRAVIS_BUILD_DIR}/build
+  - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 ${TRAVIS_BUILD_DIR}
+  - make tests -j4
+  - tests
