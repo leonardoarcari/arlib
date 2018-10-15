@@ -30,6 +30,10 @@ before_install:
   - sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
   - export PATH=/opt/cmake/bin:$PATH
 
+before_install:
+  - wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
+  - sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir
+
 script:
   - mkdir -p ${TRAVIS_BUILD_DIR}/build
   - cd ${TRAVIS_BUILD_DIR}/build
