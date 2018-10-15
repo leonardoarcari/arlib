@@ -12,11 +12,13 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-trusty-7
+      - llvm-toolchain-trusty-6
       - sourceline: 'ppa:mhier/libboost-latest'
     packages:
       - g++-8
       - clang-7
       - libclang-7-dev
+      - libclang-6-dev
       - boost1.67
       - graphviz
 
