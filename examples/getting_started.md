@@ -246,4 +246,5 @@ know more check the following resources out:
 [Property Maps]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/using_property_maps.html
 [Section 2.1]: #21-introducing-multi_predecessor_map
 [cmake-example]: include_in_cmake_project.md
+[Documentation]: https://leonardoarcari.github.io/arlib
 [Home]: https://github.com/leonardoarcari/arlib/blob/master/README.md
