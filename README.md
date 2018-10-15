@@ -1,4 +1,7 @@
 # ARLib - Alternative-Routing Library for Boost.Graph
+| Branch | Travis CI |
+| ------ | --------- |
+| master | [![Build Status](https://travis-ci.com/leonardoarcari/arlib.svg?token=TzBLy2LC32a8SnWn6yPo&branch=master)](https://travis-ci.com/leonardoarcari/arlib)
 
 **ARLib** is a generic library for [Boost.Graph][boost-graph] providing several
 **Alternative-Routing** algorithms. Alternative routing, also known in the
@@ -37,7 +40,7 @@ Moreover, the following algorithms are also available:
 If you want to use this library, please check the following resources
  - [Include ARLib in your CMake project](examples/include_in_cmake_project.md)
  - [Tutorial](examples/getting_started.md)
- - Documentation
+ - [Documentation]
 
 ### References
 The algorithm provided in this library are implementations of algorithms
@@ -55,3 +58,4 @@ described in these scientific papers:
 [CMake]: https://cmake.org/cmake/help/v3.5/
 [boost-graph]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/index.html
 [boost-program-options]: https://www.boost.org/doc/libs/1_68_0/doc/html/program_options.html
+[Documentation]: https://leonardoarcari.github.io/arlib
