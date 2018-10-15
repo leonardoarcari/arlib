@@ -4,8 +4,8 @@ sudo: required
 os: linux
 
 branches:
-  except:
-    - gh-pages
+  only:
+    - master
 
 addons:
   apt:
