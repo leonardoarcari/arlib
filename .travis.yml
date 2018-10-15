@@ -10,7 +10,7 @@ addons:
       - boost-latest
       - sourceline: 'ppa:mhier/libboost-latest'
     packages:
-      - g++8
+      - g++-8
       - cmake-data
       - cmake
       - boost1.67
