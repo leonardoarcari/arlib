@@ -59,4 +59,4 @@ $ build/my_target
 [boost-graph]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/index.html
 [boost-program-options]: https://www.boost.org/doc/libs/1_68_0/doc/html/program_options.html
 [Tutorial]: getting_started.md
-[Home]: https://gitlab.com/leonardo_arcari_master_thesis/arlib/blob/master/README.md
+[Home]: https://github.com/leonardoarcari/arlib/blob/master/README.md

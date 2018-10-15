@@ -236,9 +236,14 @@ know more check the following resources out:
 | ESX       | Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and Ulf Leser, Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology (EDBT) (2017)
 | Penalty   | Yanyan Chen, Michael GH Bell, and Klaus Bogenberger. Reliable pretrip multipath planning and dynamic adaptation for a centralized road navigation system. Intelligent Transportation Systems, IEEE Transactions on, 8(1):14–20, 2007
 
+----------------------------
+
+[Home]
+
 [Boost.Graph]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/
 [Dijkstra's algorithm]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 [Graph Concepts]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/graph_concepts.html
 [Property Maps]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/using_property_maps.html
 [Section 2.1]: #21-introducing-multi_predecessor_map
 [cmake-example]: include_in_cmake_project.md
+[Home]: https://github.com/leonardoarcari/arlib/blob/master/README.md
