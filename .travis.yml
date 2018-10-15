@@ -13,6 +13,7 @@ addons:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-trusty-7
       - sourceline: 'ppa:mhier/libboost-latest'
+      - sourceline: 'ppa:libreoffice/ppa'
     packages:
       - g++-8
       - clang-7
@@ -43,7 +44,7 @@ after_success:
 deploy:
   provider: pages
   skip_cleanup: true
-  local_dir: ${TRAVIS_BUILD_DIR}/build/doc/html
+  local_dir: build/doc/html
   github_token: $GH_REPO_TOKEN
   on:
     branch: master
