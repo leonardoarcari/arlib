@@ -18,7 +18,7 @@ addons:
       - g++-8
       - clang-7
       - libclang-7-dev
-      - libclang-6-dev
+      - libclang-6.0-dev
       - boost1.67
       - graphviz
 
