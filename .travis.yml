@@ -17,6 +17,7 @@ addons:
     packages:
       - g++-8
       - clang-7
+      - libclang-7-dev
       - boost1.67
       - doxygen
       - doxygen-doc
