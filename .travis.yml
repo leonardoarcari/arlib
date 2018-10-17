@@ -26,6 +26,7 @@ addons:
       - graphviz
 
 before_install:
+  - chmod +x ${TRAVIS_BUILD_DIR}/script/install_travis_dependencies.sh
   - ${TRAVIS_BUILD_DIR}/script/install_travis_dependencies.sh
   - export PATH=${HOME}/opt/cmake/bin:${HOME}/opt/doxygen/bin:$PATH
 
