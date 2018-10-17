@@ -13,8 +13,12 @@ fi
 
 if [ true ]; then
     echo "==> Installing Doxygen 1.8.14..."
-    wget http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.14.linux.bin.tar.gz
+    git clone https://github.com/doxygen/doxygen.git
+    cd doxygen
+    mkdir build
+    cd build
     mkdir -p "$OPT/doxygen"
-    tar vxf "doxygen-1.8.14.linux.bin.tar.gz"
-    cp -r "doxygen-1.8.14" "$OPT/doxygen"
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 -DCMAKE_INSTALL_PREFIX="$OPT"
+    make -j2
+    make install
 fi
