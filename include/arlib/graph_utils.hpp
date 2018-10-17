@@ -1,6 +1,7 @@
 #ifndef BOOST_GRAPH_UTILS_H
 #define BOOST_GRAPH_UTILS_H
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -214,6 +215,9 @@ std::vector<Path<Graph>> to_paths(Graph const &G,
     }
   }
 
+  std::sort(res.begin(), res.end(), [](auto const &a, auto const &b) {
+    return a.length() < b.length();
+  });
   return res;
 }
 
