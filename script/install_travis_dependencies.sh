@@ -17,8 +17,7 @@ if [ true ]; then
     cd doxygen
     mkdir build
     cd build
-    mkdir -p "$OPT/doxygen"
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 -DCMAKE_INSTALL_PREFIX="$OPT"
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 -DCMAKE_INSTALL_PREFIX="$OPT" ..
     make -j2
     make install
 fi
