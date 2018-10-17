@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+mkdir -p $HOME/opt
 $OPT=$HOME/opt
 
 if [ ! -d "$OPT/cmake" ]; then
