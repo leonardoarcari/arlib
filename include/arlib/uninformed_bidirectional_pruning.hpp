@@ -7,53 +7,16 @@
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <arlib/bidirectional_dijkstra.hpp>
 #include <arlib/details/arlib_utils.hpp>
-#include <arlib/visitor.hpp>
+#include <arlib/details/ubp_impl.hpp>
+#include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
+#include <arlib/routing_kernels/visitor.hpp>
 
 #include <limits>
 #include <unordered_set>
 #include <vector>
 
 namespace arlib {
-template <typename Vertex, typename FPredecessorMap, typename BPredecessorMap,
-          typename FDistanceMap, typename BDistanceMap, typename Length>
-bool pruning_policy(Vertex s, Vertex t, Vertex v, FPredecessorMap predecessor_f,
-                    BPredecessorMap predecessor_b, FDistanceMap distance_f,
-                    BDistanceMap distance_b, double tau,
-                    Length final_distance) {
-  // Source and Target vertices must not be pruned.
-  if (v != s && v != t) {
-    // If v is not in any shortest path from forward nor backward, prune it.
-    bool found_v_f = (predecessor_f[v] != v);
-    bool found_v_b = (predecessor_b[v] != v);
-    Length inf = std::numeric_limits<Length>::max();
-    if (distance_f[v] == inf && !found_v_b) {
-      return true;
-    }
-
-    if (distance_b[v] == inf && !found_v_f) {
-      return true;
-    }
-
-    if (!found_v_f && !found_v_b) {
-      // If a node was not added to SP-Trees but we met it from both
-      // directions we must keep it!
-      if (distance_f[v] == inf && distance_b[v] == inf) {
-        return true;
-      }
-    }
-
-    // If distance_s_v + distance_t_v > tau * final_distance, prun it
-    if (distance_f[v] != inf && distance_b[v] != inf) {
-      if (distance_f[v] + distance_b[v] > tau * final_distance) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 template <
     typename Graph, typename WeightMap, typename RevWeightMap,
     typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
@@ -108,8 +71,8 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
   for (auto [v_it, v_end] = pruning_visitor.get_pruned_vertices();
        v_it != v_end; ++v_it) {
     bool should_prune =
-        pruning_policy(s, t, *v_it, predecessor_f, predecessor_b, distance_f,
-                       distance_b, tau, final_distance);
+        details::pruning_policy(s, t, *v_it, predecessor_f, predecessor_b,
+                                distance_f, distance_b, tau, final_distance);
     if (should_prune) {
       for (auto [adj_it, adj_end] = adjacent_vertices(*v_it, pruned_G);
            adj_it != adj_end; ++adj_it) {

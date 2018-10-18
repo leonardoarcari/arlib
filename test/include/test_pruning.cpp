@@ -9,9 +9,9 @@
 #include "test_types.hpp"
 #include "utils.hpp"
 
-#include <arlib/graph_pruning.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/uninformed_bidirectional_pruning.hpp>
 
 #include <experimental/filesystem>
 #include <memory>

@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <arlib/graph_types.hpp>
+#include <arlib/path.hpp>
 
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>

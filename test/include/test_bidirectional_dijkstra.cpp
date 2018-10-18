@@ -7,10 +7,10 @@
 
 #include "test_types.hpp"
 #include "utils.hpp"
-#include <arlib/bidirectional_dijkstra.hpp>
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 
 #include <experimental/filesystem>
 #include <memory>

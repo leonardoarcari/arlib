@@ -8,9 +8,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <arlib/bidirectional_dijkstra.hpp>
 #include <arlib/details/arlib_utils.hpp>
-#include <arlib/graph_types.hpp>
+#include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
+#include <arlib/routing_kernels/types.hpp>
 
 #include <limits>
 #include <unordered_set>

@@ -7,7 +7,7 @@
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <arlib/visitor.hpp>
+#include <arlib/routing_kernels/visitor.hpp>
 
 #include <deque>
 #include <iostream>
