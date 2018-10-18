@@ -10,6 +10,7 @@
 
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <iterator>
 #include <sstream>
@@ -71,9 +72,8 @@ bool exists_path_to(Vertex v, const DistMap &dist) {
  * @return The length of @p candidate, i.e. @f$\sum_{e \in candidate} weight(e,
  *         G)@f$
  */
-template <
-    typename ForwardIt, typename GWeightMap,
-    typename Length = typename boost::property_traits<GWeightMap>::value_type>
+template <typename ForwardIt, typename GWeightMap,
+          typename Length = value_of_t<GWeightMap>>
 Length compute_length_from_edges(ForwardIt first, ForwardIt last,
                                  GWeightMap const &weight) {
   Length length = 0;
@@ -85,9 +85,8 @@ Length compute_length_from_edges(ForwardIt first, ForwardIt last,
   return length;
 }
 
-template <
-    typename GWeightMap, typename Edge,
-    typename Length = typename boost::property_traits<GWeightMap>::value_type>
+template <typename GWeightMap, typename Edge,
+          typename Length = value_of_t<GWeightMap>>
 Length compute_shared_length(
     const std::vector<Edge> &candidate,
     std::unordered_set<Edge, boost::hash<Edge>> const &alt_path,
@@ -104,9 +103,8 @@ Length compute_shared_length(
   return length;
 }
 
-template <
-    typename Graph, typename GWeightMap,
-    typename Length = typename boost::property_traits<GWeightMap>::value_type>
+template <typename Graph, typename GWeightMap,
+          typename Length = value_of_t<GWeightMap>>
 Length compute_shared_length(const Graph &candidate, const Graph &G,
                              GWeightMap const &weight) {
   using namespace boost;
@@ -150,9 +148,7 @@ double compute_similarity(const Path<Graph> &candidate,
   return shared_length / alt_path.length();
 }
 
-template <
-    typename Length, typename Graph,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Length, typename Graph, typename Vertex = vertex_of_t<Graph>>
 std::vector<Length> distance_from_target(const Graph &G, Vertex t) {
   // Reverse graph
   auto G_rev = boost::make_reverse_graph(G);
@@ -206,10 +202,9 @@ build_path_from_dijkstra(const Graph &G, EdgeWeightMap const &weight,
  * @param p The PredecessorMap
  * @return A vector of the shortest path edges from @p s to @p t.
  */
-template <
-    typename Graph, typename PredecessorMap,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename PredecessorMap,
+          typename Edge = edge_of_t<Graph>,
+          typename Vertex = vertex_of_t<Graph>>
 std::vector<Edge> build_edge_list_from_dijkstra(Graph const &G, Vertex s,
                                                 Vertex t,
                                                 const PredecessorMap &p) {
@@ -232,12 +227,10 @@ std::vector<Edge> build_edge_list_from_dijkstra(Graph const &G, Vertex s,
   return edge_list;
 }
 
-template <
-    typename Graph, typename EdgeWeightMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Length =
-        typename boost::property_traits<EdgeWeightMap>::value_type>
+template <typename Graph, typename EdgeWeightMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = value_of_t<EdgeWeightMap>>
 std::pair<std::vector<Edge>, Length>
 compute_shortest_path(const Graph &G, EdgeWeightMap const &weight, Vertex s,
                       Vertex t) {

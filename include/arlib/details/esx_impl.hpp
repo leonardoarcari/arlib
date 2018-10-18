@@ -11,6 +11,7 @@
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/types.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <limits>
 #include <unordered_set>
@@ -170,10 +171,9 @@ private:
 //                          ESX algorithm routines
 //===----------------------------------------------------------------------===//
 
-template <
-    typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
 constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
 build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &, Vertex,
@@ -212,10 +212,9 @@ build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &, Vertex,
  * @return true If @p e is in the computed path from @p s to @p t
  * @return false otherwise.
  */
-template <
-    typename Graph, typename PredMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+template <typename Graph, typename PredMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
 bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
                                  const PredMap &predecessor) {
   auto e_s = boost::source(e, G);
@@ -249,10 +248,9 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
  * @return A std::optional of the list of edges from @p s to @p t if a path
  * could be found. An empty optional otherwise.
  */
-template <
-    typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
 std::optional<std::vector<Edge>>
 astar_shortest_path(const Graph &G, Vertex s, Vertex t,
                     const AStarHeuristic &heuristic,
@@ -280,13 +278,10 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
   return std::optional<std::vector<Edge>>{};
 }
 
-template <
-    typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
 std::optional<std::vector<Edge>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      const AStarHeuristic &,
@@ -343,10 +338,8 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
  * @return The priority of @p e.
  */
 template <typename Graph, typename DeletedEdgeMap,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-          typename Length =
-              typename boost::property_traits<typename boost::property_map<
-                  Graph, boost::edge_weight_t>::type>::value_type>
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
 int compute_priority(const Graph &G, const Edge &e,
                      const DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
@@ -478,7 +471,7 @@ void init_edge_priorities(const Graph &alternative,
  * @param deleted_edges The set of edges to filter from @p G
  */
 template <typename PrioritiesVector, typename Graph, typename EdgeMap,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
+          typename Edge = edge_of_t<Graph>,
           typename Index = typename PrioritiesVector::size_type>
 void init_edge_priorities(const std::vector<Edge> &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,

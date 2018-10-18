@@ -10,10 +10,9 @@ $ git clone https://gitlab.com/leonardo_arcari_master_thesis/arlib.git external/
 
 ##### Dependencies
 
-**ARLib** require a C++17 compiler, CMake (>=3.5) and the following dependencies
-to be locatable by CMake `find_package`:
- - [Boost::Graph][boost-graph]
- - [Boost::program_options][boost-program-options]
+**ARLib** require a C++17 compiler, CMake (>=3.5) and
+[Boost::Graph][boost-graph] (>= 1.65) to be locatable by CMake
+`find_package`
 
 ##### CMakeLists.txt
 
@@ -57,6 +56,5 @@ $ build/my_target
 [Home]
  
 [boost-graph]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/index.html
-[boost-program-options]: https://www.boost.org/doc/libs/1_68_0/doc/html/program_options.html
 [Tutorial]: getting_started.md
 [Home]: https://github.com/leonardoarcari/arlib/blob/master/README.md

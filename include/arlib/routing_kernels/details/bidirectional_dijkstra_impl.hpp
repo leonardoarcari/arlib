@@ -8,6 +8,7 @@
 #include <boost/property_map/property_map.hpp>
 
 #include <arlib/routing_kernels/visitor.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <deque>
 #include <iostream>
@@ -148,12 +149,11 @@ void compare_and_update_shortest_path(Seen<Vertex, Length> &seen_f,
   }
 }
 
-template <
-    typename Graph, typename PredecessorMap, typename DistanceMap,
-    typename WeightMap, typename OtherPredecessorMap, typename OtherDistanceMap,
-    typename BiDijkstraVisitorImpl,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Length = typename boost::property_traits<DistanceMap>::value_type>
+template <typename Graph, typename PredecessorMap, typename DistanceMap,
+          typename WeightMap, typename OtherPredecessorMap,
+          typename OtherDistanceMap, typename BiDijkstraVisitorImpl,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Length = value_of_t<DistanceMap>>
 BiDijkStepRes bi_dijkstra_step(
     const Graph &G, Vertex s, Vertex t, PredecessorMap predecessor,
     DistanceMap distance, WeightMap weight, Fringe<Vertex, Length> &fringe,

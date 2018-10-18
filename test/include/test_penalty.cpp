@@ -35,8 +35,8 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
   auto max_nb_steps = 100000;
 
   auto predecessors = arlib::multi_predecessor_map<Vertex>{};
-  arlib::penalty_ag(G, predecessors, s, t, k, theta, p, r, bound_limit,
-                    max_nb_steps);
+  arlib::penalty(G, predecessors, s, t, k, theta, p, r, bound_limit,
+                 max_nb_steps);
   auto res_paths = arlib::to_paths(G, predecessors, s, t);
 
   REQUIRE(res_paths.size() == 3);
@@ -228,14 +228,14 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
   auto max_nb_steps = 100000;
 
   auto predecessors_uni = arlib::multi_predecessor_map<Vertex>{};
-  arlib::penalty_ag(G, predecessors_uni, s, t, k, theta, p, r, bound_limit,
-                    max_nb_steps);
+  arlib::penalty(G, predecessors_uni, s, t, k, theta, p, r, bound_limit,
+                 max_nb_steps);
   auto res_paths_uni = arlib::to_paths(G, predecessors_uni, s, t);
 
   auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
-  penalty_ag(G, predecessors_bi, s, t, k, theta, p, r, bound_limit,
-             max_nb_steps,
-             arlib::shortest_path_algorithm::bidirectional_dijkstra);
+  arlib::penalty(G, predecessors_bi, s, t, k, theta, p, r, bound_limit,
+                 max_nb_steps,
+                 arlib::shortest_path_algorithm::bidirectional_dijkstra);
   auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());

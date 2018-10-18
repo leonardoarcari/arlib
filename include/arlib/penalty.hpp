@@ -8,6 +8,7 @@
 #include <arlib/details/penalty_impl.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <queue>
 #include <unordered_map>
@@ -47,10 +48,9 @@ namespace arlib {
  *
  * @return A vector of at maximum @p k alternative paths.
  */
-template <
-    typename Graph, typename WeightMap, typename MultiPredecessorMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
-void penalty_ag(
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Vertex = vertex_of_t<Graph>>
+void penalty(
     const Graph &G, WeightMap const &original_weight,
     MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k, double theta,
     double p, double r, int max_nb_updates, int max_nb_steps,
@@ -73,7 +73,7 @@ void penalty_ag(
   // P_LO set of k paths
   auto resPaths = std::vector<Path<Graph>>{};
   // Make a local weight map to avoid modifying existing graph.
-  auto penalty = details::penalty_functor{original_weight};
+  auto pen_fctor = details::penalty_functor{original_weight};
 
   // Make shortest path algorithm function
   auto compute_shortest_path =
@@ -101,17 +101,17 @@ void penalty_ag(
   auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
 
   // Penalize sp edges
-  details::penalize_candidate_path(*sp, G, s, t, p, r, penalty, distance_s,
+  details::penalize_candidate_path(*sp, G, s, t, p, r, pen_fctor, distance_s,
                                    distance_t, penalty_bounds, max_nb_updates);
 
   int step = 0;
   using Index = std::size_t;
   while (resPathsEdges.size() < static_cast<Index>(k) && step < max_nb_steps) {
-    auto p_tmp = compute_shortest_path(G, s, t, penalty);
+    auto p_tmp = compute_shortest_path(G, s, t, pen_fctor);
 
     // Penalize p_tmp edges
-    details::penalize_candidate_path(*p_tmp, G, s, t, p, r, penalty, distance_s,
-                                     distance_t, penalty_bounds,
+    details::penalize_candidate_path(*p_tmp, G, s, t, p, r, pen_fctor,
+                                     distance_s, distance_t, penalty_bounds,
                                      max_nb_updates);
     ++step;
 
@@ -137,9 +137,8 @@ void penalty_ag(
 }
 
 template <typename PropertyGraph, typename MultiPredecessorMap,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
-void penalty_ag(
+          typename Vertex = vertex_of_t<PropertyGraph>>
+void penalty(
     const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
     Vertex t, int k, double theta, double p, double r, int max_nb_updates,
     int max_nb_steps,
@@ -151,8 +150,8 @@ void penalty_ag(
       (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
 
   auto weight = get(edge_weight, G);
-  penalty_ag(G, weight, predecessors, s, t, k, theta, p, r, max_nb_updates,
-             max_nb_steps, algorithm);
+  penalty(G, weight, predecessors, s, t, k, theta, p, r, max_nb_updates,
+          max_nb_steps, algorithm);
 }
 } // namespace arlib
 
