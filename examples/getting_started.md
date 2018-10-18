@@ -91,7 +91,7 @@ The remaining arguments are OnePass+ parameters:
 So let's compute our alternative routes.
 
  ```cpp
-#include <arlib/graph_types.hpp>
+#include <arlib/path.hpp>
 #include <arlib/graph_utils.hpp>
 #include <arlib/multi_predecessor_map.hpp>
 #include <arlib/onepass_plus.hpp>

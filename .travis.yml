@@ -10,18 +10,14 @@ branches:
 cache:
   directories:
     - $HOME/opt
-  apt: true
 
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
       - sourceline: 'ppa:mhier/libboost-latest'
-      # - sourceline: 'ppa:libreoffice/ppa'
     packages:
       - g++-8
-      # - doxygen
-      # - doxygen-latex
       - boost1.67
       - graphviz
 
@@ -35,7 +31,7 @@ script:
   - cd ${TRAVIS_BUILD_DIR}/build
   - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 ${TRAVIS_BUILD_DIR}
   - make tests -j4
-  - ./tests
+  - test/tests
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}/build

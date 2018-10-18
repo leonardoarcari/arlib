@@ -7,11 +7,11 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "arlib/details/arlib_utils.hpp"
-#include "arlib/details/penalty_impl.hpp"
-#include "arlib/graph_types.hpp"
-#include "arlib/graph_utils.hpp"
-#include "arlib/penalty.hpp"
+#include <arlib/details/arlib_utils.hpp>
+#include <arlib/details/penalty_impl.hpp>
+#include <arlib/graph_utils.hpp>
+#include <arlib/penalty.hpp>
+#include <arlib/routing_kernels/types.hpp>
 
 #include <experimental/filesystem>
 #include <memory>

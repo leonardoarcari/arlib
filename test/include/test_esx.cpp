@@ -10,8 +10,8 @@
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/details/esx_impl.hpp>
 #include <arlib/esx.hpp>
-#include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/routing_kernels/types.hpp>
 
 #include <kspwlo_ref/algorithms/kspwlo.hpp>
 #include <kspwlo_ref/exploration/graph_utils.hpp>

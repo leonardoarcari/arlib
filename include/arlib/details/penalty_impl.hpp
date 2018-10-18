@@ -9,8 +9,8 @@
 #include <boost/property_map/function_property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <arlib/bidirectional_dijkstra.hpp>
-#include <arlib/graph_types.hpp>
+#include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
+#include <arlib/routing_kernels/types.hpp>
 
 #include <functional>
 #include <iostream>

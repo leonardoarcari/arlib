@@ -1,0 +1,16 @@
+add_subdirectory(details)
+add_subdirectory(routing_kernels)
+
+set(ARLIB_HEADERS
+        ${DETAILS_HEADERS}
+        ${ROUTING_KERNELS_HEADERS}
+        include/arlib/esx.hpp
+        include/arlib/graph_types.hpp
+        include/arlib/graph_utils.hpp
+        include/arlib/multi_predecessor_map.hpp
+        include/arlib/onepass_plus.hpp
+        include/arlib/path.hpp
+        include/arlib/penalty.hpp
+        include/arlib/reorder_buffer.hpp
+        include/arlib/uninformed_bidirectional_pruning.hpp
+    PARENT_SCOPE)

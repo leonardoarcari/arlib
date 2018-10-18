@@ -8,7 +8,7 @@
 
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/details/bidirectional_dijkstra_impl.hpp>
-#include <arlib/visitor.hpp>
+#include <arlib/routing_kernels/visitor.hpp>
 
 #include <deque>
 #include <limits>

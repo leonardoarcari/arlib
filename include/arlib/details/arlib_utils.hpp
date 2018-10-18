@@ -187,14 +187,12 @@ build_path_from_dijkstra(const Graph &G, EdgeWeightMap const &weight,
     current = u;
   }
 
-  auto edge_pred = alternative_path_edges{std::move(path_es)};
-  auto vertex_pred = alternative_path_vertices{std::move(path_vs)};
   using FilteredGraph =
       boost::filtered_graph<Graph, alternative_path_edges<Edge>,
                             alternative_path_vertices<Vertex>>;
-  auto fg = std::make_shared<FilteredGraph>(G, edge_pred, vertex_pred);
+  std::shared_ptr<FilteredGraph> fg =
+      make_path_filtered_graph(G, std::move(path_es), std::move(path_vs));
   return Path{fg, length};
-  // return {build_graph_from_edges(edge_list, G), length};
 }
 
 /**
