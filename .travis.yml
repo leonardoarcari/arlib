@@ -10,18 +10,14 @@ branches:
 cache:
   directories:
     - $HOME/opt
-  apt: true
 
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
       - sourceline: 'ppa:mhier/libboost-latest'
-      # - sourceline: 'ppa:libreoffice/ppa'
     packages:
       - g++-8
-      # - doxygen
-      # - doxygen-latex
       - boost1.67
       - graphviz
 
