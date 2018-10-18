@@ -11,15 +11,15 @@
 #include <arlib/details/ubp_impl.hpp>
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/visitor.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <limits>
 #include <unordered_set>
 #include <vector>
 
 namespace arlib {
-template <
-    typename Graph, typename WeightMap, typename RevWeightMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename WeightMap, typename RevWeightMap,
+          typename Vertex = vertex_of_t<Graph>>
 Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
                                       boost::reverse_graph<Graph> const &rev_G,
                                       RevWeightMap const &weight_b, Vertex s,
@@ -95,9 +95,7 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
   return pruned_G;
 }
 
-template <typename PropertyGraph,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+template <typename PropertyGraph, typename Vertex = vertex_of_t<PropertyGraph>>
 PropertyGraph uninformed_bidirectional_pruner(const PropertyGraph &G, Vertex s,
                                               Vertex t, double tau) {
   using namespace boost;

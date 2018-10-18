@@ -11,6 +11,7 @@
 
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/types.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <functional>
 #include <iostream>
@@ -184,10 +185,8 @@ private:
 //                     Penalty algorithm support routines
 //===----------------------------------------------------------------------===//
 
-template <
-    typename Graph, typename PMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor>
+template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
 constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
 build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
@@ -224,13 +223,9 @@ build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
  * @return A vector of the edges of the shortest path from s to t.
  *         An empty optional if t is not reachable from s.
  */
-template <
-    typename Graph,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+template <typename Graph, typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
 std::optional<std::vector<Edge>>
 dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
                                 DistanceMap<Length> &distance_s,
@@ -279,13 +274,9 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
  * @return A vector of the edges of the shortest path from s to t.
  *         An empty optional if t is not reachable from s.
  */
-template <
-    typename Graph, typename PMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
 std::optional<std::vector<Edge>>
 dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                        penalty_functor<PMap> &penalty) {
@@ -313,13 +304,9 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   return std::optional<std::vector<Edge>>{};
 }
 
-template <
-    typename Graph, typename PMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
 std::optional<std::vector<Edge>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                      penalty_functor<PMap> &penalty) {
@@ -392,13 +379,10 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
  * @param penalty_bounds A PenBoundsMap.
  * @param bound_limit The maximum number of times an edge can be penalized.
  */
-template <
-    typename Graph, typename DistanceMap, typename PMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor,
-    typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-    typename Length =
-        typename boost::property_traits<typename boost::property_map<
-            Graph, boost::edge_weight_t>::type>::value_type>
+template <typename Graph, typename DistanceMap, typename PMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
 void penalize_candidate_path(const std::vector<Edge> &candidate, const Graph &G,
                              Vertex s, Vertex t, double p, double r,
                              penalty_functor<PMap> &penalty,

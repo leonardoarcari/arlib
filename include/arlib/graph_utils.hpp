@@ -15,6 +15,7 @@
 
 #include <arlib/graph_types.hpp>
 #include <arlib/path.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>
@@ -139,9 +140,8 @@ Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
 }
 
 namespace details {
-template <
-    typename Graph, typename WeightMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename WeightMap,
+          typename Vertex = vertex_of_t<Graph>>
 Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G,
                             WeightMap const &W) {
   using namespace boost;
@@ -173,8 +173,7 @@ Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G,
   return Path{fg, len};
 }
 
-template <typename Graph, typename Vertex = typename boost::graph_traits<
-                              Graph>::vertex_descriptor>
+template <typename Graph, typename Vertex = vertex_of_t<Graph>>
 Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
@@ -186,9 +185,8 @@ Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
 
 } // namespace details
 
-template <
-    typename Graph, typename WeightMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename WeightMap,
+          typename Vertex = vertex_of_t<Graph>>
 std::vector<Path<Graph>> to_paths(Graph const &G,
                                   multi_predecessor_map<Vertex> &pmap,
                                   WeightMap const &weight, Vertex s, Vertex t) {
@@ -222,8 +220,7 @@ std::vector<Path<Graph>> to_paths(Graph const &G,
   return res;
 }
 
-template <typename Graph, typename Vertex = typename boost::graph_traits<
-                              Graph>::vertex_descriptor>
+template <typename Graph, typename Vertex = vertex_of_t<Graph>>
 std::vector<Path<Graph>> to_paths(Graph const &G,
                                   multi_predecessor_map<Vertex> &pmap, Vertex s,
                                   Vertex t) {

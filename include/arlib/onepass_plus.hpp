@@ -8,6 +8,7 @@
 #include <arlib/details/onepass_plus_impl.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -41,9 +42,8 @@ namespace arlib {
  *
  * @return A vector of at maximum @p k alternative paths.
  */
-template <
-    typename Graph, typename WeightMap, typename MultiPredecessorMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Vertex = vertex_of_t<Graph>>
 void onepass_plus(const Graph &G, WeightMap weight,
                   MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
                   double theta) {
@@ -189,8 +189,7 @@ void onepass_plus(const Graph &G, WeightMap weight,
 }
 
 template <typename PropertyGraph, typename MultiPredecessorMap,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+          typename Vertex = vertex_of_t<PropertyGraph>>
 void onepass_plus(const PropertyGraph &G, MultiPredecessorMap &predecessors,
                   Vertex s, Vertex t, int k, double theta) {
   using namespace boost;

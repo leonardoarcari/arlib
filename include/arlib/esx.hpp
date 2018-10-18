@@ -8,6 +8,7 @@
 #include <arlib/details/esx_impl.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <queue>
 #include <unordered_set>
@@ -38,9 +39,8 @@ namespace arlib {
  *
  * @return A list of at maximum @p k alternative paths.
  */
-template <
-    typename Graph, typename WeightMap, typename MultiPredecessorMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Vertex = vertex_of_t<Graph>>
 void esx(const Graph &G, WeightMap const &weight,
          MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
          double theta,
@@ -184,8 +184,7 @@ void esx(const Graph &G, WeightMap const &weight,
 }
 
 template <typename PropertyGraph, typename MultiPredecessorMap,
-          typename Vertex =
-              typename boost::graph_traits<PropertyGraph>::vertex_descriptor>
+          typename Vertex = vertex_of_t<PropertyGraph>>
 void esx(const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
          Vertex t, int k, double theta,
          shortest_path_algorithm algorithm = shortest_path_algorithm::astar) {

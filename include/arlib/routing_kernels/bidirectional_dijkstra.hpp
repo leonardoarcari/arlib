@@ -7,8 +7,9 @@
 #include <boost/graph/reverse_graph.hpp>
 
 #include <arlib/details/arlib_utils.hpp>
-#include <arlib/details/bidirectional_dijkstra_impl.hpp>
+#include <arlib/routing_kernels/details/bidirectional_dijkstra_impl.hpp>
 #include <arlib/routing_kernels/visitor.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <deque>
 #include <limits>
@@ -85,12 +86,10 @@ void fill_predecessor(PredecessorMap predecessor,
  * @param weight_b The WeightMap for the backward step.
  * @param visitor An implementation of a BiDijkstraVisitor.
  */
-template <
-    typename Graph, typename PredecessorMap, typename DistanceMap,
-    typename WeightMap, typename BackGraph, typename BackPredecessorMap,
-    typename BackDistanceMap, typename BackWeightMap,
-    typename BiDijkstraVisitorImpl,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename PredecessorMap, typename DistanceMap,
+          typename WeightMap, typename BackGraph, typename BackPredecessorMap,
+          typename BackDistanceMap, typename BackWeightMap,
+          typename BiDijkstraVisitorImpl, typename Vertex = vertex_of_t<Graph>>
 void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             PredecessorMap predecessor, DistanceMap distance,
                             WeightMap weight, const BackGraph &G_b,
@@ -99,9 +98,8 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             BiDijkstraVisitor<BiDijkstraVisitorImpl> &visitor) {
   using namespace boost;
   using Length = typename property_traits<DistanceMap>::value_type;
-  using Edge = typename graph_traits<Graph>::edge_descriptor;
-  using RevEdge =
-      typename graph_traits<boost::reverse_graph<Graph>>::edge_descriptor;
+  using Edge = edge_of_t<Graph>;
+  using RevEdge = edge_of_t<boost::reverse_graph<Graph>>;
 
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
@@ -207,11 +205,10 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
  *         must be an integer type. The vertex descriptor type of the graph
  *         needs to be usable as the key type of the map.
  */
-template <
-    typename Graph, typename PredecessorMap, typename DistanceMap,
-    typename WeightMap, typename BackGraph, typename BackWeightMap,
-    typename BackIndexMap, typename BiDijkstraVisitorImpl,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename PredecessorMap, typename DistanceMap,
+          typename WeightMap, typename BackGraph, typename BackWeightMap,
+          typename BackIndexMap, typename BiDijkstraVisitorImpl,
+          typename Vertex = vertex_of_t<Graph>>
 void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             PredecessorMap predecessor, DistanceMap distance,
                             WeightMap weight, const BackGraph &G_b,
@@ -265,11 +262,9 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
  *         must be an integer type. The vertex descriptor type of the graph
  *         needs to be usable as the key type of the map.
  */
-template <
-    typename Graph, typename PredecessorMap, typename DistanceMap,
-    typename WeightMap, typename BackGraph, typename BackWeightMap,
-    typename BackIndexMap,
-    typename Vertex = typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename PredecessorMap, typename DistanceMap,
+          typename WeightMap, typename BackGraph, typename BackWeightMap,
+          typename BackIndexMap, typename Vertex = vertex_of_t<Graph>>
 void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
                             PredecessorMap predecessor, DistanceMap distance,
                             WeightMap weight, const BackGraph &G_b,

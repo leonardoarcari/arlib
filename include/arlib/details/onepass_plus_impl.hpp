@@ -7,6 +7,7 @@
 
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/graph_types.hpp>
+#include <arlib/type_traits.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -44,10 +45,8 @@ namespace details {
  * @tparam Vertex A vertex of Graph.
  * @tparam Length The value type of an edge weight of Graph.
  */
-template <typename Graph, typename Length,
-          typename Edge = typename boost::graph_traits<Graph>::edge_descriptor,
-          typename Vertex =
-              typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename Length, typename Edge = edge_of_t<Graph>,
+          typename Vertex = vertex_of_t<Graph>>
 class OnePassLabel {
 private:
   Vertex node;
@@ -268,9 +267,7 @@ private:
  * @tparam Graph A Boost::Graph
  * @tparam Vertex A vertex of Graph.
  */
-template <typename Graph, typename Length,
-          typename Vertex =
-              typename boost::graph_traits<Graph>::vertex_descriptor>
+template <typename Graph, typename Length, typename Vertex = vertex_of_t<Graph>>
 class SkylineContainer {
 public:
   using Label = OnePassLabel<Graph, Length>;
