@@ -32,8 +32,7 @@ Moreover, the following algorithms are also available:
 
  - A C++17 compliant compiler
  - [CMake] (>= 3.5)
- - [Boost::Graph][boost-graph]
- - [Boost::program_options][boost-program-options]
+ - [Boost::Graph][boost-graph] (>= 1.65)
  
 ### Getting  started
 
@@ -57,5 +56,4 @@ described in these scientific papers:
 [Dijkstra's algorithm]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 [CMake]: https://cmake.org/cmake/help/v3.5/
 [boost-graph]: https://www.boost.org/doc/libs/1_68_0/libs/graph/doc/index.html
-[boost-program-options]: https://www.boost.org/doc/libs/1_68_0/doc/html/program_options.html
 [Documentation]: https://leonardoarcari.github.io/arlib
