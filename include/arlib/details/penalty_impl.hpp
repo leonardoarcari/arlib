@@ -69,7 +69,7 @@ template <typename Length> using DistanceMap = std::vector<Length>;
 template <typename PMap> class penalty_functor {
 public:
   using Edge = typename boost::property_traits<PMap>::key_type;
-  using Length = typename boost::property_traits<PMap>::value_type;
+  using Length = double;
 
   /**
    * @brief Construct a new penalty functor object.
@@ -138,7 +138,7 @@ template <typename PMap, typename Graph> class reverse_penalty_functor {
 public:
   using Edge = typename boost::graph_traits<
       boost::reverse_graph<Graph>>::edge_descriptor;
-  using Length = typename boost::property_traits<PMap>::value_type;
+  using Length = double;
 
   reverse_penalty_functor(penalty_functor<PMap> &penalty, const Graph &G,
                           const boost::reverse_graph<Graph> &rev_G)
