@@ -1,3 +1,33 @@
+/**
+ * @file uninformed_bidirectional_pruning.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT Licence
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef BOOST_GRAPH_PRUNING_ALGORITHMS_HPP
 #define BOOST_GRAPH_PRUNING_ALGORITHMS_HPP
 
@@ -17,7 +47,41 @@
 #include <unordered_set>
 #include <vector>
 
+/**
+ * An Alternative-Routing library for Boost.Graph
+ */
 namespace arlib {
+/**
+ * An implementation of Uninformed Bidirectional Pruning for Boost::Graph.
+ *
+ * This implementation refers to the following publication:
+ *
+ * Andreas Paraskevopoulos, Christos Zaroliagis. Improved Alternative Route
+ * Planning. Daniele Frigioni and Sebastian Stiller. ATMOS - 13th Workshop on
+ * Algorithmic Approaches for Transportation Modelling, Optimization, and
+ * Systems - 2013, Sep 2013, Sophia Antipolis, France. Schloss
+ * Dagstuhl–Leibniz-Zentrum fuer Informatik, 33, pp.108–122, 2013, OpenAccess
+ * Series in Informatics (OASIcs).
+ *
+ * @tparam Graph A Boost::VertexAndEdgeListGraph
+ * @tparam WeightMap The weight or "length" of each edge in the graph. The
+ *         weights must all be non-negative, and the algorithm will throw a
+ *         negative_edge exception is one of the edges is negative. The type
+ *         WeightMap must be a model of Readable Property Map. The edge
+ *         descriptor type of the graph needs to be usable as the key type for
+ *         the weight map. The value type for this map must be the same as the
+ *         value type of the distance map.
+ * @tparam RevWeightMap Same as `WeightMap`, but for
+ *         `boost::reverse_graph<Graph>`
+ * @param G The input graph.
+ * @param weight_f The weight map of `G`.
+ * @param rev_G A `boost::reverse_graph` of `G`
+ * @param weight_b The weight map of `rev_G`.
+ * @param s The source node.
+ * @param t The target node.
+ * @param tau The pruning factor.
+ * @return A pruned copy of `G`.
+ */
 template <typename Graph, typename WeightMap, typename RevWeightMap,
           typename Vertex = vertex_of_t<Graph>>
 Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
@@ -95,6 +159,25 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
   return pruned_G;
 }
 
+/**
+ * An implementation of Uninformed Bidirectional Pruning for Boost::Graph.
+ *
+ * This overload takes an input graph modeling `PropertyGraph` concept having at
+ * least one edge property with tag `boost::edge_weight_t`. Moreover it does not
+ * require an explicit `WeightMap` parameter, because it is directly gathered
+ * from the `PropertyGraph`.
+ *
+ * @see uninformed_bidirectional_pruner(const Graph &G, WeightMap const
+ *                                      &weight_f, boost::reverse_graph<Graph>
+ *                                      const &rev_G, RevWeightMap const
+ *                                      &weight_b, Vertex s, Vertex t, double
+ *                                      tau)
+ *
+ * @tparam PropertyGraph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ *
+ * @return A pruned copy of `G`.
+ */
 template <typename PropertyGraph, typename Vertex = vertex_of_t<PropertyGraph>>
 PropertyGraph uninformed_bidirectional_pruner(const PropertyGraph &G, Vertex s,
                                               Vertex t, double tau) {
