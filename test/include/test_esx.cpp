@@ -143,7 +143,7 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
 
   auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
   arlib::esx(G, predecessors_bi, s, t, 3, 0.5,
-             arlib::shortest_path_algorithm::bidirectional_dijkstra);
+             arlib::routing_kernels::bidirectional_dijkstra);
   auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());

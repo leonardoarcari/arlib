@@ -25,7 +25,7 @@ auto find_alternative_paths(Graph const &G, int k = 3, double theta = 0.5) {
 
   auto predecessors = arlib::multi_predecessor_map<Vertex>{};
   arlib::penalty(G, predecessors, s, t, k, theta, p, r, bound_limit,
-                 max_nb_steps, arlib::shortest_path_algorithm::dijkstra);
+                 max_nb_steps, arlib::routing_kernels::dijkstra);
   auto res_paths = arlib::to_paths(G, predecessors, s, t);
   return res_paths;
 }

@@ -235,7 +235,7 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
   auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
   arlib::penalty(G, predecessors_bi, s, t, k, theta, p, r, bound_limit,
                  max_nb_steps,
-                 arlib::shortest_path_algorithm::bidirectional_dijkstra);
+                 arlib::routing_kernels::bidirectional_dijkstra);
   auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());
