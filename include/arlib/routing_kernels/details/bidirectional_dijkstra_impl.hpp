@@ -1,3 +1,33 @@
+/**
+ * @file bidirectional_dijkstra_impl.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef KSPWLO_BIDIRECTIONAL_DIJKSTRA_IMPL_HPP
 #define KSPWLO_BIDIRECTIONAL_DIJKSTRA_IMPL_HPP
 
@@ -18,7 +48,7 @@
 
 namespace arlib {
 /**
- * @brief Implementations details of kSPwLO algorithms
+ * Implementations details of kSPwLO algorithms
  */
 namespace details {
 //===----------------------------------------------------------------------===//
@@ -26,13 +56,13 @@ namespace details {
 //===----------------------------------------------------------------------===//
 
 /**
- * @brief Enum to describe whether a forward or a backward step of bidirectional
+ * Enum to describe whether a forward or a backward step of bidirectional
  * dijkstra is executing.
  */
 enum class Direction { forward = 1, backward };
 
 /**
- * @brief Returns the opposite direction.
+ * Returns the opposite direction.
  *
  * @param prev_dir The current execution direction.
  * @return Direction::forward if @p prev_dir == Direction::backward.
@@ -44,12 +74,12 @@ constexpr Direction switch_direction(Direction prev_dir) {
 }
 
 /**
- * @brief Return code of bi_dijkstra_step()
+ * Return code of bi_dijkstra_step()
  */
 enum class BiDijkStepRes {
-  next = 1,        /**< bidirectional_dijkstra() should execute another step. */
-  end,             /**< bidirectional_dijkstra() should end. */
-  negative_weights /**< bidirectional_dijkstra() should exit because
+  next = 1, /**< arlib::bidirectional_dijkstra() should execute another step. */
+  end,      /**< arlib::bidirectional_dijkstra() should end. */
+  negative_weights /**< arlib::bidirectional_dijkstra() should exit because
                         preconditions are violated. */
 };
 
@@ -81,7 +111,7 @@ using Seen = std::unordered_map<Vertex, Length, boost::hash<Vertex>>;
 //                      Bidirectional Dijkstra routines
 //===----------------------------------------------------------------------===//
 /**
- * @brief Initialize a DistanceMap with @c infinite value for each vertex in the
+ * Initialize a DistanceMap with @c infinite value for each vertex in the
  * graph.
  *
  * @post For each vertex @c v in @p G, <tt>distance[v] = +inf</tt>, given
@@ -235,6 +265,16 @@ BiDijkStepRes bi_dijkstra_step(
   }
   // Everything went fine, go with other direction
   return BiDijkStepRes::next;
+}
+
+template <typename PredecessorMap, typename Vertex>
+void fill_predecessor(PredecessorMap predecessor,
+                      const std::deque<Vertex> &final_path) {
+  if (!final_path.empty()) {
+    for (std::size_t i = 0; i < final_path.size() - 1; ++i) {
+      predecessor[final_path[i + 1]] = final_path[i];
+    }
+  }
 }
 } // namespace details
 } // namespace arlib

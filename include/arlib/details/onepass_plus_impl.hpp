@@ -1,3 +1,33 @@
+/**
+ * @file onepass_plus_impl.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef ONEPASS_PLUS_IMPL_HPP
 #define ONEPASS_PLUS_IMPL_HPP
 
@@ -18,7 +48,7 @@
 
 namespace arlib {
 /**
- * @brief Implementations details of kSPwLO algorithms
+ * Implementations details of kSPwLO algorithms
  */
 namespace details {
 
@@ -27,7 +57,7 @@ namespace details {
 //===----------------------------------------------------------------------===//
 
 /**
- * @brief A label for a node in the graph to keep track of its exploration
+ * A label for a node in the graph to keep track of its exploration
  *        state.
  *
  * A label tracks the path from the source to the node @c n it's attached, the
@@ -59,28 +89,28 @@ private:
 
 public:
   /**
-   * @brief size_type trait of similarity vector
+   * size_type trait of similarity vector
    */
   using similarity_map_size_type = typename decltype(similarity_map)::size_type;
 
   /**
-   * @brief iterator trait of similarity vector
+   * iterator trait of similarity vector
    */
   using similarity_map_iterator_type =
       typename decltype(similarity_map)::iterator;
 
   /**
-   * @brief Length
+   * Length
    */
   using length_type = Length;
 
   /**
-   * @brief Vertex
+   * Vertex
    */
   using vertex_type = Vertex;
 
   /**
-   * @brief Construct a new OnePass Label object with a predecessor label.
+   * Construct a new OnePass Label object with a predecessor label.
    *
    * @param node Node to attach this label to.
    * @param length Distance of this node from source following the path from
@@ -98,7 +128,7 @@ public:
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
   /**
-   * @brief Construct a new OnePass Label object with no predecessor (i.e. a @c
+   * Construct a new OnePass Label object with no predecessor (i.e. a @c
    * head label)
    *
    * @param node Node to attach this label to.
@@ -180,7 +210,7 @@ public:
   }
 
   /**
-   * @brief Copies the similarity values from [@p first, @p last) iterators into
+   * Copies the similarity values from [@p first, @p last) iterators into
    *        label's similarity vector.
    *
    * @param first begin iterator.
@@ -229,7 +259,7 @@ public:
   }
 
   /**
-   * @brief Set the time step of similarities update.
+   * Set the time step of similarities update.
    *
    * @param step the time step.
    */
@@ -256,7 +286,7 @@ private:
 };
 
 /**
- * @brief A conventient container for labels dominance checking.
+ * A conventient container for labels dominance checking.
  *
  * When a new label @c l' for a node @c n is created we must check it against
  * Lemma 2: Let @c P_LO the set of computed alternative paths so far. If all the
@@ -274,7 +304,7 @@ public:
   using LabelPtr = Label *;
 
   /**
-   * @brief Inserts a label into the skyline. Before insertion, you should check
+   * Inserts a label into the skyline. Before insertion, you should check
    * if the skyline already dominates @p label. See dominates().
    *
    * @param label A label to add to the skyline.
@@ -302,7 +332,7 @@ public:
   }
 
   /**
-   * @brief Check if the skyline dominates @p label. Refer to SkylineContainer
+   * Check if the skyline dominates @p label. Refer to SkylineContainer
    * description for a more clear explanation.
    *
    * @param label A label to check if it's dominated by the skyline.
@@ -358,7 +388,7 @@ private:
 };
 
 /**
- * @brief A Comparator functor to compare two labels in an A* fashion.
+ * A Comparator functor to compare two labels in an A* fashion.
  *
  * A lower bound for the distance of the label from the target is used to decide
  * the ordering. The label with the lowest lower bound is the smallest.

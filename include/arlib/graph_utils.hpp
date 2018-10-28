@@ -1,3 +1,33 @@
+/**
+ * @file graph_utils.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef BOOST_GRAPH_UTILS_H
 #define BOOST_GRAPH_UTILS_H
 
@@ -14,6 +44,7 @@
 #include <vector>
 
 #include <arlib/graph_types.hpp>
+#include <arlib/multi_predecessor_map.hpp>
 #include <arlib/path.hpp>
 #include <arlib/type_traits.hpp>
 
@@ -22,7 +53,26 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+/**
+ * An Alternative-Routing library for Boost.Graph
+ */
 namespace arlib {
+/**
+ * Constructs a PropertyGraph from vertices, edges and weights contained in a
+ * .gr-format string. An example of .gr-format string is the following:
+ * ```
+ * d
+ * # nb_vertices nb_edges
+ * 3 2
+ * # v1 v2 weight
+ * 0 1 4
+ * 1 2 3
+ * ```
+ *
+ * @tparam PropertyGraph The Graph type
+ * @param graph A .gr-format string defining the graph.
+ * @return the constructed graph.
+ */
 template <typename PropertyGraph>
 PropertyGraph read_graph_from_string(const std::string &graph) {
   auto ss = std::stringstream{graph};
@@ -58,6 +108,22 @@ PropertyGraph read_graph_from_string(const std::string &graph) {
   return G;
 }
 
+/**
+ * Constructs a PropertyGraph from vertices, edges and weights contained in a
+ * file in .gr format. An example of .gr-format file is the following:
+ * ```
+ * d
+ * # nb_vertices nb_edges
+ * 3 2
+ * # v1 v2 weight
+ * 0 1 4
+ * 1 2 3
+ * ```
+ *
+ * @tparam PropertyGraph The Graph type
+ * @param path A .gr-format file path defining the graph.
+ * @return the constructed graph.
+ */
 template <typename PropertyGraph>
 std::optional<PropertyGraph> read_graph_from_file(const std::string_view path) {
   namespace fs = std::filesystem;
@@ -80,8 +146,38 @@ std::optional<PropertyGraph> read_graph_from_file(const std::string_view path) {
   return {read_graph_from_string<PropertyGraph>(buffer.str())};
 }
 
-template <typename Graph> std::string dump_edges_weight(const Graph &G);
+/**
+ * Create a string representation of a graph edges and their weight.
+ *
+ * @tparam Graph A model of EdgeListGraph
+ * @param G The graph
+ * @return The edges and weights dump
+ */
+template <typename Graph> std::string dump_edges_weight(const Graph &G) {
+  using namespace boost;
+  auto ss = std::stringstream{};
+  auto weight = get(edge_weight, G);
 
+  for (auto ei = edges(G).first; ei != edges(G).second; ++ei) {
+    auto w = weight[*ei];
+
+    ss << "(" << source(*ei, G) << ", " << target(*ei, G) << "; " << w << ") ";
+  }
+
+  return ss.str();
+}
+
+/**
+ * Construct a new Graph from a vector of edges, taking their weights from
+ * another graph.
+ *
+ * @pre Edges in `edge_list` exist in `G`. If not, the behavior is undefined.
+ *
+ * @tparam Graph The type of the output graph.
+ * @param edge_list Vector of `(vertex_id, vertex_id)` edges.
+ * @param G The source graph from where to take `edge_list` edges' weights.
+ * @return The constructed graph.
+ */
 template <typename Graph>
 Graph build_graph_from_edges(const std::vector<VPair> &edge_list,
                              const Graph &G) {
@@ -102,6 +198,19 @@ Graph build_graph_from_edges(const std::vector<VPair> &edge_list,
                num_vertices(G)};
 }
 
+/**
+ * Construct an [Alternative Graph] from a sequence of
+ * paths, taking their weights from another source graph.
+ *
+ * [Alternative Graph]: http://drops.dagstuhl.de/opus/volltexte/2013/4248/
+ *
+ * @pre Edges in `paths` exist in `g`. If not, the behavior is undefined.
+ *
+ * @tparam Graph The type of the output graph.
+ * @param paths A vector of simple paths.
+ * @param g The source graph from where to take `edge_list` edges' weights.
+ * @return The constructed graph.
+ */
 template <typename Graph>
 Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
   using namespace boost;
@@ -139,7 +248,29 @@ Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
   return Graph{std::begin(es), std::end(es), std::begin(weights), nodes.size()};
 }
 
+/**
+ * Implementations details of kSPwLO algorithms
+ */
 namespace details {
+/**
+ * Construct a Path from a sequence of vertices of a graph `G`.
+ *
+ * @pre `vertex_descriptor`s of `path` must be vertices of `G`.
+ *
+ * @tparam Graph A model of a graph for which `edge(u, v, G)` is a valid
+ *         expression.
+ * @tparam WeightMap The weight or "length" of each edge in the graph. The
+ *         weights must all be non-negative, and the algorithm will throw a
+ *         negative_edge exception is one of the edges is negative. The type
+ *         WeightMap must be a model of Readable Property Map. The edge
+ *         descriptor type of the graph needs to be usable as the key type for
+ *         the weight map. The value type for this map must be the same as the
+ *         value type of the distance map.
+ * @param path A sequence of vertices of `G` representing a simple-path.
+ * @param G The graph.
+ * @param W The Weight Property Map of `G`.
+ * @return The constructed Path.
+ */
 template <typename Graph, typename WeightMap,
           typename Vertex = vertex_of_t<Graph>>
 Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G,
@@ -173,6 +304,17 @@ Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G,
   return Path{fg, len};
 }
 
+/**
+ * Construct a Path from a sequence of vertices of a graph `G`.
+ *
+ * @pre `vertex_descriptor`s of `path` must be vertices of `G`.
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @param path A sequence of vertices of `G` representing a simple-path.
+ * @param G The graph.
+ * @return The constructed Path.
+ */
 template <typename Graph, typename Vertex = vertex_of_t<Graph>>
 Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
   using namespace boost;
@@ -185,6 +327,29 @@ Path<Graph> build_path_from(std::vector<Vertex> const &path, Graph const &G) {
 
 } // namespace details
 
+/**
+ * Construct a sequence of Path from a graph `G` a pair of source-target
+ * vertices a multi_predecessor_map holding alternative paths from `s` to `t`.
+ *
+ * multi_predecessor_map is often filled by *alternative routing* algorithms
+ * like onepass_plus(), esx() or penalty().
+ *
+ * @tparam Graph A model of a graph for which `edge(u, v, G)` is a valid
+ *         expression.
+ * @tparam WeightMap The weight or "length" of each edge in the graph. The
+ *         weights must all be non-negative, and the algorithm will throw a
+ *         negative_edge exception is one of the edges is negative. The type
+ *         WeightMap must be a model of Readable Property Map. The edge
+ *         descriptor type of the graph needs to be usable as the key type for
+ *         the weight map. The value type for this map must be the same as the
+ *         value type of the distance map.
+ * @param G The graph.
+ * @param pmap The multi predecessor map of `G`.
+ * @param weight The Weight Property Map of `G`.
+ * @param s The source vertex.
+ * @param t The target vertex.
+ * @return A sequence of constructed Path.
+ */
 template <typename Graph, typename WeightMap,
           typename Vertex = vertex_of_t<Graph>>
 std::vector<Path<Graph>> to_paths(Graph const &G,
@@ -220,6 +385,21 @@ std::vector<Path<Graph>> to_paths(Graph const &G,
   return res;
 }
 
+/**
+ * Construct a sequence of Path from a graph `G` a pair of source-target
+ * vertices a multi_predecessor_map holding alternative paths from `s` to `t`.
+ *
+ * multi_predecessor_map is often filled by *alternative routing* algorithms
+ * like onepass_plus(), esx() or penalty().
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @param G The graph.
+ * @param pmap The multi predecessor map of `G`.
+ * @param s The source vertex.
+ * @param t The target vertex.
+ * @return A sequence of constructed Path.
+ */
 template <typename Graph, typename Vertex = vertex_of_t<Graph>>
 std::vector<Path<Graph>> to_paths(Graph const &G,
                                   multi_predecessor_map<Vertex> &pmap, Vertex s,

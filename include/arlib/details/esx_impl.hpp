@@ -1,3 +1,33 @@
+/**
+ * @file esx_impl.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef BOOST_EDGE_SUBSET_EXCLUSION_IMPL_HPP
 #define BOOST_EDGE_SUBSET_EXCLUSION_IMPL_HPP
 
@@ -17,9 +47,12 @@
 #include <unordered_set>
 #include <utility>
 
+/**
+ * An Alternative-Routing library for Boost.Graph
+ */
 namespace arlib {
 /**
- * @brief Implementations details of kSPwLO algorithms
+ * Implementations details of kSPwLO algorithms
  */
 namespace details {
 
@@ -28,7 +61,7 @@ namespace details {
 //===----------------------------------------------------------------------===//
 
 /**
- * @brief Comparator for edges priority queue.
+ * Comparator for edges priority queue.
  *
  * Given two edges @c e1 and @c e2, if <tt>prio(e1) > prio(e2)</tt> then @c e1
  * must be popped before @c e2.
@@ -36,10 +69,12 @@ namespace details {
  * @tparam Edge A Boost::Graph edge descriptor.
  */
 template <typename Edge> struct EdgePriorityComparator {
-  using Priority = std::pair<Edge, int>;
-
   /**
-   * @brief Given two edges @c e1 and @c e2, if <tt>prio(e1) > prio(e2)</tt>
+   * The priority of Edge
+   */
+  using Priority = std::pair<Edge, int>;
+  /**
+   * Given two edges @c e1 and @c e2, if <tt>prio(e1) > prio(e2)</tt>
    * then @c e1 must be popped before @c e2.
    *
    * @param lhs first edge and its priority.
@@ -53,7 +88,7 @@ template <typename Edge> struct EdgePriorityComparator {
 };
 
 /**
- * @brief A filter functor for Boost::filtered_graph to hide edges deleted by
+ * A filter functor for Boost::filtered_graph to hide edges deleted by
  * ESX.
  *
  * @tparam Edge A Boost::Graph edge descriptor
@@ -61,23 +96,21 @@ template <typename Edge> struct EdgePriorityComparator {
 template <typename Edge> class edge_deleted_filter {
 public:
   /**
-   * @brief The deleted edges map.
+   * The deleted edges map.
    */
   using DeletedEdgeMap = std::unordered_set<Edge, boost::hash<Edge>>;
   /**
-   * @brief Empty constructor, required by Boost::Graph
+   * Empty constructor, required by Boost::Graph
    */
   edge_deleted_filter() : deleted_edge_map{nullptr} {}
-
   /**
-   * @brief Construct a new edge_deleted_filter object filtering edges contained
+   * Construct a new edge_deleted_filter object filtering edges contained
    * in @p deleted_edge_map.
    *
    * @param deleted_edge_map The set of deleted edges.
    */
   edge_deleted_filter(const DeletedEdgeMap &deleted_edge_map)
       : deleted_edge_map{std::addressof(deleted_edge_map)} {};
-
   /**
    * @param e Edge to check.
    * @return true if @p e is marked as deleted
@@ -92,7 +125,7 @@ private:
 };
 
 /**
- * @brief An A* heuristic using <em>distance from target</em> lower bound.
+ * An A* heuristic using <em>distance from target</em> lower bound.
  *
  * In order to derive tight h(n, t) lower bounds, we first reverse the edges of
  * the road network and then run Dijkstra’s algorithm from target t to every
@@ -105,10 +138,12 @@ private:
 template <typename Graph, typename CostType>
 class distance_heuristic : public boost::astar_heuristic<Graph, CostType> {
 public:
-  using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
-
   /**
-   * @brief Construct a new distance heuristic object. Upon construction a
+   * Graph vertex descriptor.
+   */
+  using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
+  /**
+   * Construct a new distance heuristic object. Upon construction a
    * Dijkstra’s algorithm is run on @c G' from @p t to all nodes. @c G' is equal
    * to @p G except that all the edges are reversed.
    *
@@ -117,7 +152,6 @@ public:
    */
   distance_heuristic(const Graph &G, Vertex t)
       : lower_bounds{distance_from_target<CostType>(G, t)} {}
-
   /**
    * @param u The Vertex
    * @return The heuristic of the cost of Vertex @p u.
@@ -129,7 +163,7 @@ private:
 };
 
 /**
- * @brief An A* visitor to stop the algorithm when a target vertex is found.
+ * An A* visitor to stop the algorithm when a target vertex is found.
  *
  * This visitor is required when you are interested just in finding a route from
  * a source to a target, while generally speaking A* Star search terminates when
@@ -141,13 +175,12 @@ template <typename Vertex>
 class astar_target_visitor : public boost::default_astar_visitor {
 public:
   /**
-   * @brief Construct a new astar_target_visitor object that ends the search
+   * Construct a new astar_target_visitor object that ends the search
    * when Vertex @p t is found.
    *
    * @param t The target Vertex
    */
   explicit astar_target_visitor(Vertex t) : t{t} {}
-
   /**
    * When Vertex <tt>u == t</tt> (i.e. we found target node) A* search stops
    * throwing a target_found exception.
@@ -176,15 +209,15 @@ template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
           typename Edge = edge_of_t<Graph>>
 constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
-build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &, Vertex,
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex,
                        Vertex, const AStarHeuristic &, DeletedEdgeMap &) {
   switch (algorithm) {
-  case shortest_path_algorithm::astar:
+  case routing_kernels::astar:
     return [](const auto &G, auto s, auto t, const auto &heuristic,
               auto &deleted_edge_map) {
       return astar_shortest_path(G, s, t, heuristic, deleted_edge_map);
     };
-  case shortest_path_algorithm::bidirectional_dijkstra:
+  case routing_kernels::bidirectional_dijkstra:
     return [](const auto &G, auto s, auto t, const auto &heuristic,
               auto &deleted_edge_map) {
       return bidirectional_dijkstra_shortest_path(G, s, t, heuristic,
@@ -197,7 +230,7 @@ build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &, Vertex,
 }
 
 /**
- * @brief Checks whether the path from @p s to @p t contains edge @p e or not.
+ * Checks whether the path from @p s to @p t contains edge @p e or not.
  *
  * @pre @p predecessor is the PredecessorMap filled by a Boost::Graph shortest
  * path algorithm such that <tt>predecessor[s] == s</tt>
@@ -233,7 +266,7 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
 }
 
 /**
- * @brief Compute a shortest path between two vertices on a filtered graph using
+ * Compute a shortest path between two vertices on a filtered graph using
  * an A* approach, provided the set of edges to filter and the heuristic.
  *
  * @tparam Graph A Boost::PropertyGraph having at least one edge
@@ -316,7 +349,7 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
 }
 
 /**
- * @brief Computes the ESX priority of an edge. Quoting the reference paper:
+ * Computes the ESX priority of an edge. Quoting the reference paper:
  *
  * <blockquote>Given an edge e(a, b) on some alternative path p, let E_inc(a) be
  * the set of all incoming edges e(n_i, a) to a from some node n_i in N\{b} and
@@ -407,7 +440,7 @@ int compute_priority(const Graph &G, const Edge &e,
 }
 
 /**
- * @brief Computes the edge priorities of an alternative path.
+ * Computes the edge priorities of an alternative path.
  *
  * @pre @p edge_priorities is a vector of std::priority_queue of size al least
  * @p alt_index + 1.
@@ -448,7 +481,7 @@ void init_edge_priorities(const Graph &alternative,
 }
 
 /**
- * @brief Computes the edge priorities of an alternative path.
+ * Computes the edge priorities of an alternative path.
  *
  * @pre @p edge_priorities is a vector of std::priority_queue of size al least
  * @p alt_index + 1.
@@ -483,7 +516,7 @@ void init_edge_priorities(const std::vector<Edge> &alternative,
 }
 
 /**
- * @brief Checks whether another alternative path can be found by ESX.
+ * Checks whether another alternative path can be found by ESX.
  *
  * @param overlaps The vector of overlapping factors between @c path_tmp and the
  * alternative paths.
@@ -493,7 +526,7 @@ void init_edge_priorities(const std::vector<Edge> &alternative,
 bool check_feasibility(const std::vector<double> &overlaps);
 
 /**
- * @brief Checks whether a candidate path satisfies the condition to add it the
+ * Checks whether a candidate path satisfies the condition to add it the
  * the alternative paths set. That is: @f$Sim(candidate, p_i) < \theta, \forall
  * p_i \in AlternativePaths@f$
  *

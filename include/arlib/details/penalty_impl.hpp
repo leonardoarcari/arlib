@@ -1,3 +1,33 @@
+/**
+ * @file penalty_impl.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef BOOST_PENALTY_BASED_ALTERNATIVE_ROUTING_IMPL_HPP
 #define BOOST_PENALTY_BASED_ALTERNATIVE_ROUTING_IMPL_HPP
 
@@ -22,14 +52,14 @@
 
 namespace arlib {
 /**
- * @brief Implementations details of kSPwLO algorithms
+ * Implementations details of kSPwLO algorithms
  */
 namespace details {
 //===----------------------------------------------------------------------===//
 //                      Penalty algorithm types
 //===----------------------------------------------------------------------===//
 /**
- * @brief A map from edges to the number of time they have been penalized so
+ * A map from edges to the number of time they have been penalized so
  * far.
  *
  * @tparam Edge An edge_descriptor
@@ -38,7 +68,7 @@ template <typename Edge>
 using PenBoundsMap = std::unordered_map<Edge, int, boost::hash<Edge>>;
 
 /**
- * @brief A map from edges to their weights
+ * A map from edges to their weights
  *
  * @tparam Edge An edge_descriptor
  * @tparam Length The edge weight type
@@ -47,7 +77,7 @@ template <typename Edge, typename Length>
 using WeightMap = std::unordered_map<Edge, Length, boost::hash<Edge>>;
 
 /**
- * @brief A vector for tracking distance of a vertex from the source.
+ * A vector for tracking distance of a vertex from the source.
  *
  * The vector must be indexable by the vertex_descriptor, thus its size should
  * be equal to the number of vertices in the graph.
@@ -61,7 +91,7 @@ template <typename Length> using DistanceMap = std::vector<Length>;
 //===----------------------------------------------------------------------===//
 
 /**
- * @brief A functor to return the penalized weight of an edge, to avoid changing
+ * A functor to return the penalized weight of an edge, to avoid changing
  * the original graph weights.
  *
  * @tparam PMap A Weight Property Map.
@@ -72,7 +102,7 @@ public:
   using Length = double;
 
   /**
-   * @brief Construct a new penalty functor object.
+   * Construct a new penalty functor object.
    *
    * @tparam EdgeIterator An iterator of the graph edges.
    * @param weight The weight property map.
@@ -82,7 +112,7 @@ public:
   }
 
   /**
-   * @brief Copy constructor.
+   * Copy constructor.
    *
    * @param other The penalty functor to copy from
    */
@@ -90,7 +120,7 @@ public:
       : weight{other.weight}, penalties{other.penalties} {}
 
   /**
-   * @brief Returns the penalized weight of an edge.
+   * Returns the penalized weight of an edge.
    *
    * @param e The query edge.
    * @return The penalized weight for @p e.
@@ -98,7 +128,7 @@ public:
   const Length &operator()(const Edge &e) const { return get_or_insert(e); }
 
   /**
-   * @brief Returns the penalized weight of an edge.
+   * Returns the penalized weight of an edge.
    *
    * @param e The query edge.
    * @return The penalized weight for @p e.
@@ -106,7 +136,7 @@ public:
   Length &operator[](const Edge &e) { return get_or_insert(e); }
 
   /**
-   * @brief Returns the penalized weight of an edge.
+   * Returns the penalized weight of an edge.
    *
    * @param e The query edge.
    * @return The penalized weight for @p e.
@@ -189,14 +219,14 @@ template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
           typename Edge = edge_of_t<Graph>>
 constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
-build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
+build_shortest_path_fn(routing_kernels algorithm, const Graph &,
                        const PMap &) {
   switch (algorithm) {
-  case shortest_path_algorithm::dijkstra:
+  case routing_kernels::dijkstra:
     return [](const auto &G, auto s, auto t, auto &penalty) {
       return dijkstra_shortest_path(G, s, t, penalty);
     };
-  case shortest_path_algorithm::bidirectional_dijkstra:
+  case routing_kernels::bidirectional_dijkstra:
     return [](const auto &G, auto s, auto t, auto &penalty) {
       return bidirectional_dijkstra_shortest_path(G, s, t, penalty);
     };
@@ -207,7 +237,7 @@ build_shortest_path_fn(shortest_path_algorithm algorithm, const Graph &,
 }
 
 /**
- * @brief Computes the shortest path between two vertices s and t, first
+ * Computes the shortest path between two vertices s and t, first
  * from s to t and then from t to s. The distances of each node in the
  * shortest paths are stored in distance_s and distance_t.
  *
@@ -257,7 +287,7 @@ dijkstra_shortest_path_two_ways(const Graph &G, Vertex s, Vertex t,
 } // namespace kspwlo_impl
 
 /**
- * @brief Computes the Dijkstra shortest path from s to t using a
+ * Computes the Dijkstra shortest path from s to t using a
  *        penalty_functor to gather edges weight instead of the Graph's weight
  *        property map
  *
@@ -339,7 +369,7 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
 }
 
 /**
- * @brief Apply penalization step to the candidate path.
+ * Apply penalization step to the candidate path.
  *
  * @pre For each vertex @c v in @p candidate @p distance_s contains the shortest
  *      path distance of @c v from @p s

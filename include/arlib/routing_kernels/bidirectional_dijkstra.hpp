@@ -1,3 +1,33 @@
+/**
+ * @file bidirectional_dijkstra.hpp
+ * @author Leonardo Arcari (leonardo1.arcari@gmail.com)
+ * @version 1.0.0
+ * @date 2018-10-28
+ *
+ * @copyright Copyright (c) 2018 Leonardo Arcari
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef BOOST_BIDIRECTIONAL_DIJKSTRA_HPP
 #define BOOST_BIDIRECTIONAL_DIJKSTRA_HPP
 
@@ -16,35 +46,23 @@
 #include <vector>
 
 /**
- * @brief Algorithms and utilities for Boost::Graph
+ * An Alternative-Routing library for Boost.Graph
  */
 namespace arlib {
 //===----------------------------------------------------------------------===//
 //                   Bidirectional Dijkstra algorithm
 //===----------------------------------------------------------------------===//
-template <typename Vertex>
-using PathMap =
-    std::unordered_map<Vertex, std::vector<Vertex>, boost::hash<Vertex>>;
-
-template <typename PredecessorMap, typename Vertex>
-void fill_predecessor(PredecessorMap predecessor,
-                      const std::deque<Vertex> &final_path) {
-  if (!final_path.empty()) {
-    for (std::size_t i = 0; i < final_path.size() - 1; ++i) {
-      predecessor[final_path[i + 1]] = final_path[i];
-    }
-  }
-}
-
 /**
- * @brief Implementation of Bidirectional Dijkstra method for Boost::Graph to
+ * Implementation of Bidirectional Dijkstra method for Boost::Graph to
  *        compute the shortest path between two vertices.
  *
  * This implementation follows the one from nx.graph library:
  * https://networkx.github.io/documentation/networkx-1.10/_modules/networkx/algorithms/shortest_paths/weighted.html#bidirectional_dijkstra
  *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
+ * You can find the original paper by Nicholson (1996)
+ * https://academic.oup.com/comjnl/article/9/3/275/406281
+ *
+ * @tparam Graph A Boost::VertexAndEdgeListGraph
  * @tparam PredecessorMap The predecessor map records the edges in the shortest
  *         path tree, the tree computed by the traversal of the graph. Upon
  *         completion of the algorithm, the edges (p[u],u) for all u in V are in
@@ -158,7 +176,7 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
       break;
     case BiDijkStepRes::end:
       // Fill predecessor map
-      fill_predecessor(predecessor, final_path);
+      details::fill_predecessor(predecessor, final_path);
       return;
     case BiDijkStepRes::negative_weights:
       throw std::domain_error{"Contradictory paths found: negative weights?"};
@@ -173,7 +191,7 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
       throw details::target_not_found{"No path found!"};
     } else {
       // Clean exit
-      fill_predecessor(predecessor, final_path);
+      details::fill_predecessor(predecessor, final_path);
       return;
     }
   } else {
@@ -183,7 +201,7 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
 }
 
 /**
- * @brief Implementation of Bidirectional Dijkstra method for Boost::Graph to
+ * Implementation of Bidirectional Dijkstra method for Boost::Graph to
  *        compute the shortest path between two vertices.
  *
  * This overload does not need a PredecessorMap nor a DistanceMap for the
@@ -239,8 +257,8 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
 }
 
 /**
- * @brief Implementation of Bidirectional Dijkstra method for Boost::Graph to
- *        compute the shortest path between two vertices.
+ * Implementation of Bidirectional Dijkstra method for Boost::Graph to
+ * compute the shortest path between two vertices.
  *
  * This overload does not need a PredecessorMap nor a DistanceMap for the
  * backward step nor a BiDijkstraVisitor. This simply runs Bidirectional
