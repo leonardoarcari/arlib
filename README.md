@@ -50,8 +50,8 @@ described in these scientific papers:
 | OnePass+                          | Theodoros Chondrogiannis, Panagiotis Bouros, Johann Gamper and UlfLeser, Exact and Approximate Algorithms for Finding k-Shortest Paths with Limited Overlap , In Proc. of the 20th Int. Conf. on Extending Database Technology (EDBT) (2017)
 | ESX                               | *Same as above*
 | Penalty                           | Yanyan Chen, Michael GH Bell, and Klaus Bogenberger. Reliable pretrip multipath planning and dynamic adaptation for a centralized road navigation system. Intelligent Transportation Systems, IEEE Transactions on, 8(1):14–20, 2007
-| Bidirectional Dijkstra            | Andreas Paraskevopoulos, Christos Zaroliagis. Improved Alternative Route Planning. Daniele Frigioni and Sebastian Stiller. ATMOS - 13th Workshop on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems - 2013, Sep 2013, Sophia Antipolis, France. Schloss Dagstuhl–Leibniz-Zentrum fuer Informatik, 33, pp.108–122, 2013, OpenAccess Series in Informatics (OASIcs).
-| Uninformed Bidirectional Pruner   | *Same as above*
+| Bidirectional Dijkstra            | Nicholson, T. Alastair J. "Finding the shortest route between two points in a network." The computer journal 9.3 (1966): 275-280.
+| Uninformed Bidirectional Pruner   | Andreas Paraskevopoulos, Christos Zaroliagis. Improved Alternative Route Planning. Daniele Frigioni and Sebastian Stiller. ATMOS - 13th Workshop on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems - 2013, Sep 2013, Sophia Antipolis, France. Schloss Dagstuhl–Leibniz-Zentrum fuer Informatik, 33, pp.108–122, 2013, OpenAccess Series in Informatics (OASIcs).
 
 [Dijkstra's algorithm]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 [CMake]: https://cmake.org/cmake/help/v3.5/
