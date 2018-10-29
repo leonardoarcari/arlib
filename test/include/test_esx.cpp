@@ -95,8 +95,7 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   using boost::source;
   using boost::target;
   std::cout << "Esx boost::graph result:\n";
-  for (auto &resPath : res) {
-    auto &p = resPath.graph();
+  for (auto &p : res) {
     for (auto it = edges(p).first; it != edges(p).second; ++it) {
       std::cout << "(" << source(*it, p) << ", " << target(*it, p) << ") ";
     }
@@ -120,8 +119,7 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
 
   // For each k-spwlo check if its edges are in a solution of the regression
   // test
-  for (auto &resPath : res) {
-    auto &p = resPath.graph();
+  for (auto &p : res) {
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
 }

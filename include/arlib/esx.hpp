@@ -96,8 +96,7 @@ template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
           typename Vertex = vertex_of_t<Graph>>
 void esx(const Graph &G, WeightMap const &weight,
          MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
-         double theta,
-         routing_kernels algorithm = routing_kernels::astar) {
+         double theta, routing_kernels algorithm = routing_kernels::astar) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<WeightMap>::value_type;
