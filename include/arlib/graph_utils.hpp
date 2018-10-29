@@ -224,8 +224,7 @@ Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
   auto nodes = std::unordered_set<Vertex>{};
 
   for (auto &path : paths) {
-    auto &path_g = path.graph();
-    for (auto it = edges(path_g).first; it != edges(path_g).second; ++it) {
+    for (auto it = edges(path).first; it != edges(path).second; ++it) {
       auto u = source(*it, g);
       auto v = target(*it, g);
 
