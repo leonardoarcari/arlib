@@ -4,13 +4,15 @@ set -e
 mkdir -p "$HOME/opt"
 OPT="$HOME/opt"
 
-if [ ! -f "$OPT/bin/cmake" ]; then
+if [ ! -f "$OPT/cmake/bin/cmake" ]; then
     echo "==> Installing CMake 3.12..."
     wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
     mkdir -p "$OPT/cmake"
-    sh cmake-3.12.0-Linux-x86_64.sh --prefix="$OPT/cmake" --skip-license
-    ln -s "$OPT/cmake/bin/cmake" "$OPT/bin/cmake"
+    sh cmake-3.12.0-Linux-x86_64.sh --prefix="$OPT/cmake" --skip-license    
 fi
+
+# In any case, create a CMake link to $OPT/bin
+ln -s "$OPT/cmake/bin/cmake" "$OPT/bin/cmake"
 
 if [ ! -f "$OPT/bin/doxygen" ]; then
     echo "==> Installing Doxygen 1.8.14..."
