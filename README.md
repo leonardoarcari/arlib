@@ -1,7 +1,7 @@
 # ARLib - Alternative-Routing Library for Boost.Graph
 | Branch | Travis CI |
 | ------ | --------- |
-| master | [![Build Status](https://travis-ci.com/leonardoarcari/arlib.svg?token=TzBLy2LC32a8SnWn6yPo&branch=master)](https://travis-ci.com/leonardoarcari/arlib)
+| master | [![Build Status](https://travis-ci.com/leonardoarcari/arlib.svg?branch=master)](https://travis-ci.com/leonardoarcari/arlib)
 
 **ARLib** is a generic library for [Boost.Graph][boost-graph] providing several
 **Alternative-Routing** algorithms. Alternative routing, also known in the
