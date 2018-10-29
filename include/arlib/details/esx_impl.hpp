@@ -209,8 +209,8 @@ template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
           typename Edge = edge_of_t<Graph>>
 constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
-build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex,
-                       Vertex, const AStarHeuristic &, DeletedEdgeMap &) {
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex, Vertex,
+                       const AStarHeuristic &, DeletedEdgeMap &) {
   switch (algorithm) {
   case routing_kernels::astar:
     return [](const auto &G, auto s, auto t, const auto &heuristic,

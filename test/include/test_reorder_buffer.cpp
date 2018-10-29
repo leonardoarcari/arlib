@@ -61,8 +61,7 @@ TEST_CASE(
     for (std::size_t j = 0; j < i; ++j) {
       std::cout << "  Similarity with path " << j << ": "
                 << arlib::details::compute_similarity(
-                       paths[i], paths[j],
-                       boost::get(boost::edge_weight, paths[j].graph()))
+                       paths[i], paths[j], get(boost::edge_weight, paths[j]))
                 << "\n";
     }
   }

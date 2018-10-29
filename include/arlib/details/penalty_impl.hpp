@@ -219,8 +219,7 @@ template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
           typename Edge = edge_of_t<Graph>>
 constexpr std::function<std::optional<std::vector<Edge>>(
     const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
-build_shortest_path_fn(routing_kernels algorithm, const Graph &,
-                       const PMap &) {
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, const PMap &) {
   switch (algorithm) {
   case routing_kernels::dijkstra:
     return [](const auto &G, auto s, auto t, auto &penalty) {

@@ -170,10 +170,8 @@ template <typename Graph, typename AltEdgeWeightMap>
 double compute_similarity(const Path<Graph> &candidate,
                           const Path<Graph> &alt_path,
                           AltEdgeWeightMap const &weight) {
-  auto const &candidate_g = candidate.graph();
-  auto const &alt_path_g = alt_path.graph();
-  double shared_length = static_cast<double>(
-      compute_shared_length(candidate_g, alt_path_g, weight));
+  double shared_length =
+      static_cast<double>(compute_shared_length(candidate, alt_path, weight));
 
   return shared_length / alt_path.length();
 }

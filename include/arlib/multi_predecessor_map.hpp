@@ -59,8 +59,8 @@ namespace arlib {
  *
  * @tparam Vertex The `vertex_descriptor`.
  * @tparam UnorderedAssociativeContainer A model of
- *         `UnorderedAssociativeContainer` concept. Defaulted to `std::unordered_map<int,
- *         Vertex>`
+ *         `UnorderedAssociativeContainer` concept. Defaulted to
+ *         `std::unordered_map<int, Vertex>`
  */
 template <typename Vertex, typename UnorderedAssociativeContainer =
                                std::unordered_map<int, Vertex>>
@@ -143,7 +143,7 @@ private:
  *         an `int`, the index/number of alternative path for which it exists a
  *         predecessor of `v`, and where the value type is a vertex descriptor
  *         of input graph @p G.
- * @tparam Key Must be a valid key type for `MultiPredecessorMap`. 
+ * @tparam Key Must be a valid key type for `MultiPredecessorMap`.
  * @param pmap The `MultiPredecessorMap` to get value from.
  * @param k The key.
  * @return A reference to the value associated with `k`.
