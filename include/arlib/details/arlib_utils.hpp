@@ -31,6 +31,7 @@
 #ifndef KSPWLO_IMPL_HPP
 #define KSPWLO_IMPL_HPP
 
+#include <boost/graph/astar_search.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>
@@ -80,6 +81,44 @@ template <typename Vertex, typename Tag>
 target_visitor<Vertex, Tag> make_target_visitor(Vertex t, Tag) {
   return target_visitor<Vertex, Tag>{t};
 }
+
+/**
+ * An A* visitor to stop the algorithm when a target vertex is found.
+ *
+ * This visitor is required when you are interested just in finding a route from
+ * a source to a target, while generally speaking A* Star search terminates when
+ * a shortest path to all the nodes are found.
+ *
+ * @tparam Vertex A Boost::Graph vertex descriptor
+ */
+template <typename Vertex>
+class astar_target_visitor : public boost::default_astar_visitor {
+public:
+  /**
+   * Construct a new astar_target_visitor object that ends the search
+   * when Vertex @p t is found.
+   *
+   * @param t The target Vertex
+   */
+  explicit astar_target_visitor(Vertex t) : t{t} {}
+  /**
+   * When Vertex <tt>u == t</tt> (i.e. we found target node) A* search stops
+   * throwing a target_found exception.
+   *
+   * @tparam Graph A Boost::PropertyGraph having at least one edge
+   *         property with tag boost::edge_weight_t.
+   * @param u examined Vertex
+   * @throws target_found when target Vertex is found.
+   */
+  template <typename Graph> void examine_vertex(Vertex u, Graph &) {
+    if (u == t) {
+      throw target_found{};
+    }
+  }
+
+private:
+  Vertex t;
+};
 
 //===----------------------------------------------------------------------===//
 //                      kSPwLO algorithms routines
@@ -186,6 +225,44 @@ std::vector<Length> distance_from_target(const Graph &G, Vertex t) {
   boost::dijkstra_shortest_paths(G_rev, t, boost::distance_map(&distance[0]));
   return distance;
 }
+
+/**
+ * An A* heuristic using <em>distance from target</em> lower bound.
+ *
+ * In order to derive tight h(n, t) lower bounds, we first reverse the edges of
+ * the road network and then run Dijkstra’s algorithm from target t to every
+ * node n of the network
+ *
+ * @tparam Graph A Boost::PropertyGraph having at least one edge
+ *         property with tag boost::edge_weight_t.
+ * @tparam CostType The value type of an edge weight of Graph.
+ */
+template <typename Graph, typename CostType>
+class distance_heuristic : public boost::astar_heuristic<Graph, CostType> {
+public:
+  /**
+   * Graph vertex descriptor.
+   */
+  using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
+  /**
+   * Construct a new distance heuristic object. Upon construction a
+   * Dijkstra’s algorithm is run on @c G' from @p t to all nodes. @c G' is equal
+   * to @p G except that all the edges are reversed.
+   *
+   * @param G The Graph on which to search
+   * @param t The target vertex
+   */
+  distance_heuristic(const Graph &G, Vertex t)
+      : lower_bounds{distance_from_target<CostType>(G, t)} {}
+  /**
+   * @param u The Vertex
+   * @return The heuristic of the cost of Vertex @p u.
+   */
+  CostType operator()(Vertex u) const { return lower_bounds[u]; }
+
+private:
+  std::vector<CostType> lower_bounds;
+};
 
 template <typename Graph, typename EdgeWeightMap, typename PredecessorMap,
           typename Vertex>

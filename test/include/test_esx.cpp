@@ -56,21 +56,21 @@ TEST_CASE("Edge priority computation", "[esx]") {
   REQUIRE(contains(sp_path.begin(), sp_path.end(), edge(0, 3, G).first));
   auto s_n3 = edge(0, 3, G).first;
 
-  int prio_s_n3 = compute_priority(G, s_n3, deleted_edges);
+  int prio_s_n3 = compute_priority(G, s_n3, weight_map, deleted_edges);
   REQUIRE(prio_s_n3 == 0);
 
   // Check that (3, 5) was computed in shortest path
   REQUIRE(contains(sp_path.begin(), sp_path.end(), edge(3, 5, G).first));
   auto n3_n5 = edge(3, 5, G).first;
 
-  int prio_n3_n5 = compute_priority(G, n3_n5, deleted_edges);
+  int prio_n3_n5 = compute_priority(G, n3_n5, weight_map, deleted_edges);
   REQUIRE(prio_n3_n5 == 3);
 
   // Check that (5, 6) was computed in shortest path
   REQUIRE(contains(sp_path.begin(), sp_path.end(), edge(5, 6, G).first));
   auto n5_t = edge(5, 6, G).first;
 
-  int prio_n5_t = compute_priority(G, n5_t, deleted_edges);
+  int prio_n5_t = compute_priority(G, n5_t, weight_map, deleted_edges);
   REQUIRE(prio_n5_t == 0);
 }
 
@@ -142,6 +142,32 @@ TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
   auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
   arlib::esx(G, predecessors_bi, s, t, 3, 0.5,
              arlib::routing_kernels::bidirectional_dijkstra);
+  auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
+
+  REQUIRE(res_paths_uni.size() == res_paths_bi.size());
+
+  for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
+    REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
+  }
+}
+
+TEST_CASE("ESX running with plain dijkstra returns same result as astar",
+          "[esx]") {
+  using namespace boost;
+
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+
+  Vertex s = 0, t = 6;
+  int k = 3;
+  double theta = 0.5;
+
+  auto predecessors_uni = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors_uni, s, t, 3, 0.5);
+  auto res_paths_uni = arlib::to_paths(G, predecessors_uni, s, t);
+
+  auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors_bi, s, t, 3, 0.5,
+             arlib::routing_kernels::dijkstra);
   auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
 
   REQUIRE(res_paths_uni.size() == res_paths_bi.size());

@@ -124,116 +124,61 @@ private:
   const DeletedEdgeMap *deleted_edge_map;
 };
 
-/**
- * An A* heuristic using <em>distance from target</em> lower bound.
- *
- * In order to derive tight h(n, t) lower bounds, we first reverse the edges of
- * the road network and then run Dijkstra’s algorithm from target t to every
- * node n of the network
- *
- * @tparam Graph A Boost::PropertyGraph having at least one edge
- *         property with tag boost::edge_weight_t.
- * @tparam CostType The value type of an edge weight of Graph.
- */
-template <typename Graph, typename CostType>
-class distance_heuristic : public boost::astar_heuristic<Graph, CostType> {
+template <typename PMap, class Graph> class reverse_weight_functor {
 public:
-  /**
-   * Graph vertex descriptor.
-   */
-  using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
-  /**
-   * Construct a new distance heuristic object. Upon construction a
-   * Dijkstra’s algorithm is run on @c G' from @p t to all nodes. @c G' is equal
-   * to @p G except that all the edges are reversed.
-   *
-   * @param G The Graph on which to search
-   * @param t The target vertex
-   */
-  distance_heuristic(const Graph &G, Vertex t)
-      : lower_bounds{distance_from_target<CostType>(G, t)} {}
-  /**
-   * @param u The Vertex
-   * @return The heuristic of the cost of Vertex @p u.
-   */
-  CostType operator()(Vertex u) const { return lower_bounds[u]; }
+  using Edge = typename boost::graph_traits<
+      boost::reverse_graph<Graph>>::edge_descriptor;
+  using Length = typename boost::property_traits<PMap>::value_type;
 
-private:
-  std::vector<CostType> lower_bounds;
-};
+  reverse_weight_functor(PMap &pmap, Graph const &G,
+                         const boost::reverse_graph<Graph> &rev_G)
+      : inner_weight{pmap}, G{G}, rev_G{rev_G} {}
 
-/**
- * An A* visitor to stop the algorithm when a target vertex is found.
- *
- * This visitor is required when you are interested just in finding a route from
- * a source to a target, while generally speaking A* Star search terminates when
- * a shortest path to all the nodes are found.
- *
- * @tparam Vertex A Boost::Graph vertex descriptor
- */
-template <typename Vertex>
-class astar_target_visitor : public boost::default_astar_visitor {
-public:
-  /**
-   * Construct a new astar_target_visitor object that ends the search
-   * when Vertex @p t is found.
-   *
-   * @param t The target Vertex
-   */
-  explicit astar_target_visitor(Vertex t) : t{t} {}
-  /**
-   * When Vertex <tt>u == t</tt> (i.e. we found target node) A* search stops
-   * throwing a target_found exception.
-   *
-   * @tparam Graph A Boost::PropertyGraph having at least one edge
-   *         property with tag boost::edge_weight_t.
-   * @param u examined Vertex
-   * @throws target_found when target Vertex is found.
-   */
-  template <typename Graph> void examine_vertex(Vertex u, Graph &) {
-    if (u == t) {
-      throw target_found{};
-    }
+  reverse_weight_functor(reverse_weight_functor const &other)
+      : inner_weight{other.inner_weight}, G{other.G}, rev_G{other.rev_G} {}
+
+  const Length &operator()(const Edge &e) const {
+    auto forward_edge = get_forward_edge(e);
+
+    return inner_weight(forward_edge);
+  }
+
+  Length &operator[](const Edge &e) {
+    auto forward_edge = get_forward_edge(e);
+
+    return inner_weight[forward_edge];
+  }
+
+  const Length &operator[](const Edge &e) const {
+    auto forward_edge = get_forward_edge(e);
+
+    return inner_weight[forward_edge];
   }
 
 private:
-  Vertex t;
+  auto get_forward_edge(const Edge &e) const {
+    using namespace boost;
+    auto u = source(e, rev_G);
+    auto v = target(e, rev_G);
+
+    auto [forward_edge, is_valid] = edge(v, u, G);
+    assert(is_valid);
+    return forward_edge;
+  }
+
+  PMap &inner_weight;
+  const Graph &G;
+  const boost::reverse_graph<Graph> &rev_G;
 };
 
 //===----------------------------------------------------------------------===//
 //                          ESX algorithm routines
 //===----------------------------------------------------------------------===//
-
-template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-          typename Vertex = vertex_of_t<Graph>,
-          typename Edge = edge_of_t<Graph>>
-constexpr std::function<std::optional<std::vector<Edge>>(
-    const Graph &, Vertex, Vertex, const AStarHeuristic &, DeletedEdgeMap &)>
-build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex, Vertex,
-                       const AStarHeuristic &, DeletedEdgeMap &) {
-  switch (algorithm) {
-  case routing_kernels::astar:
-    return [](const auto &G, auto s, auto t, const auto &heuristic,
-              auto &deleted_edge_map) {
-      return astar_shortest_path(G, s, t, heuristic, deleted_edge_map);
-    };
-  case routing_kernels::bidirectional_dijkstra:
-    return [](const auto &G, auto s, auto t, const auto &heuristic,
-              auto &deleted_edge_map) {
-      return bidirectional_dijkstra_shortest_path(G, s, t, heuristic,
-                                                  deleted_edge_map);
-    };
-  default:
-    throw std::invalid_argument{
-        "Invalid algorithm. Only [dijkstra|bidirectional_dijkstra] allowed."};
-  }
-}
-
 /**
  * Checks whether the path from @p s to @p t contains edge @p e or not.
  *
- * @pre @p predecessor is the PredecessorMap filled by a Boost::Graph shortest
- * path algorithm such that <tt>predecessor[s] == s</tt>
+ * @pre @p predecessor is the PredecessorMap filled by a Boost::Graph
+ * shortest path algorithm such that <tt>predecessor[s] == s</tt>
  *
  * @tparam Graph A Boost::EdgeList graph
  * @tparam PredMap A Boost::PredecessorMap
@@ -265,6 +210,40 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
   return false;
 }
 
+template <typename Graph, typename WeightMap, typename DeletedEdgeMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
+std::optional<std::vector<Edge>>
+dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
+                       const WeightMap &weight,
+                       DeletedEdgeMap &deleted_edge_map) {
+  using namespace boost;
+
+  // Get a graph with deleted edges filtered out
+  auto filter = edge_deleted_filter{deleted_edge_map};
+  auto filtered_G = filtered_graph(G, filter);
+
+  auto predecessor = std::vector<Vertex>(num_vertices(filtered_G), s);
+  auto vertex_id = get(vertex_index, filtered_G);
+
+  try {
+    dijkstra_shortest_paths(
+        filtered_G, s,
+        weight_map(weight)
+            .predecessor_map(make_iterator_property_map(std::begin(predecessor),
+                                                        vertex_id, s))
+            .visitor(make_dijkstra_visitor(
+                make_target_visitor(t, on_examine_vertex{}))));
+  } catch (target_found tf) {
+    auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
+    return std::make_optional(edge_list);
+  }
+
+  // In case t could not be found from astar_search and target_found is not
+  // thrown, return empty optional
+  return std::optional<std::vector<Edge>>{};
+}
+
 /**
  * Compute a shortest path between two vertices on a filtered graph using
  * an A* approach, provided the set of edges to filter and the heuristic.
@@ -281,11 +260,11 @@ bool shortest_path_contains_edge(Vertex s, Vertex t, Edge e, const Graph &G,
  * @return A std::optional of the list of edges from @p s to @p t if a path
  * could be found. An empty optional otherwise.
  */
-template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
-          typename Vertex = vertex_of_t<Graph>,
+template <typename Graph, typename WeightMap, typename AStarHeuristic,
+          typename DeletedEdgeMap, typename Vertex = vertex_of_t<Graph>,
           typename Edge = edge_of_t<Graph>>
 std::optional<std::vector<Edge>>
-astar_shortest_path(const Graph &G, Vertex s, Vertex t,
+astar_shortest_path(const Graph &G, Vertex s, Vertex t, const WeightMap &weight,
                     const AStarHeuristic &heuristic,
                     DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
@@ -301,7 +280,8 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
     astar_search(filtered_G, s, heuristic,
                  predecessor_map(make_iterator_property_map(
                                      std::begin(predecessor), vertex_id, s))
-                     .visitor(astar_target_visitor{t}));
+                     .visitor(astar_target_visitor{t})
+                     .weight_map(weight));
   } catch (target_found &tf) {
     auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
     return std::make_optional(edge_list);
@@ -311,29 +291,30 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t,
   return std::optional<std::vector<Edge>>{};
 }
 
-template <typename Graph, typename AStarHeuristic, typename DeletedEdgeMap,
+template <typename Graph, typename WeightMap, typename DeletedEdgeMap,
           typename Vertex = vertex_of_t<Graph>,
           typename Edge = edge_of_t<Graph>,
           typename Length = length_of_t<Graph>>
 std::optional<std::vector<Edge>>
 bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
-                                     const AStarHeuristic &,
+                                     const WeightMap &weight,
                                      DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
 
   // Get a graph with deleted edges filtered out
   auto filter = edge_deleted_filter{deleted_edge_map};
-  auto filtered_G = filtered_graph(G, filter);
+  const auto filtered_G = make_filtered_graph(G, filter);
 
   auto index = get(vertex_index, filtered_G);
   auto predecessor_vec = std::vector<Vertex>(num_vertices(G), s);
   auto predecessor = make_iterator_property_map(predecessor_vec.begin(), index);
   auto distance_vec = std::vector<Length>(num_vertices(G));
   auto distance = make_iterator_property_map(distance_vec.begin(), index);
-  auto weight = get(edge_weight, filtered_G);
 
   auto rev_G = make_reverse_graph(filtered_G);
-  auto rev_weight = get(edge_weight, rev_G);
+  using RevEdge = typename graph_traits<reverse_graph<Graph>>::edge_descriptor;
+  auto rev_weight = make_function_property_map<RevEdge>(
+      reverse_weight_functor{weight, filtered_G, rev_G});
   auto rev_index = get(vertex_index, rev_G);
 
   try {
@@ -346,6 +327,53 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
 
   auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
   return std::make_optional(edge_list);
+}
+
+template <typename Graph, typename WeightMap, typename AStarHeuristic,
+          typename DeletedEdgeMap, typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
+constexpr std::function<std::optional<std::vector<Edge>>(
+    const Graph &, Vertex, Vertex, const WeightMap &, DeletedEdgeMap &)>
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex, Vertex,
+                       const WeightMap &, const AStarHeuristic &heuristic,
+                       DeletedEdgeMap &) {
+  switch (algorithm) {
+  case routing_kernels::astar:
+    return [&heuristic](const auto &G, auto s, auto t, const auto &weight,
+                        auto &deleted_edge_map) {
+      return astar_shortest_path(G, s, t, weight, heuristic, deleted_edge_map);
+    };
+  default:
+    throw std::invalid_argument{
+        "Invalid algorithm. Only [astar] "
+        "allowed."};
+  }
+}
+
+template <typename Graph, typename WeightMap, typename DeletedEdgeMap,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
+constexpr std::function<std::optional<std::vector<Edge>>(
+    const Graph &, Vertex, Vertex, const WeightMap &, DeletedEdgeMap &)>
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex, Vertex,
+                       const WeightMap &, DeletedEdgeMap &) {
+  switch (algorithm) {
+  case routing_kernels::dijkstra:
+    return [](const auto &G, auto s, auto t, const auto &weight,
+              auto &deleted_edge_map) {
+      return dijkstra_shortest_path(G, s, t, weight, deleted_edge_map);
+    };
+  case routing_kernels::bidirectional_dijkstra:
+    return [](const auto &G, auto s, auto t, const auto &weight,
+              auto &deleted_edge_map) {
+      return bidirectional_dijkstra_shortest_path(G, s, t, weight,
+                                                  deleted_edge_map);
+    };
+  default:
+    throw std::invalid_argument{
+        "Invalid algorithm. Only [dijkstra|bidirectional_dijkstra] "
+        "allowed."};
+  }
 }
 
 /**
@@ -370,10 +398,10 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
  * @param deleted_edge_map The set of edges to filter from @p G
  * @return The priority of @p e.
  */
-template <typename Graph, typename DeletedEdgeMap,
+template <typename Graph, typename WeightMap, typename DeletedEdgeMap,
           typename Edge = edge_of_t<Graph>,
           typename Length = length_of_t<Graph>>
-int compute_priority(const Graph &G, const Edge &e,
+int compute_priority(const Graph &G, const Edge &e, WeightMap &weight,
                      const DeletedEdgeMap &deleted_edge_map) {
   using namespace boost;
   using Vertex = typename graph_traits<Graph>::vertex_descriptor;
@@ -406,7 +434,7 @@ int compute_priority(const Graph &G, const Edge &e,
 
   // Get a graph with deleted edges filtered out
   auto filter = edge_deleted_filter{deleted_edge_map};
-  auto filtered_G = filtered_graph(G, filter);
+  const auto filtered_G = make_filtered_graph(G, filter);
 
   for (auto s_i : sources) {
     for (auto t_i : targets) {
@@ -417,10 +445,12 @@ int compute_priority(const Graph &G, const Edge &e,
           make_iterator_property_map(predecessor_vec.begin(), index);
       auto distance_vec = std::vector<Length>(num_vertices(G));
       auto distance = make_iterator_property_map(distance_vec.begin(), index);
-      auto weight = get(edge_weight, filtered_G);
 
       auto rev_G = make_reverse_graph(filtered_G);
-      auto rev_weight = get(edge_weight, rev_G);
+      using RevEdge =
+          typename graph_traits<reverse_graph<Graph>>::edge_descriptor;
+      auto rev_weight = make_function_property_map<RevEdge>(
+          reverse_weight_functor{weight, filtered_G, rev_G});
       auto rev_index = get(vertex_index, rev_G);
 
       try {
@@ -462,11 +492,13 @@ int compute_priority(const Graph &G, const Edge &e,
  * @param heuristic An A* heuristic to use in performing shortest paths search.
  * @param deleted_edges The set of edges to filter from @p G
  */
-template <typename Graph, typename PrioritiesVector, typename EdgeMap,
+template <typename Graph, typename PrioritiesVector, typename WeightMap,
+          typename EdgeMap,
           typename Index = typename PrioritiesVector::size_type>
 void init_edge_priorities(const Graph &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
-                          const Graph &G, const EdgeMap &deleted_edges) {
+                          const Graph &G, const WeightMap &weight,
+                          const EdgeMap &deleted_edges) {
   using namespace boost;
   for (auto it = edges(alternative).first; it != edges(alternative).second;
        ++it) {
@@ -475,7 +507,7 @@ void init_edge_priorities(const Graph &alternative,
     auto v = target(*it, alternative);
     auto edge_in_G = edge(u, v, G);
     assert(edge_in_G.second); // (u, v) must exist in G
-    auto prio_e_i = compute_priority(G, edge_in_G.first, deleted_edges);
+    auto prio_e_i = compute_priority(G, edge_in_G.first, weight, deleted_edges);
     edge_priorities[alt_index].push(std::make_pair(edge_in_G.first, prio_e_i));
   }
 }
@@ -503,14 +535,15 @@ void init_edge_priorities(const Graph &alternative,
  * @param heuristic An A* heuristic to use in performing shortest paths search.
  * @param deleted_edges The set of edges to filter from @p G
  */
-template <typename PrioritiesVector, typename Graph, typename EdgeMap,
-          typename Edge = edge_of_t<Graph>,
+template <typename PrioritiesVector, typename Graph, typename WeightMap,
+          typename EdgeMap, typename Edge = edge_of_t<Graph>,
           typename Index = typename PrioritiesVector::size_type>
 void init_edge_priorities(const std::vector<Edge> &alternative,
                           PrioritiesVector &edge_priorities, Index alt_index,
-                          const Graph &G, const EdgeMap &deleted_edges) {
+                          const Graph &G, const WeightMap &weight,
+                          const EdgeMap &deleted_edges) {
   for (const auto &e : alternative) {
-    auto prio_e_i = compute_priority(G, e, deleted_edges);
+    auto prio_e_i = compute_priority(G, e, weight, deleted_edges);
     edge_priorities[alt_index].push(std::make_pair(e, prio_e_i));
   }
 }
@@ -563,6 +596,147 @@ void move_to_dnr(Edge e,
   deleted_edges.erase(e); // Reinsert e_tmp into G
   assert(deleted_edges.size() + 1 == old_size);
   dnr_edges.insert(e); // Mark e_tmp as do_not_remove
+}
+
+//===----------------------------------------------------------------------===//
+//                             ESX implementation
+//===----------------------------------------------------------------------===//
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename RoutingKernel, typename Vertex = vertex_of_t<Graph>>
+void esx(const Graph &G, WeightMap const &weight,
+         MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
+         double theta, RoutingKernel &routing_kernel) {
+  using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using Length = typename boost::property_traits<WeightMap>::value_type;
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
+  auto resPathsEdges = std::vector<std::vector<Edge>>{};
+  auto resEdges = std::vector<std::unordered_set<Edge, boost::hash<Edge>>>{};
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
+  auto resPaths = std::vector<Path<Graph>>{};
+  // Compute shortest path from s to t
+  auto [sp, sp_len] = compute_shortest_path(G, weight, s, t);
+
+  // P_LO <-- {shortest path p_0(s, t)};
+  resPathsEdges.push_back(sp);
+  resEdges.emplace_back(sp.begin(), sp.end());
+
+  // If we need the shortest path only
+  if (k == 1) {
+    fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
+                           predecessors);
+    return;
+  }
+
+  // Every max-heap H_i is associated with p_i
+  using Priority = std::pair<Edge, int>;
+  using EdgePriorityQueue =
+      std::priority_queue<Priority, std::vector<Priority>,
+                          details::EdgePriorityComparator<Edge>>;
+  auto edge_priorities = std::vector<EdgePriorityQueue>(k);
+
+  // We keep a set of non-removable edges
+  auto dnr_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
+
+  // We keep a set of deleted-edges
+  auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
+
+  // Compute lower bounds for AStar
+  auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
+
+  // Initialize max-heap H_0 with the priority of each edge of the shortest path
+  init_edge_priorities(sp, edge_priorities, 0, G, weight, deleted_edges);
+
+  auto overlaps = std::vector<double>(k, 0.0);
+  overlaps[0] = 1.0; // Set p_c overlap with sp (itself) to 1
+
+  bool still_feasible = true;
+  while (resPathsEdges.size() < static_cast<std::size_t>(k) && still_feasible) {
+    std::ptrdiff_t p_max_idx = 0;
+    double overlap_ratio = 1.0;
+
+    while (overlap_ratio >= theta) {
+      // Get the max overlapping path
+      auto max_it = std::max_element(std::begin(overlaps), std::end(overlaps));
+      p_max_idx = max_it - std::begin(overlaps);
+      overlap_ratio = *max_it;
+
+      // Check if finding a result is feasible
+      still_feasible = details::check_feasibility(overlaps);
+      if (!still_feasible) {
+        break; // Stop the algorithm
+      }
+
+      // Get e_tmp with higher priority from H_{p_max_idx}
+      auto e_tmp = edge_priorities[p_max_idx].top().first;
+
+      // If edge is in DO-NOT-REMOVE edges set, continue
+      if (dnr_edges.find(e_tmp) != std::end(dnr_edges)) {
+        edge_priorities[p_max_idx].pop();
+        // Also, if H_{p_max_idx} queue is empty set its overlapping value to 0
+        if (edge_priorities[p_max_idx].empty()) {
+          overlaps[p_max_idx] = 0;
+        }
+        continue;
+      } else {
+        // Otherwise, add e_tmp to deleted edges
+        deleted_edges.insert(e_tmp);
+      }
+
+      // Compute p_tmp shortest path
+      auto p_tmp = routing_kernel(G, s, t, weight, deleted_edges);
+
+      // If shortest path did not find a path
+      if (!p_tmp) {
+        move_to_dnr(e_tmp, deleted_edges, dnr_edges);
+        continue;
+      }
+
+      // Remove e_tmp from H_{p_max_idx}
+      edge_priorities[p_max_idx].pop();
+
+      // in cases there are no more edges to remove we set overlap to zero to
+      // avoid choosing from the same path again. A path the overlap of which is
+      // zero can never be chosen to remove its edges.
+      if (edge_priorities[p_max_idx].empty()) {
+        overlaps[p_max_idx] = 0;
+      } else {
+        const auto &alt_path = resEdges[p_max_idx];
+        overlaps[p_max_idx] = compute_similarity(*p_tmp, alt_path, weight);
+      }
+
+      // Checking if the resulting path is valid
+      bool candidate_is_valid =
+          check_candidate_validity(*p_tmp, resEdges, weight, theta);
+      if (candidate_is_valid) {
+        // Add p_tmp to P_LO
+        resPathsEdges.emplace_back(*p_tmp);
+        resEdges.emplace_back(p_tmp->begin(), p_tmp->end());
+
+        // Set p_c overlap with itself to 1
+        std::ptrdiff_t p_c_idx = resPathsEdges.size() - 1;
+        overlaps[p_c_idx] = 1.0;
+
+        // Initialize max-heap H_i with the priority of each edge of new
+        // alternative path
+        init_edge_priorities(*p_tmp, edge_priorities, p_c_idx, G, weight,
+                             deleted_edges);
+        break; // From inner while loop
+      }
+    }
+  }
+
+  // Beforer returning, populate predecessors map
+  fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
+                         predecessors);
 }
 } // namespace details
 } // namespace arlib

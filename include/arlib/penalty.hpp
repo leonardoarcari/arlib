@@ -105,85 +105,19 @@ void penalty(const Graph &G, WeightMap const &original_weight,
              double theta, double p, double r, int max_nb_updates,
              int max_nb_steps,
              routing_kernels algorithm = routing_kernels::dijkstra) {
-  using namespace boost;
-  using Edge = typename graph_traits<Graph>::edge_descriptor;
-  using Length = typename boost::property_traits<typename boost::property_map<
-      Graph, boost::edge_weight_t>::type>::value_type;
-
-  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
-
-  // P_LO set of k paths
-  auto resPathsEdges = std::vector<std::vector<Edge>>{};
-  auto resEdges = std::vector<std::unordered_set<Edge, boost::hash<Edge>>>{};
-
-  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
-
-  // P_LO set of k paths
-  auto resPaths = std::vector<Path<Graph>>{};
-  // Make a local weight map to avoid modifying existing graph.
-  auto pen_fctor = details::penalty_functor{original_weight};
-
-  // Make shortest path algorithm function
-  auto compute_shortest_path =
-      details::build_shortest_path_fn(algorithm, G, original_weight);
-
-  // Compute shortest path from s to t
-  auto distance_s = std::vector<Length>(num_vertices(G));
-  auto distance_t = std::vector<Length>(num_vertices(G));
-  auto sp =
-      details::dijkstra_shortest_path_two_ways(G, s, t, distance_s, distance_t);
-  assert(sp);
-
-  // P_LO <-- {shortest path p_0(s, t)};
-  resPathsEdges.push_back(*sp);
-  resEdges.emplace_back(sp->begin(), sp->end());
-
-  // If we need the shortest path only
-  if (k == 1) {
-    details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(),
-                                    G, predecessors);
-    return;
+  using Length = length_of_t<Graph>;
+  if (algorithm == routing_kernels::astar) {
+    auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
+    auto routing_kernel = details::build_shortest_path_fn(
+        algorithm, G, original_weight, heuristic);
+    details::penalty(G, original_weight, predecessors, s, t, k, theta, p, r,
+                     max_nb_updates, max_nb_steps, routing_kernel);
+  } else {
+    auto routing_kernel =
+        details::build_shortest_path_fn(algorithm, G, original_weight);
+    details::penalty(G, original_weight, predecessors, s, t, k, theta, p, r,
+                     max_nb_updates, max_nb_steps, routing_kernel);
   }
-
-  // Initialize map for penalty bounds
-  auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
-
-  // Penalize sp edges
-  details::penalize_candidate_path(*sp, G, s, t, p, r, pen_fctor, distance_s,
-                                   distance_t, penalty_bounds, max_nb_updates);
-
-  int step = 0;
-  using Index = std::size_t;
-  while (resPathsEdges.size() < static_cast<Index>(k) && step < max_nb_steps) {
-    auto p_tmp = compute_shortest_path(G, s, t, pen_fctor);
-
-    // Penalize p_tmp edges
-    details::penalize_candidate_path(*p_tmp, G, s, t, p, r, pen_fctor,
-                                     distance_s, distance_t, penalty_bounds,
-                                     max_nb_updates);
-    ++step;
-
-    // If p_tmp is sufficiently dissimilar to other alternative paths, accept it
-    bool is_valid_path = true;
-    for (const auto &alt_path : resEdges) {
-      if (details::compute_similarity(*p_tmp, alt_path, original_weight) >
-          theta) {
-        is_valid_path = false;
-        break;
-      }
-    }
-
-    if (is_valid_path) {
-      resPathsEdges.push_back(*p_tmp);
-      resEdges.emplace_back(p_tmp->begin(), p_tmp->end());
-    }
-  }
-
-  // Beforer returning, populate predecessors map
-  details::fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
-                                  predecessors);
 }
 
 /**

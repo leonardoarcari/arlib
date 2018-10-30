@@ -242,3 +242,35 @@ TEST_CASE("Penalty running with bidirectional dijkstra returns same result as "
     REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
   }
 }
+
+TEST_CASE("Penalty running with astar returns same result as "
+          "unidirectional dijkstra",
+          "[penalty]") {
+  using namespace boost;
+
+  auto G = arlib::read_graph_from_string<Graph>(std::string(graph_gr_esx));
+
+  Vertex s = 0, t = 6;
+  int k = 3;
+  double theta = 0.5;
+  auto p = 0.1;
+  auto r = 0.1;
+  auto bound_limit = 10;
+  auto max_nb_steps = 100000;
+
+  auto predecessors_uni = arlib::multi_predecessor_map<Vertex>{};
+  arlib::penalty(G, predecessors_uni, s, t, k, theta, p, r, bound_limit,
+                 max_nb_steps);
+  auto res_paths_uni = arlib::to_paths(G, predecessors_uni, s, t);
+
+  auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
+  arlib::penalty(G, predecessors_bi, s, t, k, theta, p, r, bound_limit,
+                 max_nb_steps, arlib::routing_kernels::astar);
+  auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
+
+  REQUIRE(res_paths_uni.size() == res_paths_bi.size());
+
+  for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
+    REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
+  }
+}
