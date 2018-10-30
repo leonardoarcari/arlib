@@ -39,6 +39,7 @@
 #include <boost/property_map/function_property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 
+#include <arlib/details/arlib_utils.hpp>
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/types.hpp>
 #include <arlib/type_traits.hpp>
@@ -214,27 +215,6 @@ private:
 //===----------------------------------------------------------------------===//
 //                     Penalty algorithm support routines
 //===----------------------------------------------------------------------===//
-
-template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
-          typename Edge = edge_of_t<Graph>>
-constexpr std::function<std::optional<std::vector<Edge>>(
-    const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
-build_shortest_path_fn(routing_kernels algorithm, const Graph &, const PMap &) {
-  switch (algorithm) {
-  case routing_kernels::dijkstra:
-    return [](const auto &G, auto s, auto t, auto &penalty) {
-      return dijkstra_shortest_path(G, s, t, penalty);
-    };
-  case routing_kernels::bidirectional_dijkstra:
-    return [](const auto &G, auto s, auto t, auto &penalty) {
-      return bidirectional_dijkstra_shortest_path(G, s, t, penalty);
-    };
-  default:
-    throw std::invalid_argument{
-        "Invalid algorithm. Only [dijkstra|bidirectional_dijkstra] allowed."};
-  }
-}
-
 /**
  * Computes the shortest path between two vertices s and t, first
  * from s to t and then from t to s. The distances of each node in the
@@ -333,6 +313,34 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   return std::optional<std::vector<Edge>>{};
 }
 
+template <typename Graph, typename PMap, typename AStarHeuristic,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>,
+          typename Length = length_of_t<Graph>>
+std::optional<std::vector<Edge>>
+astar_shortest_path(const Graph &G, Vertex s, Vertex t,
+                    penalty_functor<PMap> &penalty,
+                    const AStarHeuristic &heuristic) {
+  using namespace boost;
+  auto predecessor = std::vector<Vertex>(num_vertices(G), s);
+  auto vertex_id = get(vertex_index, G);
+
+  auto weight = make_function_property_map<Edge>(penalty);
+  try {
+    astar_search(G, s, heuristic,
+                 predecessor_map(make_iterator_property_map(
+                                     std::begin(predecessor), vertex_id, s))
+                     .visitor(astar_target_visitor{t})
+                     .weight_map(weight));
+  } catch (target_found &tf) {
+    auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
+    return std::make_optional(edge_list);
+  }
+  // In case t could not be found from astar_search and target_found is not
+  // thrown, return empty optional
+  return std::optional<std::vector<Edge>>{};
+}
+
 template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
           typename Edge = edge_of_t<Graph>,
           typename Length = length_of_t<Graph>>
@@ -365,6 +373,43 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
 
   auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
   return std::make_optional(edge_list);
+}
+
+template <typename Graph, typename PMap, typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
+constexpr std::function<std::optional<std::vector<Edge>>(
+    const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, const PMap &) {
+  switch (algorithm) {
+  case routing_kernels::dijkstra:
+    return [](const auto &G, auto s, auto t, auto &penalty) {
+      return dijkstra_shortest_path(G, s, t, penalty);
+    };
+  case routing_kernels::bidirectional_dijkstra:
+    return [](const auto &G, auto s, auto t, auto &penalty) {
+      return bidirectional_dijkstra_shortest_path(G, s, t, penalty);
+    };
+  default:
+    throw std::invalid_argument{
+        "Invalid algorithm. Only [dijkstra|bidirectional_dijkstra] allowed."};
+  }
+}
+
+template <typename Graph, typename PMap, typename AStarHeuristic,
+          typename Vertex = vertex_of_t<Graph>,
+          typename Edge = edge_of_t<Graph>>
+constexpr std::function<std::optional<std::vector<Edge>>(
+    const Graph &, Vertex, Vertex, penalty_functor<PMap> &)>
+build_shortest_path_fn(routing_kernels algorithm, const Graph &, const PMap &,
+                       const AStarHeuristic &heuristic) {
+  switch (algorithm) {
+  case routing_kernels::astar:
+    return [&heuristic](const auto &G, auto s, auto t, auto &penalty) {
+      return astar_shortest_path(G, s, t, penalty, heuristic);
+    };
+  default:
+    throw std::invalid_argument{"Invalid algorithm. Only [astar] allowed."};
+  }
 }
 
 /**
@@ -507,6 +552,83 @@ void penalize_candidate_path(const std::vector<Edge> &candidate, const Graph &G,
       }
     }
   }
+}
+
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename RoutingKernel, typename Vertex = vertex_of_t<Graph>>
+void penalty(const Graph &G, WeightMap const &original_weight,
+             MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
+             double theta, double p, double r, int max_nb_updates,
+             int max_nb_steps, RoutingKernel &routing_kernel) {
+  using namespace boost;
+  using Edge = typename graph_traits<Graph>::edge_descriptor;
+  using Length = typename boost::property_traits<typename boost::property_map<
+      Graph, boost::edge_weight_t>::type>::value_type;
+
+  BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
+
+  // P_LO set of k paths
+  auto resPathsEdges = std::vector<std::vector<Edge>>{};
+  auto resEdges = std::vector<std::unordered_set<Edge, boost::hash<Edge>>>{};
+
+  // P_LO set of k paths
+  auto resPaths = std::vector<Path<Graph>>{};
+  // Make a local weight map to avoid modifying existing graph.
+  auto pen_fctor = details::penalty_functor{original_weight};
+
+  // Compute shortest path from s to t
+  auto distance_s = std::vector<Length>(num_vertices(G));
+  auto distance_t = std::vector<Length>(num_vertices(G));
+  auto sp = dijkstra_shortest_path_two_ways(G, s, t, distance_s, distance_t);
+  assert(sp);
+
+  // P_LO <-- {shortest path p_0(s, t)};
+  resPathsEdges.push_back(*sp);
+  resEdges.emplace_back(sp->begin(), sp->end());
+
+  // If we need the shortest path only
+  if (k == 1) {
+    fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
+                           predecessors);
+    return;
+  }
+
+  // Initialize map for penalty bounds
+  auto penalty_bounds = std::unordered_map<Edge, int, boost::hash<Edge>>{};
+
+  // Penalize sp edges
+  penalize_candidate_path(*sp, G, s, t, p, r, pen_fctor, distance_s, distance_t,
+                          penalty_bounds, max_nb_updates);
+
+  int step = 0;
+  using Index = std::size_t;
+  while (resPathsEdges.size() < static_cast<Index>(k) && step < max_nb_steps) {
+    auto p_tmp = routing_kernel(G, s, t, pen_fctor);
+
+    // Penalize p_tmp edges
+    penalize_candidate_path(*p_tmp, G, s, t, p, r, pen_fctor, distance_s,
+                            distance_t, penalty_bounds, max_nb_updates);
+    ++step;
+
+    // If p_tmp is sufficiently dissimilar to other alternative paths, accept it
+    bool is_valid_path = true;
+    for (const auto &alt_path : resEdges) {
+      if (compute_similarity(*p_tmp, alt_path, original_weight) > theta) {
+        is_valid_path = false;
+        break;
+      }
+    }
+
+    if (is_valid_path) {
+      resPathsEdges.push_back(*p_tmp);
+      resEdges.emplace_back(p_tmp->begin(), p_tmp->end());
+    }
+  }
+
+  // Beforer returning, populate predecessors map
+  fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
+                         predecessors);
 }
 } // namespace details
 } // namespace arlib

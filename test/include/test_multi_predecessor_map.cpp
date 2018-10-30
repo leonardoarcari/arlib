@@ -30,7 +30,8 @@ TEST_CASE("multi_predecessor_map interface") {
   }
 
   REQUIRE(pred.size() == in_degree(v, G));
-  for (auto [first, last] = in_edges(v, G); first != last; ++first) {
+  graph_traits<Graph>::in_edge_iterator first, last;
+  for (std::tie(first, last) = in_edges(v, G); first != last; ++first) {
     REQUIRE(
         std::find_if(pred.begin(), pred.end(), [&first, &G](auto const &entry) {
           return entry.second == source(*first, G);
