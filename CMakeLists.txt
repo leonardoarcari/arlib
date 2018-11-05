@@ -1,5 +1,5 @@
 # check the minimum version
-cmake_minimum_required( VERSION 3.5 )
+cmake_minimum_required( VERSION 3.10 )
 
 # the project name
 project( alternative-routing-lib )
@@ -24,6 +24,7 @@ add_subdirectory(include/arlib)
 add_subdirectory(src/arlib)
 
 add_library(arlib STATIC ${ARLIB_HEADERS} ${ARLIB_SRC})
+add_library(arlib::arlib ALIAS arlib)
 
 target_compile_options(arlib PUBLIC -std=c++17)
 
@@ -32,19 +33,26 @@ target_include_directories(arlib
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-    )
+)
 
 target_link_libraries(arlib
     PUBLIC
         Boost::graph
-    PRIVATE
-        stdc++fs  # std::filesystem
-    )
+)
+
+# Link <filesystem> library
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        target_link_libraries(arlib PRIVATE c++fs)
+    endif()
+else()
+    target_link_libraries(arlib PRIVATE stdc++fs)
+endif()
 
 # ==-----------------------------------------------------------------------== #
 #                                  Install
 # ==-----------------------------------------------------------------------== #
-set(arlib_VERSION 0.0.1)
+set(arlib_VERSION 1.0.0)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file("arlibConfigVersion.cmake"
