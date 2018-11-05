@@ -22,3 +22,7 @@ parameter_space_exploration*
 
 # Other
 activate
+
+# Python
+dist
+**/*.egg-info
