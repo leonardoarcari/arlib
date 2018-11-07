@@ -165,7 +165,7 @@ void onepass_plus(const Graph &G, WeightMap weight,
     // priority queue.
     if (label->is_outdated(paths_count - 1)) {
       bool below_sim_threshold = details::update_label_similarity(
-          *label, G, resEdges, resPathsEdges, weight, theta, paths_count - 1);
+          *label, G, resEdges, resPathsEdges, weight, theta, paths_count);
 
       label->set_last_check(paths_count - 1); // Update last check time step
       if (!below_sim_threshold) {
@@ -177,7 +177,6 @@ void onepass_plus(const Graph &G, WeightMap weight,
     if (label->get_node() == t) {
       // Build the new k-th shortest path
       resPathsEdges.push_back(label->get_path(G));
-      // resPathsLengths.push_back(label->get_length());
 
       auto &tmpPath = resPathsEdges.back();
       ++paths_count;

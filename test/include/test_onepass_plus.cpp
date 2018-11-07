@@ -136,4 +136,9 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
   for (auto &p : res) {
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
+
+  using boost::get;
+  using boost::edge_weight;
+  REQUIRE(
+      alternative_paths_are_dissimilar(res, get(edge_weight, G), 0.5));
 }

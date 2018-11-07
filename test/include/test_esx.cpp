@@ -122,6 +122,10 @@ TEST_CASE("esx kspwlo algorithm runs on Boost::Graph", "[esx]") {
   for (auto &p : res) {
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
+
+  using boost::edge_weight;
+  using boost::get;
+  REQUIRE(alternative_paths_are_dissimilar(res, get(edge_weight, G), 0.5));
 }
 
 TEST_CASE("ESX running with bidirectional dijkstra returns same result as "
