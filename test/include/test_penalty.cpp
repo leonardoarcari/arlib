@@ -39,6 +39,8 @@ TEST_CASE("Penalty algorithm follows specifications", "[penalty]") {
                  max_nb_steps);
   auto res_paths = arlib::to_paths(G, predecessors, s, t);
 
+  REQUIRE(
+      alternative_paths_are_dissimilar(res_paths, get(edge_weight, G), theta));
   REQUIRE(res_paths.size() == 3);
 
   std::cout << "Penalty boost::Graph result:\n";

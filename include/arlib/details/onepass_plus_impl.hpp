@@ -461,7 +461,7 @@ bool update_label_similarity(Label &label, const Graph &G,
 
           // Check Lemma 1. The similarity between the candidate path and
           // all the other k-shortest-paths must be less then theta
-          auto const &alt_path = resPaths[step];
+          auto const &alt_path = resPaths[index];
           auto alt_len = compute_length_from_edges(alt_path.begin(),
                                                    alt_path.end(), weight);
           if (label.get_similarity_with(index) / alt_len > theta) {
