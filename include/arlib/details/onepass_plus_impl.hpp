@@ -36,7 +36,6 @@
 #include <boost/graph/properties.hpp>
 
 #include <arlib/details/arlib_utils.hpp>
-#include <arlib/graph_types.hpp>
 #include <arlib/type_traits.hpp>
 
 #include <cassert>
@@ -45,6 +44,7 @@
 #include <queue>
 #include <unordered_set>
 #include <vector>
+#include <unordered_map>
 
 namespace arlib {
 /**
@@ -145,13 +145,14 @@ public:
         similarity_map(k, 0), k{k}, checked_at_step{checked_at_step} {}
 
   std::vector<Edge> get_path(Graph const &G) const {
+    using namespace boost;
     auto edge_set = std::vector<Edge>{};
 
     auto v = node;
     auto prev = previous;
     while (prev != nullptr) {
       auto u = prev->node;
-      auto [e, is_ok] = boost::edge(u, v, G);
+      auto [e, is_ok] = edge(u, v, G);
       assert(is_ok &&
              "[arlib::details::OnePassLabel::get_path] Edge not found.");
       edge_set.push_back(e);

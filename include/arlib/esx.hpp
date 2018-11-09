@@ -28,17 +28,17 @@
  *
  */
 
-#ifndef BOOST_EDGE_SUBSET_EXCLUSION_HPP
-#define BOOST_EDGE_SUBSET_EXCLUSION_HPP
+#ifndef BOOST_ESX_ALTERNATIVE_ROUTING_HPP
+#define BOOST_ESX_ALTERNATIVE_ROUTING_HPP
 
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <arlib/details/esx_impl.hpp>
-#include <arlib/graph_types.hpp>
-#include <arlib/graph_utils.hpp>
+#include <arlib/terminators.hpp>
 #include <arlib/type_traits.hpp>
+
+#include <arlib/details/esx_impl.hpp>
 
 #include <queue>
 #include <unordered_set>
@@ -93,10 +93,12 @@ namespace arlib {
  *
  */
 template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Terminator = arlib::always_continue,
           typename Vertex = vertex_of_t<Graph>>
 void esx(const Graph &G, WeightMap const &weight,
          MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
-         double theta, routing_kernels algorithm = routing_kernels::astar) {
+         double theta, routing_kernels algorithm = routing_kernels::astar,
+         Terminator &&terminator = Terminator{}) {
   using Edge = edge_of_t<Graph>;
   using Length = length_of_t<Graph>;
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
@@ -104,11 +106,13 @@ void esx(const Graph &G, WeightMap const &weight,
     auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
     auto routing_kernel = details::build_shortest_path_fn(
         algorithm, G, s, t, weight, heuristic, deleted_edges);
-    details::esx(G, weight, predecessors, s, t, k, theta, routing_kernel);
+    details::esx(G, weight, predecessors, s, t, k, theta, routing_kernel,
+                 std::forward<Terminator>(terminator));
   } else {
     auto routing_kernel = details::build_shortest_path_fn(
         algorithm, G, s, t, weight, deleted_edges);
-    details::esx(G, weight, predecessors, s, t, k, theta, routing_kernel);
+    details::esx(G, weight, predecessors, s, t, k, theta, routing_kernel,
+                 std::forward<Terminator>(terminator));
   }
 }
 
@@ -131,10 +135,12 @@ void esx(const Graph &G, WeightMap const &weight,
  *
  */
 template <typename PropertyGraph, typename MultiPredecessorMap,
+          typename Terminator = arlib::always_continue,
           typename Vertex = vertex_of_t<PropertyGraph>>
 void esx(const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
          Vertex t, int k, double theta,
-         routing_kernels algorithm = routing_kernels::astar) {
+         routing_kernels algorithm = routing_kernels::astar,
+         Terminator &&terminator = Terminator{}) {
   using namespace boost;
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
 
@@ -142,7 +148,8 @@ void esx(const PropertyGraph &G, MultiPredecessorMap &predecessors, Vertex s,
       (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
 
   auto weight = get(edge_weight, G);
-  esx(G, weight, predecessors, s, t, k, theta, algorithm);
+  esx(G, weight, predecessors, s, t, k, theta, algorithm,
+      std::forward<Terminator>(terminator));
 }
 } // namespace arlib
 

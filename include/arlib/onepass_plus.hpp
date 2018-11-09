@@ -35,10 +35,10 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <arlib/details/onepass_plus_impl.hpp>
-#include <arlib/graph_types.hpp>
-#include <arlib/graph_utils.hpp>
+#include <arlib/terminators.hpp>
 #include <arlib/type_traits.hpp>
+
+#include <arlib/details/onepass_plus_impl.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -93,10 +93,11 @@ namespace arlib {
  *
  */
 template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Terminator = arlib::always_continue,
           typename Vertex = vertex_of_t<Graph>>
 void onepass_plus(const Graph &G, WeightMap weight,
                   MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
-                  double theta) {
+                  double theta, Terminator &&terminator = Terminator{}) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<WeightMap>::value_type;
@@ -156,6 +157,14 @@ void onepass_plus(const Graph &G, WeightMap weight,
 
   // While Q is not empty
   while (!Q.empty()) {
+    // The remainder code is the hot part of the algorithm. So we check here
+    // if the algorithm should terminate
+    if (terminator.should_stop()) {
+      throw terminator_stop_error{
+          "OnePass+ terminated before completing due to a Terminator. Please "
+          "discard partial output."};
+    }
+
     // Current path
     auto label = Q.top();
     Q.pop();
@@ -255,9 +264,11 @@ void onepass_plus(const Graph &G, WeightMap weight,
  *
  */
 template <typename PropertyGraph, typename MultiPredecessorMap,
+          typename Terminator = arlib::always_continue,
           typename Vertex = vertex_of_t<PropertyGraph>>
 void onepass_plus(const PropertyGraph &G, MultiPredecessorMap &predecessors,
-                  Vertex s, Vertex t, int k, double theta) {
+                  Vertex s, Vertex t, int k, double theta,
+                  Terminator &&terminator = Terminator{}) {
   using namespace boost;
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
 
@@ -265,7 +276,8 @@ void onepass_plus(const PropertyGraph &G, MultiPredecessorMap &predecessors,
       (PropertyGraphConcept<PropertyGraph, Edge, edge_weight_t>));
 
   auto weight = get(edge_weight, G);
-  onepass_plus(G, weight, predecessors, s, t, k, theta);
+  onepass_plus(G, weight, predecessors, s, t, k, theta,
+               std::forward<Terminator>(terminator));
 }
 } // namespace arlib
 

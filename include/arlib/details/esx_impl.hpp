@@ -41,6 +41,7 @@
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/types.hpp>
+#include <arlib/terminators.hpp>
 #include <arlib/type_traits.hpp>
 
 #include <limits>
@@ -344,9 +345,8 @@ build_shortest_path_fn(routing_kernels algorithm, const Graph &, Vertex, Vertex,
       return astar_shortest_path(G, s, t, weight, heuristic, deleted_edge_map);
     };
   default:
-    throw std::invalid_argument{
-        "Invalid algorithm. Only [astar] "
-        "allowed."};
+    throw std::invalid_argument{"Invalid algorithm. Only [astar] "
+                                "allowed."};
   }
 }
 
@@ -602,10 +602,11 @@ void move_to_dnr(Edge e,
 //                             ESX implementation
 //===----------------------------------------------------------------------===//
 template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
-          typename RoutingKernel, typename Vertex = vertex_of_t<Graph>>
+          typename RoutingKernel, typename Terminator,
+          typename Vertex = vertex_of_t<Graph>>
 void esx(const Graph &G, WeightMap const &weight,
          MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
-         double theta, RoutingKernel &routing_kernel) {
+         double theta, RoutingKernel &routing_kernel, Terminator &&terminator) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<WeightMap>::value_type;
@@ -689,6 +690,14 @@ void esx(const Graph &G, WeightMap const &weight,
       } else {
         // Otherwise, add e_tmp to deleted edges
         deleted_edges.insert(e_tmp);
+      }
+
+      // The remainder code is the hot part of the algorithm. So we check here
+      // if the algorithm should terminate
+      if (terminator.should_stop()) {
+        throw terminator_stop_error{
+            "ESX terminated before completing due to a Terminator. Please "
+            "discard partial output."};
       }
 
       // Compute p_tmp shortest path
