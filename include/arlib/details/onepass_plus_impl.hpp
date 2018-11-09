@@ -272,19 +272,23 @@ public:
 private:
   template <typename Graph2, typename Length2>
   friend std::ostream &operator<<(std::ostream &os,
-                                  const OnePassLabel<Graph2, Length2> &label) {
-    os << "(node = " << label.node << ", length = " << label.length
-       << ", lower_bound = " << label.lower_bound << ", k = " << label.k
-       << ", checked_at_step = " << label.checked_at_step
-       << ", similarities = [ ";
-    for (auto sim : label.similarity_map) {
-      os << sim << " ";
-    }
-
-    os << "])";
-    return os;
-  }
+                                  const OnePassLabel<Graph2, Length2> &label);
 };
+
+template <typename Graph2, typename Length2>
+std::ostream &operator<<(std::ostream &os,
+                                const OnePassLabel<Graph2, Length2> &label) {
+  os << "(node = " << label.node << ", length = " << label.length
+     << ", lower_bound = " << label.lower_bound << ", k = " << label.k
+     << ", checked_at_step = " << label.checked_at_step
+     << ", similarities = [ ";
+  for (auto sim : label.similarity_map) {
+    os << sim << " ";
+  }
+
+  os << "])";
+  return os;
+}
 
 /**
  * A conventient container for labels dominance checking.
