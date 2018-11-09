@@ -24,17 +24,21 @@ public:
 class timer : public terminator<timer> {
 public:
   explicit timer(std::chrono::milliseconds timeout)
+      : timeout_{std::chrono::duration_cast<std::chrono::microseconds>(
+            timeout)},
+        t1_{std::chrono::steady_clock::now()} {}
+  explicit timer(std::chrono::microseconds timeout)
       : timeout_{timeout}, t1_{std::chrono::steady_clock::now()} {}
 
   bool should_stop() const {
     auto t2 = std::chrono::steady_clock::now();
     auto elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1_);
+        std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1_);
     return (elapsed > timeout_);
   }
 
 private:
-  std::chrono::milliseconds timeout_;
+  std::chrono::microseconds timeout_;
   std::chrono::time_point<std::chrono::steady_clock> t1_;
 };
 } // namespace arlib

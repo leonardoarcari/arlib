@@ -196,6 +196,6 @@ TEST_CASE("ESX times-out on large graph", "[esx]") {
 
   REQUIRE_THROWS_AS(arlib::esx(G, predecessors, s, t, k, theta,
                                arlib::routing_kernels::astar,
-                               arlib::timer{1ms}),
+                               arlib::timer{1us}),
                     arlib::terminator_stop_error);
 }

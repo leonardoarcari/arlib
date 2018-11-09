@@ -297,6 +297,6 @@ TEST_CASE("Penalty times-out on large graph", "[penalty]") {
   REQUIRE_THROWS_AS(arlib::penalty(G, predecessors, s, t, k, theta, p, r,
                                    max_nb_updates, max_nb_steps,
                                    arlib::routing_kernels::astar,
-                                   arlib::timer{1ms}),
+                                   arlib::timer{1us}),
                     arlib::terminator_stop_error);
 }

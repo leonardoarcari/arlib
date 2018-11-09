@@ -157,6 +157,6 @@ TEST_CASE("OnePass+ times-out on large graph", "[onepassplus]") {
   auto predecessors = arlib::multi_predecessor_map<Vertex>{};
 
   REQUIRE_THROWS_AS(
-      arlib::onepass_plus(G, predecessors, s, t, k, theta, arlib::timer{1ms}),
+      arlib::onepass_plus(G, predecessors, s, t, k, theta, arlib::timer{1us}),
       arlib::terminator_stop_error);
 }
