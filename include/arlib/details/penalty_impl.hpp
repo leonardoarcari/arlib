@@ -42,6 +42,7 @@
 #include <arlib/details/arlib_utils.hpp>
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/types.hpp>
+#include <arlib/terminators.hpp>
 #include <arlib/type_traits.hpp>
 
 #include <functional>
@@ -555,11 +556,13 @@ void penalize_candidate_path(const std::vector<Edge> &candidate, const Graph &G,
 }
 
 template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
-          typename RoutingKernel, typename Vertex = vertex_of_t<Graph>>
+          typename RoutingKernel, typename Terminator,
+          typename Vertex = vertex_of_t<Graph>>
 void penalty(const Graph &G, WeightMap const &original_weight,
              MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
              double theta, double p, double r, int max_nb_updates,
-             int max_nb_steps, RoutingKernel &routing_kernel) {
+             int max_nb_steps, RoutingKernel &routing_kernel,
+             Terminator &&terminator) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
   using Length = typename boost::property_traits<typename boost::property_map<
@@ -604,6 +607,14 @@ void penalty(const Graph &G, WeightMap const &original_weight,
   int step = 0;
   using Index = std::size_t;
   while (resPathsEdges.size() < static_cast<Index>(k) && step < max_nb_steps) {
+    // The remainder code is the hot part of the algorithm. So we check here
+    // if the algorithm should terminate
+    if (terminator.should_stop()) {
+      throw terminator_stop_error{
+          "Penalty terminated before completing due to a Terminator. Please "
+          "discard partial output."};
+    }
+
     auto p_tmp = routing_kernel(G, s, t, pen_fctor);
 
     // Penalize p_tmp edges

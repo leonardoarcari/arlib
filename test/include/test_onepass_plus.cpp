@@ -4,13 +4,15 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include "test_types.hpp"
-#include "utils.hpp"
-
 #include <arlib/details/onepass_plus_impl.hpp>
 #include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
 #include <arlib/onepass_plus.hpp>
+#include <arlib/terminators.hpp>
+
+#include "test_types.hpp"
+#include "utils.hpp"
+#include "cittastudi_graph.hpp"
 
 #include <kspwlo_ref/algorithms/kspwlo.hpp>
 #include <kspwlo_ref/exploration/graph_utils.hpp>
@@ -19,6 +21,7 @@
 #include <experimental/filesystem>
 #include <fstream>
 #include <memory>
+#include <chrono>
 #include <string_view>
 
 using namespace arlib::test;
@@ -137,8 +140,23 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
 
-  using boost::get;
   using boost::edge_weight;
-  REQUIRE(
-      alternative_paths_are_dissimilar(res, get(edge_weight, G), 0.5));
+  using boost::get;
+  REQUIRE(alternative_paths_are_dissimilar(res, get(edge_weight, G), 0.5));
+}
+
+TEST_CASE("OnePass+ times-out on large graph", "[onepassplus]") {
+  using namespace boost;
+  using namespace std::chrono_literals;
+
+  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
+
+  Vertex s = 0, t = 20;
+  auto k = 3;
+  auto theta = 0.5;
+  auto predecessors = arlib::multi_predecessor_map<Vertex>{};
+
+  REQUIRE_THROWS_AS(
+      arlib::onepass_plus(G, predecessors, s, t, k, theta, arlib::timer{1us}),
+      arlib::terminator_stop_error);
 }

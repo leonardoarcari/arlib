@@ -39,13 +39,13 @@
 #include <boost/graph/properties.hpp>
 #include <boost/graph/reverse_graph.hpp>
 
-#include <arlib/graph_types.hpp>
-#include <arlib/graph_utils.hpp>
+#include <arlib/path.hpp>
 #include <arlib/type_traits.hpp>
 
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_set>
 #include <vector>
 
 namespace arlib {
@@ -269,6 +269,7 @@ template <typename Graph, typename EdgeWeightMap, typename PredecessorMap,
 Path<Graph>
 build_path_from_dijkstra(const Graph &G, EdgeWeightMap const &weight,
                          const PredecessorMap &p, Vertex s, Vertex t) {
+  using boost::edge;
   using Length = typename boost::property_traits<EdgeWeightMap>::value_type;
   using Edge = typename boost::graph_traits<Graph>::edge_descriptor;
 
@@ -282,7 +283,7 @@ build_path_from_dijkstra(const Graph &G, EdgeWeightMap const &weight,
     auto u = p[current];
     path_vs.insert(u);
 
-    auto edge_in_G = boost::edge(u, current, G).first;
+    auto edge_in_G = edge(u, current, G).first;
     length += weight[edge_in_G];
     path_es.insert(edge_in_G);
     current = u;
@@ -313,6 +314,7 @@ template <typename Graph, typename PredecessorMap,
 std::vector<Edge> build_edge_list_from_dijkstra(Graph const &G, Vertex s,
                                                 Vertex t,
                                                 const PredecessorMap &p) {
+  using namespace boost;
   auto edge_list = std::vector<Edge>{};
 
   auto current = t;
@@ -322,7 +324,7 @@ std::vector<Edge> build_edge_list_from_dijkstra(Graph const &G, Vertex s,
       // Vertex 'current' is not reachable from source vertex
       break;
     }
-    auto [e, is_ok] = boost::edge(u, current, G);
+    auto [e, is_ok] = edge(u, current, G);
     assert(is_ok &&
            "[arlib::details::build_edge_list_from_dijkstra] Edge not found.");
     edge_list.push_back(e);

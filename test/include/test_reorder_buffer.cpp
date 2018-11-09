@@ -1,13 +1,13 @@
 #include "catch.hpp"
 
+#include <arlib/graph_types.hpp>
+#include <arlib/penalty.hpp>
+#include <arlib/reorder_buffer.hpp>
+#include <arlib/graph_utils.hpp>
+
 #include "cittastudi_graph.hpp"
 #include "test_types.hpp"
 #include "utils.hpp"
-
-#include <arlib/graph_types.hpp>
-#include <arlib/graph_utils.hpp>
-#include <arlib/penalty.hpp>
-#include <arlib/reorder_buffer.hpp>
 
 #include <chrono>
 #include <random>
@@ -56,15 +56,15 @@ TEST_CASE(
   // Sort on similarity thresholds
   arlib::ReorderBuffer::by_relative_similarity(G, paths.begin(), paths.end(), 5,
                                                0.5);
-  for (std::size_t i = 1; i < paths.size(); ++i) {
-    std::cout << "[Path " << i << "]\n";
-    for (std::size_t j = 0; j < i; ++j) {
-      std::cout << "  Similarity with path " << j << ": "
-                << arlib::details::compute_similarity(
-                       paths[i], paths[j], get(boost::edge_weight, paths[j]))
-                << "\n";
-    }
-  }
+  // for (std::size_t i = 1; i < paths.size(); ++i) {
+  //   std::cout << "[Path " << i << "]\n";
+  //   for (std::size_t j = 0; j < i; ++j) {
+  //     std::cout << "  Similarity with path " << j << ": "
+  //               << arlib::details::compute_similarity(
+  //                      paths[i], paths[j], get(boost::edge_weight, paths[j]))
+  //               << "\n";
+  //   }
+  // }
 }
 
 TEST_CASE("Penalty+Reordering runs faster than Plain Penalty") {

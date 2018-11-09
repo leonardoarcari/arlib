@@ -1,8 +1,5 @@
 #include "catch.hpp"
 
-#include "test_types.hpp"
-#include "utils.hpp"
-
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
@@ -11,12 +8,17 @@
 #include <arlib/details/penalty_impl.hpp>
 #include <arlib/graph_utils.hpp>
 #include <arlib/penalty.hpp>
+#include <arlib/terminators.hpp>
 #include <arlib/routing_kernels/types.hpp>
+
+#include "test_types.hpp"
+#include "cittastudi_graph.hpp"
+#include "utils.hpp"
 
 #include <experimental/filesystem>
 #include <memory>
 #include <string>
-
+#include <chrono>
 #include <string_view>
 
 using namespace arlib::test;
@@ -275,4 +277,26 @@ TEST_CASE("Penalty running with astar returns same result as "
   for (std::size_t i = 0; i < res_paths_uni.size(); ++i) {
     REQUIRE(res_paths_uni[i].length() == res_paths_bi[i].length());
   }
+}
+
+TEST_CASE("Penalty times-out on large graph", "[penalty]") {
+  using namespace boost;
+  using namespace std::chrono_literals;
+
+  auto G = arlib::read_graph_from_string<Graph>(std::string(cittastudi_gr));
+
+  Vertex s = 0, t = 20;
+  auto k = 3;
+  auto theta = 0.5;
+  auto p = 0.1;
+  auto r = 0.1;
+  auto max_nb_updates = 10;
+  auto max_nb_steps = 10000;
+  auto predecessors = arlib::multi_predecessor_map<Vertex>{};
+
+  REQUIRE_THROWS_AS(arlib::penalty(G, predecessors, s, t, k, theta, p, r,
+                                   max_nb_updates, max_nb_steps,
+                                   arlib::routing_kernels::astar,
+                                   arlib::timer{1us}),
+                    arlib::terminator_stop_error);
 }

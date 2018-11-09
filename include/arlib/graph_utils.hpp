@@ -53,10 +53,19 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+#include <boost/graph/compressed_sparse_row_graph.hpp>
+
 /**
  * An Alternative-Routing library for Boost.Graph
  */
 namespace arlib {
+using CSRGraph = boost::compressed_sparse_row_graph<
+    boost::bidirectionalS, boost::no_property,
+    boost::property<boost::edge_weight_t, int>>;
+
+CSRGraph read_csr_graph_from_string(const std::string &graph);
+std::optional<CSRGraph> read_csr_graph_from_file(const std::string_view path);
+
 /**
  * Constructs a PropertyGraph from vertices, edges and weights contained in a
  * .gr-format string. An example of .gr-format string is the following:
@@ -108,22 +117,6 @@ PropertyGraph read_graph_from_string(const std::string &graph) {
   return G;
 }
 
-/**
- * Constructs a PropertyGraph from vertices, edges and weights contained in a
- * file in .gr format. An example of .gr-format file is the following:
- * ```
- * d
- * # nb_vertices nb_edges
- * 3 2
- * # v1 v2 weight
- * 0 1 4
- * 1 2 3
- * ```
- *
- * @tparam PropertyGraph The Graph type
- * @param path A .gr-format file path defining the graph.
- * @return the constructed graph.
- */
 template <typename PropertyGraph>
 std::optional<PropertyGraph> read_graph_from_file(const std::string_view path) {
   namespace fs = std::filesystem;

@@ -12,6 +12,7 @@ set(ARLIB_HEADERS
         include/arlib/path.hpp
         include/arlib/penalty.hpp
         include/arlib/reorder_buffer.hpp
+        include/arlib/terminators.hpp
         include/arlib/type_traits.hpp
         include/arlib/uninformed_bidirectional_pruning.hpp
     PARENT_SCOPE)

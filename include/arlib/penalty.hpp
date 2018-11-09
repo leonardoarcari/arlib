@@ -35,10 +35,10 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <arlib/details/penalty_impl.hpp>
-#include <arlib/graph_types.hpp>
-#include <arlib/graph_utils.hpp>
+#include <arlib/terminators.hpp>
 #include <arlib/type_traits.hpp>
+
+#include <arlib/details/penalty_impl.hpp>
 
 #include <queue>
 #include <unordered_map>
@@ -99,24 +99,28 @@ namespace arlib {
  *
  */
 template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Terminator = arlib::always_continue,
           typename Vertex = vertex_of_t<Graph>>
 void penalty(const Graph &G, WeightMap const &original_weight,
              MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
              double theta, double p, double r, int max_nb_updates,
              int max_nb_steps,
-             routing_kernels algorithm = routing_kernels::dijkstra) {
+             routing_kernels algorithm = routing_kernels::dijkstra,
+             Terminator &&terminator = Terminator{}) {
   using Length = length_of_t<Graph>;
   if (algorithm == routing_kernels::astar) {
     auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
     auto routing_kernel = details::build_shortest_path_fn(
         algorithm, G, original_weight, heuristic);
     details::penalty(G, original_weight, predecessors, s, t, k, theta, p, r,
-                     max_nb_updates, max_nb_steps, routing_kernel);
+                     max_nb_updates, max_nb_steps, routing_kernel,
+                     std::forward<Terminator>(terminator));
   } else {
     auto routing_kernel =
         details::build_shortest_path_fn(algorithm, G, original_weight);
     details::penalty(G, original_weight, predecessors, s, t, k, theta, p, r,
-                     max_nb_updates, max_nb_steps, routing_kernel);
+                     max_nb_updates, max_nb_steps, routing_kernel,
+                     std::forward<Terminator>(terminator));
   }
 }
 
@@ -138,11 +142,13 @@ void penalty(const Graph &G, WeightMap const &original_weight,
  *         property with tag boost::edge_weight_t.
  */
 template <typename PropertyGraph, typename MultiPredecessorMap,
+          typename Terminator = arlib::always_continue,
           typename Vertex = vertex_of_t<PropertyGraph>>
 void penalty(const PropertyGraph &G, MultiPredecessorMap &predecessors,
              Vertex s, Vertex t, int k, double theta, double p, double r,
              int max_nb_updates, int max_nb_steps,
-             routing_kernels algorithm = routing_kernels::dijkstra) {
+             routing_kernels algorithm = routing_kernels::dijkstra,
+             Terminator &&terminator = Terminator{}) {
   using namespace boost;
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
 
@@ -151,7 +157,7 @@ void penalty(const PropertyGraph &G, MultiPredecessorMap &predecessors,
 
   auto weight = get(edge_weight, G);
   penalty(G, weight, predecessors, s, t, k, theta, p, r, max_nb_updates,
-          max_nb_steps, algorithm);
+          max_nb_steps, algorithm, std::forward<Terminator>(terminator));
 }
 } // namespace arlib
 
