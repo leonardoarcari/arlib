@@ -40,7 +40,8 @@ public:
   template <typename Graph, typename ForwardIt>
   static void by_relative_similarity(Graph const &G, ForwardIt first,
                                      ForwardIt last, long k, double theta) {
-    auto weight = boost::get(boost::edge_weight, G);
+    using namespace boost;
+    auto weight = get(boost::edge_weight, G);
     auto count = 0;
     auto cur = first;
     while (count < k && cur != last) {

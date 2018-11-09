@@ -4,12 +4,12 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+#include <arlib/graph_types.hpp>
+#include <arlib/onepass_plus.hpp>
+
 #include "test_types.hpp"
 #include "utils.hpp"
-
-#include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
-#include <arlib/onepass_plus.hpp>
 
 #include <algorithm>
 #include <experimental/filesystem>
@@ -180,4 +180,39 @@ TEST_CASE("Building an AG from k alternative paths doesn't lose info",
 
   // Check if all the edges are there with the right weights
   require_correct_weights(test_edges, test_weights, ag);
+}
+
+TEST_CASE("CSR Graph can be built from .gr strings", "[graph_utils]") {
+  auto G = arlib::read_csr_graph_from_string(std::string{graph_gr});
+
+  SECTION("Reading gr string builds a graph with same vertices") {
+    using namespace boost;
+    using CSRVertex = graph_traits<arlib::CSRGraph>::vertex_descriptor;
+
+    auto Vs = std::vector<CSRVertex>{vertices(G).first, vertices(G).second};
+
+    Vertex s = 0, t = 6;
+    auto predecessors = arlib::multi_predecessor_map<Vertex>{};
+    arlib::onepass_plus(G, predecessors, s, t, 3, 0.5);
+    auto res_paths = arlib::to_paths(G, predecessors, s, t);
+
+    // Only 7 vertices are in the graph structure
+    REQUIRE(num_vertices(G) == 7);
+
+    // All the vertices are in graph structure
+    require_vertices_in_graph(std::begin(Vs), std::end(Vs));
+  }
+
+  SECTION("Reading gr string builds a graph with edges with correct weights",
+          "[graph_utils]") {
+    using namespace boost;
+    using arlib::VPair;
+
+    auto test_edges = build_test_edges<VPair>();
+    auto test_weights = build_test_weights();
+
+    REQUIRE(num_edges(G) == test_edges.size() * 2);
+
+    require_correct_weights(test_edges, test_weights, G);
+  }
 }

@@ -38,10 +38,11 @@
 #include <boost/graph/properties.hpp>
 
 #include <arlib/details/arlib_utils.hpp>
-#include <arlib/details/ubp_impl.hpp>
 #include <arlib/routing_kernels/bidirectional_dijkstra.hpp>
 #include <arlib/routing_kernels/visitor.hpp>
 #include <arlib/type_traits.hpp>
+
+#include <arlib/details/ubp_impl.hpp>
 
 #include <limits>
 #include <unordered_set>
