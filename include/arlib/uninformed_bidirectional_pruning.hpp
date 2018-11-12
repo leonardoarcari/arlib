@@ -52,6 +52,9 @@
  * An Alternative-Routing library for Boost.Graph
  */
 namespace arlib {
+template <typename Graph>
+using PrunedGraph =
+    boost::filtered_graph<Graph, details::pruned_edges<edge_of_t<Graph>>>;
 /**
  * An implementation of Uninformed Bidirectional Pruning for Boost::Graph.
  *
@@ -85,10 +88,11 @@ namespace arlib {
  */
 template <typename Graph, typename WeightMap, typename RevWeightMap,
           typename Vertex = vertex_of_t<Graph>>
-Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
-                                      boost::reverse_graph<Graph> const &rev_G,
-                                      RevWeightMap const &weight_b, Vertex s,
-                                      Vertex t, double tau) {
+PrunedGraph<Graph>
+uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
+                                boost::reverse_graph<Graph> const &rev_G,
+                                RevWeightMap const &weight_b, Vertex s,
+                                Vertex t, double tau) {
   using namespace boost;
   using Length = typename boost::property_traits<WeightMap>::value_type;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
@@ -128,7 +132,8 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
   bidirectional_dijkstra(G, s, t, predecessor_f, distance_f, weight_f, rev_G,
                          predecessor_b, distance_b, weight_b, pruning_visitor);
 
-  auto pruned_G = Graph{G};
+  // auto pruned_G = Graph{G};
+  auto prd_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
   auto sp = details::build_edge_list_from_dijkstra(G, s, t, predecessor_f);
   auto final_distance =
@@ -139,24 +144,26 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
         details::pruning_policy(s, t, *v_it, predecessor_f, predecessor_b,
                                 distance_f, distance_b, tau, final_distance);
     if (should_prune) {
-      for (auto [adj_it, adj_end] = adjacent_vertices(*v_it, pruned_G);
+      for (auto [adj_it, adj_end] = adjacent_vertices(*v_it, G);
            adj_it != adj_end; ++adj_it) {
         auto u = *adj_it;
         auto v = *v_it;
 
-        auto [uv_e, uv_exists] = edge(u, v, pruned_G);
+        auto [uv_e, uv_exists] = edge(u, v, G);
         if (uv_exists) {
-          remove_edge(u, v, pruned_G);
+          prd_edges.insert(uv_e);
         }
 
-        auto [vu_e, vu_exists] = edge(v, u, pruned_G);
+        auto [vu_e, vu_exists] = edge(v, u, G);
         if (vu_exists) {
-          remove_edge(v, u, pruned_G);
+          prd_edges.insert(vu_e);
         }
       }
     }
   }
 
+  const auto pruned_G =
+      filtered_graph(G, details::pruned_edges{std::move(prd_edges)});
   return pruned_G;
 }
 
@@ -180,8 +187,9 @@ Graph uninformed_bidirectional_pruner(const Graph &G, WeightMap const &weight_f,
  * @return A pruned copy of `G`.
  */
 template <typename PropertyGraph, typename Vertex = vertex_of_t<PropertyGraph>>
-PropertyGraph uninformed_bidirectional_pruner(const PropertyGraph &G, Vertex s,
-                                              Vertex t, double tau) {
+PrunedGraph<PropertyGraph>
+uninformed_bidirectional_pruner(const PropertyGraph &G, Vertex s, Vertex t,
+                                double tau) {
   using namespace boost;
   using Edge = typename graph_traits<PropertyGraph>::edge_descriptor;
 
