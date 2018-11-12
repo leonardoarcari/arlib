@@ -51,6 +51,7 @@ TEST_CASE("Uninformed Bidirectional Pruning with tau = 1.0 on a real world "
   double tau = 1.0;
 
   auto pruned_G = arlib::uninformed_bidirectional_pruner(G, s, t, tau);
-
-  REQUIRE(num_edges(pruned_G) < num_edges(G));
+  const auto [first, last] = edges(pruned_G);
+  const auto num_pruned_edges = std::distance(first, last);
+  REQUIRE(num_pruned_edges < num_edges(G));
 }
