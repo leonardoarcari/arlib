@@ -35,6 +35,42 @@
 
 namespace arlib {
 namespace details {
+template <typename Edge> struct pruned_edges {
+public:
+  pruned_edges() = default;
+  pruned_edges(pruned_edges const &) = default;
+  pruned_edges(pruned_edges &&) noexcept = default;
+
+  explicit pruned_edges(
+      std::unordered_set<Edge, boost::hash<Edge>> const &edges)
+      : _edges{std::make_shared<std::unordered_set<Edge, boost::hash<Edge>>>(
+            edges)} {}
+  explicit pruned_edges(std::unordered_set<Edge, boost::hash<Edge>> &&edges)
+      : _edges{std::make_shared<std::unordered_set<Edge, boost::hash<Edge>>>(
+            std::move(edges))} {}
+
+  pruned_edges &operator=(pruned_edges const &other) {
+    if (&other != this) {
+      _edges = other._edges;
+    }
+    return *this;
+  }
+
+  pruned_edges &operator=(pruned_edges &&other) noexcept {
+    if (&other != this) {
+      _edges = std::move(other._edges);
+    }
+    return *this;
+  }
+
+  bool operator()(const Edge &e) const {
+    return _edges->find(e) == _edges->end();
+  }
+
+private:
+  std::shared_ptr<std::unordered_set<Edge, boost::hash<Edge>>> _edges = {};
+};
+
 template <typename Vertex, typename FPredecessorMap, typename BPredecessorMap,
           typename FDistanceMap, typename BDistanceMap, typename Length>
 bool pruning_policy(Vertex s, Vertex t, Vertex v, FPredecessorMap predecessor_f,

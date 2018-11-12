@@ -141,7 +141,7 @@ public:
   const Length &operator()(const Edge &e) const {
     auto forward_edge = get_forward_edge(e);
 
-    return inner_weight(forward_edge);
+    return inner_weight[forward_edge];
   }
 
   Length &operator[](const Edge &e) {
@@ -303,8 +303,9 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   using namespace boost;
 
   // Get a graph with deleted edges filtered out
+  using FilteredGraph = boost::filtered_graph<Graph, edge_deleted_filter<Edge>>;
   auto filter = edge_deleted_filter{deleted_edge_map};
-  const auto filtered_G = make_filtered_graph(G, filter);
+  const auto filtered_G = filtered_graph(G, filter);
 
   auto index = get(vertex_index, filtered_G);
   auto predecessor_vec = std::vector<Vertex>(num_vertices(G), s);
@@ -313,8 +314,9 @@ bidirectional_dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
   auto distance = make_iterator_property_map(distance_vec.begin(), index);
 
   auto rev_G = make_reverse_graph(filtered_G);
-  using RevEdge = typename graph_traits<reverse_graph<Graph>>::edge_descriptor;
-  auto rev_weight = make_function_property_map<RevEdge>(
+  using RevEdge =
+      typename graph_traits<reverse_graph<FilteredGraph>>::edge_descriptor;
+  auto rev_weight = make_function_property_map<RevEdge, Length>(
       reverse_weight_functor{weight, filtered_G, rev_G});
   auto rev_index = get(vertex_index, rev_G);
 
@@ -434,7 +436,7 @@ int compute_priority(const Graph &G, const Edge &e, WeightMap &weight,
 
   // Get a graph with deleted edges filtered out
   auto filter = edge_deleted_filter{deleted_edge_map};
-  const auto filtered_G = make_filtered_graph(G, filter);
+  const auto filtered_G = filtered_graph(G, filter);
 
   for (auto s_i : sources) {
     for (auto t_i : targets) {

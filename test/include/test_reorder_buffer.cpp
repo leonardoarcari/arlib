@@ -1,8 +1,9 @@
 #include "catch.hpp"
 
-#include <arlib/graph_types.hpp>
 #include <arlib/penalty.hpp>
 #include <arlib/reorder_buffer.hpp>
+// Types always after or it does not compile.
+#include <arlib/graph_types.hpp>
 #include <arlib/graph_utils.hpp>
 
 #include "cittastudi_graph.hpp"

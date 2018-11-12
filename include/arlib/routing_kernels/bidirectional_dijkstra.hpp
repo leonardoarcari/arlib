@@ -121,8 +121,8 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
 
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<BackWeightMap, RevEdge>));
+  BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<BackWeightMap, RevEdge>));
 
   constexpr Length inf = std::numeric_limits<Length>::max();
 
@@ -240,8 +240,8 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
 
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<BackWeightMap, RevEdge>));
+  BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<BackWeightMap, RevEdge>));
 
   auto predecessor_b_vec =
       std::vector<Vertex>(vertices(G_b).first, vertices(G_b).second);
@@ -294,8 +294,8 @@ void bidirectional_dijkstra(const Graph &G, Vertex s, Vertex t,
 
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<BackGraph>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
-  BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<BackWeightMap, RevEdge>));
+  BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<WeightMap, Edge>));
+  BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<BackWeightMap, RevEdge>));
 
   auto visitor = IdentityBiDijkstraVisitor{};
   bidirectional_dijkstra(G, s, t, predecessor, distance, weight, G_b, weight_b,

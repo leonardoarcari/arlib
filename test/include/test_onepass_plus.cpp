@@ -10,18 +10,18 @@
 #include <arlib/onepass_plus.hpp>
 #include <arlib/terminators.hpp>
 
+#include "cittastudi_graph.hpp"
 #include "test_types.hpp"
 #include "utils.hpp"
-#include "cittastudi_graph.hpp"
 
 #include <kspwlo_ref/algorithms/kspwlo.hpp>
 #include <kspwlo_ref/exploration/graph_utils.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <experimental/filesystem>
 #include <fstream>
 #include <memory>
-#include <chrono>
 #include <string_view>
 
 using namespace arlib::test;
