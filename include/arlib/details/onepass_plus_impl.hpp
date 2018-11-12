@@ -42,9 +42,9 @@
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <unordered_map>
 
 namespace arlib {
 /**
@@ -277,7 +277,7 @@ private:
 
 template <typename Graph2, typename Length2>
 std::ostream &operator<<(std::ostream &os,
-                                const OnePassLabel<Graph2, Length2> &label) {
+                         const OnePassLabel<Graph2, Length2> &label) {
   os << "(node = " << label.node << ", length = " << label.length
      << ", lower_bound = " << label.lower_bound << ", k = " << label.k
      << ", checked_at_step = " << label.checked_at_step

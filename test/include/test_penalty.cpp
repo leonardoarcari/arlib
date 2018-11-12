@@ -8,17 +8,17 @@
 #include <arlib/details/penalty_impl.hpp>
 #include <arlib/graph_utils.hpp>
 #include <arlib/penalty.hpp>
-#include <arlib/terminators.hpp>
 #include <arlib/routing_kernels/types.hpp>
+#include <arlib/terminators.hpp>
 
-#include "test_types.hpp"
 #include "cittastudi_graph.hpp"
+#include "test_types.hpp"
 #include "utils.hpp"
 
+#include <chrono>
 #include <experimental/filesystem>
 #include <memory>
 #include <string>
-#include <chrono>
 #include <string_view>
 
 using namespace arlib::test;

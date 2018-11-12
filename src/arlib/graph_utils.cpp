@@ -1,6 +1,5 @@
 #include "arlib/graph_utils.hpp"
 
-
 namespace arlib {
 CSRGraph read_csr_graph_from_string(const std::string &graph) {
   auto ss = std::stringstream{graph};
