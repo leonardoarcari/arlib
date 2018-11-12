@@ -117,9 +117,9 @@ public:
     return *this;
   }
 
-  template <typename MultiPredecessorMap, typename Key>
-  friend typename MultiPredecessorMap::reference get(MultiPredecessorMap &pmap,
-                                                     Key const &k);
+  template <typename Vertex2, typename Key>
+  friend typename multi_predecessor_map<Vertex2>::reference
+  get(multi_predecessor_map<Vertex2> &pmap, Key const &k);
 
 private:
   std::shared_ptr<std::unordered_map<Vertex, UnorderedAssociativeContainer,
@@ -148,9 +148,9 @@ private:
  * @param k The key.
  * @return A reference to the value associated with `k`.
  */
-template <typename MultiPredecessorMap, typename Key>
-typename MultiPredecessorMap::reference get(MultiPredecessorMap &pmap,
-                                            Key const &k) {
+template <typename Vertex2, typename Key>
+typename multi_predecessor_map<Vertex2>::reference
+get(multi_predecessor_map<Vertex2> &pmap, Key const &k) {
   return (*pmap._pmap)[k];
 }
 } // namespace arlib
