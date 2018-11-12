@@ -43,16 +43,16 @@
 #include <unordered_set>
 #include <vector>
 
-#include <arlib/graph_types.hpp>
-#include <arlib/multi_predecessor_map.hpp>
-#include <arlib/path.hpp>
-#include <arlib/type_traits.hpp>
-
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+#include <arlib/graph_types.hpp>
+#include <arlib/path.hpp>
+#include <arlib/type_traits.hpp>
+
+#include <arlib/multi_predecessor_map.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 
 /**
@@ -237,7 +237,8 @@ Graph build_AG(const std::vector<Path<Graph>> &paths, const Graph &g) {
     }
   }
 
-  return Graph{std::begin(es), std::end(es), std::begin(weights), nodes.size()};
+  return Graph{std::begin(es), std::end(es), std::begin(weights),
+               num_vertices(g)};
 }
 
 /**
