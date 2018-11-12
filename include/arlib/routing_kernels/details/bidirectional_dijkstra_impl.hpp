@@ -234,8 +234,9 @@ BiDijkStepRes bi_dijkstra_step(
 
   // Compute neighbor distances
   for (auto [it, end] = out_edges(v, G); it != end; ++it) {
+    using boost::get;
     auto w = target(*it, G);
-    auto min_weight = weight[*it];
+    auto min_weight = get(weight, *it);
     auto vw_length = distance[v] + min_weight;
 
     if (distance[w] != inf) {
