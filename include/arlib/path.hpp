@@ -200,7 +200,7 @@ public:
   target(typename Path<G>::edge_descriptor e, Path<G> const &g);
 
   template <typename G>
-  typename Path<G>::degree_size_type
+  friend typename Path<G>::degree_size_type
   out_degree(typename Path<G>::vertex_descriptor v, Path<G> const &g);
 
   //===-------------------------------------------------------------------===//
