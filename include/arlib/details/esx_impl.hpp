@@ -652,9 +652,6 @@ void esx(const Graph &G, WeightMap const &weight,
   // We keep a set of deleted-edges
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
-  // Compute lower bounds for AStar
-  auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
-
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
   init_edge_priorities(sp, edge_priorities, 0, G, weight, deleted_edges);
 
