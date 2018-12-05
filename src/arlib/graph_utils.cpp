@@ -15,10 +15,12 @@ CSRGraph read_csr_graph_from_string(const std::string &graph) {
   line_s >> nb_nodes >> nb_edges;
 
   // Get edges and weights
-  auto edges = std::vector<std::pair<int, int>>{};
-  auto weights = std::vector<int>{};
+  using Length = typename arlib::length_of_t<CSRGraph>;
+  auto edges = std::vector<std::pair<long unsigned, long unsigned>>{};
+  auto weights = std::vector<Length>{};
 
-  int s, t, w;
+  long unsigned s, t;
+  Length w;
   while (std::getline(ss, line)) {
     line_s.str(line);
     line_s.seekg(std::ios_base::beg);
