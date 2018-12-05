@@ -130,11 +130,15 @@ void onepass_plus(const Graph &G, WeightMap weight,
   auto lower_bounds = details::distance_from_target<Length>(G, t);
 
   // Compute shortest path from s to t
-  auto [sp_path, sp_len] = details::compute_shortest_path(G, weight, s, t);
+  auto sp_path = details::compute_shortest_path(G, weight, s, t);
+  if (!sp_path) {
+    auto oss = std::ostringstream{};
+    oss << "Vertex " << t << " is unreachable from " << s;
+    throw details::target_not_found{oss.str()};
+  }
 
   // P_LO <-- {shortest path p_0(s, t)};
-  resPathsEdges.push_back(sp_path);
-  // resPathsLengths.push_back(sp_len);
+  resPathsEdges.push_back(*sp_path);
   resPathIndex paths_count = 1;
 
   // If we need the shortest path only
@@ -147,7 +151,7 @@ void onepass_plus(const Graph &G, WeightMap weight,
   // For each edge in the candidate path, we check if it's already in any of the
   // resPaths. If not, we add it to resEdges. If yes, we keep track of which
   // path includes it.
-  details::update_res_edges(sp_path, resEdges, paths_count);
+  details::update_res_edges(*sp_path, resEdges, paths_count);
 
   // Initialize min-priority queue Q with <s, empty_set>
   auto init_label =

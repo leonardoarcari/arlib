@@ -338,7 +338,7 @@ template <typename Graph, typename EdgeWeightMap,
           typename Vertex = vertex_of_t<Graph>,
           typename Edge = edge_of_t<Graph>,
           typename Length = value_of_t<EdgeWeightMap>>
-std::pair<std::vector<Edge>, Length>
+std::optional<std::vector<Edge>>
 compute_shortest_path(const Graph &G, EdgeWeightMap const &weight, Vertex s,
                       Vertex t) {
   using namespace boost;
@@ -357,13 +357,11 @@ compute_shortest_path(const Graph &G, EdgeWeightMap const &weight, Vertex s,
   } catch (target_found &tf) {
     auto path = build_edge_list_from_dijkstra(G, s, t, predecessor);
     auto len = compute_length_from_edges(path.begin(), path.end(), weight);
-    return {path, len};
+    return {path};
   }
 
   // If target was not found, t is unreachable from s
-  auto oss = std::ostringstream{};
-  oss << "Vertex " << t << " is unreachable from " << s;
-  throw target_not_found{oss.str()};
+  return {};
 }
 
 template <typename ForwardIt, typename Graph, typename MultiPredecessorMap>

@@ -584,7 +584,11 @@ void penalty(const Graph &G, WeightMap const &original_weight,
   auto distance_s = std::vector<Length>(num_vertices(G));
   auto distance_t = std::vector<Length>(num_vertices(G));
   auto sp = dijkstra_shortest_path_two_ways(G, s, t, distance_s, distance_t);
-  assert(sp);
+  if (!sp) {
+    auto oss = std::ostringstream{};
+    oss << "Vertex " << t << " is unreachable from " << s;
+    throw details::target_not_found{oss.str()};
+  }
 
   // P_LO <-- {shortest path p_0(s, t)};
   resPathsEdges.push_back(*sp);

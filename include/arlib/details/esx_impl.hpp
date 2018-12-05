@@ -611,7 +611,6 @@ void esx(const Graph &G, WeightMap const &weight,
          double theta, RoutingKernel &routing_kernel, Terminator &&terminator) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
-  using Length = typename boost::property_traits<WeightMap>::value_type;
 
   BOOST_CONCEPT_ASSERT((VertexAndEdgeListGraphConcept<Graph>));
   BOOST_CONCEPT_ASSERT((LvaluePropertyMapConcept<WeightMap, Edge>));
@@ -626,11 +625,16 @@ void esx(const Graph &G, WeightMap const &weight,
   // P_LO set of k paths
   auto resPaths = std::vector<Path<Graph>>{};
   // Compute shortest path from s to t
-  auto [sp, sp_len] = compute_shortest_path(G, weight, s, t);
+  auto sp = details::compute_shortest_path(G, weight, s, t);
+  if (!sp) {
+    auto oss = std::ostringstream{};
+    oss << "Vertex " << t << " is unreachable from " << s;
+    throw details::target_not_found{oss.str()};
+  }
 
   // P_LO <-- {shortest path p_0(s, t)};
-  resPathsEdges.push_back(sp);
-  resEdges.emplace_back(sp.begin(), sp.end());
+  resPathsEdges.push_back(*sp);
+  resEdges.emplace_back(sp->begin(), sp->end());
 
   // If we need the shortest path only
   if (k == 1) {
@@ -652,8 +656,11 @@ void esx(const Graph &G, WeightMap const &weight,
   // We keep a set of deleted-edges
   auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
 
+  // Compute lower bounds for AStar
+  // auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
+
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
-  init_edge_priorities(sp, edge_priorities, 0, G, weight, deleted_edges);
+  init_edge_priorities(*sp, edge_priorities, 0, G, weight, deleted_edges);
 
   auto overlaps = std::vector<double>(k, 0.0);
   overlaps[0] = 1.0; // Set p_c overlap with sp (itself) to 1
