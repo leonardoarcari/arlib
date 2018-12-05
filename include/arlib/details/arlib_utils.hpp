@@ -356,7 +356,6 @@ compute_shortest_path(const Graph &G, EdgeWeightMap const &weight, Vertex s,
                 make_target_visitor(t, on_examine_vertex{}))));
   } catch (target_found &tf) {
     auto path = build_edge_list_from_dijkstra(G, s, t, predecessor);
-    auto len = compute_length_from_edges(path.begin(), path.end(), weight);
     return {path};
   }
 
