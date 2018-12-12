@@ -1,5 +1,7 @@
 #include "catch.hpp"
 
+#include <boost/graph/betweenness_centrality.hpp>
+#include <boost/graph/exterior_property.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
@@ -44,8 +46,7 @@ TEST_CASE("Edge priority computation", "[esx]") {
 
   // Compute shortest path from s to t
   auto weight_map = get(edge_weight, G);
-  auto [sp_path, sp_len] =
-      arlib::details::compute_shortest_path(G, weight_map, s, t);
+  auto sp_path = *arlib::details::compute_shortest_path(G, weight_map, s, t);
 
   // Compute lower bounds for AStar
   auto heuristic = arlib::details::distance_heuristic<Graph, Length>(G, t);
@@ -198,4 +199,46 @@ TEST_CASE("ESX times-out on large graph", "[esx]") {
                                arlib::routing_kernels::astar,
                                arlib::timer{1us}),
                     arlib::terminator_stop_error);
+}
+
+TEST_CASE(
+    "ESX with Betweeness-Centrality is functionally equivalent to original one",
+    "[esx]") {
+  using namespace boost;
+
+  auto G = arlib::read_csr_graph_from_string(std::string(graph_gr_esx));
+
+  Vertex s = 0, t = 6;
+  int k = 3;
+  double theta = 0.5;
+
+  using EdgeCentralityProperty =
+      exterior_edge_property<arlib::CSRGraph, double>;
+  using EdgeCentralityContainer =
+      typename EdgeCentralityProperty::container_type;
+  using EdgeCentralityMap = typename EdgeCentralityProperty::map_type;
+
+  // Compute Edge betweeness-centrality
+  auto edge2centrality = EdgeCentralityContainer(num_edges(G));
+  auto edge_centrality_map = EdgeCentralityMap(edge2centrality, G);
+  boost::brandes_betweenness_centrality(
+      G, boost::edge_centrality_map(edge_centrality_map));
+
+  // ARP with Betweeness-Centrality
+  auto predecessors_bc = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors_bc, edge_centrality_map, s, t, k, theta);
+  auto res_paths_bc = arlib::to_paths(G, predecessors_bc, s, t);
+
+  // ARP for vanilla ESX
+  auto predecessors_bi = arlib::multi_predecessor_map<Vertex>{};
+  arlib::esx(G, predecessors_bi, s, t, k, theta,
+             arlib::routing_kernels::dijkstra);
+  auto res_paths_bi = arlib::to_paths(G, predecessors_bi, s, t);
+
+  // Require solutions to match
+  REQUIRE(res_paths_bc.size() == res_paths_bi.size());
+
+  for (std::size_t i = 0; i < res_paths_bc.size(); ++i) {
+    REQUIRE(res_paths_bc[i].length() == res_paths_bi[i].length());
+  }
 }

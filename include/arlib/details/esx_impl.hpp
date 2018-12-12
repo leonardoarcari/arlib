@@ -604,11 +604,12 @@ void move_to_dnr(Edge e,
 //                             ESX implementation
 //===----------------------------------------------------------------------===//
 template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
-          typename RoutingKernel, typename Terminator,
+          typename PriorityFunc, typename RoutingKernel, typename Terminator,
           typename Vertex = vertex_of_t<Graph>>
 void esx(const Graph &G, WeightMap const &weight,
          MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
-         double theta, RoutingKernel &routing_kernel, Terminator &&terminator) {
+         double theta, PriorityFunc &&priority_fn,
+         RoutingKernel &routing_kernel, Terminator &&terminator) {
   using namespace boost;
   using Edge = typename graph_traits<Graph>::edge_descriptor;
 
@@ -660,7 +661,7 @@ void esx(const Graph &G, WeightMap const &weight,
   // auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
 
   // Initialize max-heap H_0 with the priority of each edge of the shortest path
-  init_edge_priorities(*sp, edge_priorities, 0, G, weight, deleted_edges);
+  priority_fn(*sp, edge_priorities, 0, G, weight, deleted_edges);
 
   auto overlaps = std::vector<double>(k, 0.0);
   overlaps[0] = 1.0; // Set p_c overlap with sp (itself) to 1
@@ -742,8 +743,7 @@ void esx(const Graph &G, WeightMap const &weight,
 
         // Initialize max-heap H_i with the priority of each edge of new
         // alternative path
-        init_edge_priorities(*p_tmp, edge_priorities, p_c_idx, G, weight,
-                             deleted_edges);
+        priority_fn(*p_tmp, edge_priorities, p_c_idx, G, weight, deleted_edges);
         break; // From inner while loop
       }
     }
@@ -752,6 +752,71 @@ void esx(const Graph &G, WeightMap const &weight,
   // Beforer returning, populate predecessors map
   fill_multi_predecessor(resPathsEdges.begin(), resPathsEdges.end(), G,
                          predecessors);
+}
+
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename PriorityFunc, typename Terminator,
+          typename Vertex = vertex_of_t<Graph>>
+void esx_dispatch2(const Graph &G, WeightMap const &weight,
+                   MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
+                   double theta, PriorityFunc &&priority_fn,
+                   routing_kernels algorithm, Terminator &&terminator) {
+  using Edge = edge_of_t<Graph>;
+  using Length = length_of_t<Graph>;
+
+  auto deleted_edges = std::unordered_set<Edge, boost::hash<Edge>>{};
+  if (algorithm == routing_kernels::astar) {
+    auto heuristic = details::distance_heuristic<Graph, Length>(G, t);
+    auto routing_kernel = details::build_shortest_path_fn(
+        algorithm, G, s, t, weight, heuristic, deleted_edges);
+    esx(G, weight, predecessors, s, t, k, theta,
+        std::forward<PriorityFunc>(priority_fn), routing_kernel,
+        std::forward<Terminator>(terminator));
+  } else {
+    auto routing_kernel = details::build_shortest_path_fn(
+        algorithm, G, s, t, weight, deleted_edges);
+    esx(G, weight, predecessors, s, t, k, theta,
+        std::forward<PriorityFunc>(priority_fn), routing_kernel,
+        std::forward<Terminator>(terminator));
+  }
+}
+
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename Terminator, typename Vertex = vertex_of_t<Graph>>
+void esx_dispatch(const Graph &G, WeightMap const &weight,
+                  MultiPredecessorMap &predecessors, Vertex s, Vertex t, int k,
+                  double theta, routing_kernels algorithm,
+                  Terminator &&terminator) {
+  auto priority_fn = [](auto const &alternative, auto &edge_priorities,
+                        auto alt_index, auto const &G, auto const &weight,
+                        auto const &deleted_edges) {
+    init_edge_priorities(alternative, edge_priorities, alt_index, G, weight,
+                         deleted_edges);
+  };
+  esx_dispatch2(G, weight, predecessors, s, t, k, theta, std::move(priority_fn),
+                algorithm, std::forward<Terminator>(terminator));
+}
+
+template <typename Graph, typename WeightMap, typename MultiPredecessorMap,
+          typename EdgeCentralityMap, typename Terminator,
+          typename Vertex = vertex_of_t<Graph>>
+void esx_dispatch(const Graph &G, WeightMap const &weight,
+                  MultiPredecessorMap &predecessors,
+                  EdgeCentralityMap const &edge_centrality, Vertex s, Vertex t,
+                  int k, double theta, routing_kernels algorithm,
+                  Terminator &&terminator) {
+  auto priority_fn = [&edge_centrality](auto const &alternative,
+                                        auto &edge_priorities, auto alt_index,
+                                        auto const &, auto const &,
+                                        auto const &) {
+    for (const auto &e : alternative) {
+      auto prio_e_i = get(edge_centrality, e);
+      edge_priorities[alt_index].push(std::make_pair(e, prio_e_i));
+    }
+  };
+
+  esx_dispatch2(G, weight, predecessors, s, t, k, theta, std::move(priority_fn),
+                algorithm, std::forward<Terminator>(terminator));
 }
 } // namespace details
 } // namespace arlib
