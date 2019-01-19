@@ -35,7 +35,11 @@
 
 #include <arlib/path.hpp>
 #include <arlib/type_traits.hpp>
+<<<<<<< HEAD
 
+=======
+#include <boost/graph/adjacency_list.hpp>
+>>>>>>> 1b28b4d5382de3135408921948e7e20f77952a03
 
 #include <exception>
 #include <vector>

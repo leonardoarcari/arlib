@@ -140,6 +140,7 @@ TEST_CASE("onepass_plus kspwlo algorithm runs on Boost::Graph",
     REQUIRE(one_regression_path_have_edges(res_regression, p));
   }
 
+<<<<<<< HEAD
   using boost::edge_weight;
   using boost::get;
   REQUIRE(alternative_paths_are_dissimilar(res, get(edge_weight, G), 0.5));
@@ -159,4 +160,10 @@ TEST_CASE("OnePass+ times-out on large graph", "[onepassplus]") {
   REQUIRE_THROWS_AS(
       arlib::onepass_plus(G, predecessors, s, t, k, theta, arlib::timer{1us}),
       arlib::terminator_stop_error);
+=======
+  using boost::get;
+  using boost::edge_weight;
+  REQUIRE(
+      alternative_paths_are_dissimilar(res, get(edge_weight, G), 0.5));
+>>>>>>> 1b28b4d5382de3135408921948e7e20f77952a03
 }
