@@ -72,21 +72,12 @@ bool alternative_paths_are_dissimilar(
 
   // For each path_i, check its similarity with all the other paths.
   for (std::size_t i = 0; i < alt_paths.size(); ++i) {
-<<<<<<< HEAD
     auto const &path_i = alt_paths[i];
     auto const &edges_i = edge_lists[i];
     for (std::size_t j = 0; j < i; ++j) {
       auto const &path_j = alt_paths[j];
       auto shared_len = 0.0;
       for (auto const &e : edges_i) {
-=======
-    auto const& path_i = alt_paths[i];
-    auto const& edges_i = edge_lists[i];
-    for (std::size_t j = 0; j < i; ++j) {
-      auto const &path_j = alt_paths[j];
-      auto shared_len = 0.0;
-      for (auto const& e : edges_i) {
->>>>>>> 1b28b4d5382de3135408921948e7e20f77952a03
         auto u = arlib::source(e, path_i);
         auto v = arlib::target(e, path_i);
         auto ok = arlib::edge(u, v, path_j).second;

@@ -34,21 +34,12 @@
 #include "graph_types.hpp"
 #include "arlib_utils.hpp"
 
-<<<<<<< HEAD
 #include <boost/graph/graph_traits.hpp>
 #include <arlib/multi_predecessor_map.hpp>
 #include <arlib/onepass_plus.hpp>
 #include <arlib/type_traits.hpp>
 
 #include <arlib/graph_utils.hpp>
-=======
-#include <arlib/graph_utils.hpp>
-#include <arlib/multi_predecessor_map.hpp>
-#include <arlib/onepass_plus.hpp>
-#include <arlib/type_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
->>>>>>> 1b28b4d5382de3135408921948e7e20f77952a03
 
 #include <filesystem>
 #include <exception>

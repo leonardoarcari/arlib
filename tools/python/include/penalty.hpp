@@ -34,22 +34,13 @@
 #include "arlib_utils.hpp"
 #include "graph_types.hpp"
 
-<<<<<<< HEAD
 #include <boost/graph/graph_traits.hpp>
-=======
-#include <arlib/graph_utils.hpp>
->>>>>>> 1b28b4d5382de3135408921948e7e20f77952a03
 #include <arlib/multi_predecessor_map.hpp>
 #include <arlib/penalty.hpp>
 #include <arlib/routing_kernels/types.hpp>
 #include <arlib/type_traits.hpp>
-<<<<<<< HEAD
 
 #include <arlib/graph_utils.hpp>
-=======
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
->>>>>>> 1b28b4d5382de3135408921948e7e20f77952a03
 
 #include <exception>
 #include <filesystem>
