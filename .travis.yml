@@ -19,7 +19,6 @@ addons:
     packages:
       - g++-8
       - boost1.68
-      # - doxygen
       - graphviz
 
 before_install:
