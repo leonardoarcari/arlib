@@ -19,13 +19,13 @@ addons:
     packages:
       - g++-8
       - boost1.68
-      - doxygen
+      # - doxygen
       - graphviz
 
 before_install:
   - chmod +x ${TRAVIS_BUILD_DIR}/script/install_travis_dependencies.sh
   - ${TRAVIS_BUILD_DIR}/script/install_travis_dependencies.sh
-  # - export PATH=${HOME}/opt/bin:$PATH
+  - export PATH=${HOME}/opt/bin:$PATH
 
 script:
   - mkdir -p ${TRAVIS_BUILD_DIR}/build
