@@ -1,11 +1,11 @@
 language: cpp
-dist: trusty
-sudo: false
+dist: xenial
 os: linux
 
 branches:
   only:
     - master
+    - fix-travis
 
 cache:
   directories:
@@ -18,13 +18,14 @@ addons:
       - sourceline: 'ppa:mhier/libboost-latest'
     packages:
       - g++-8
-      - boost1.67
+      - boost1.68
+      - doxygen
       - graphviz
 
 before_install:
   - chmod +x ${TRAVIS_BUILD_DIR}/script/install_travis_dependencies.sh
   - ${TRAVIS_BUILD_DIR}/script/install_travis_dependencies.sh
-  - export PATH=${HOME}/opt/bin:$PATH
+  # - export PATH=${HOME}/opt/bin:$PATH
 
 script:
   - mkdir -p ${TRAVIS_BUILD_DIR}/build
