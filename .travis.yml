@@ -5,7 +5,6 @@ os: linux
 branches:
   only:
     - master
-    - fix-travis
 
 cache:
   directories:
