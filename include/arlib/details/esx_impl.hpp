@@ -111,7 +111,7 @@ public:
    * @param deleted_edge_map The set of deleted edges.
    */
   edge_deleted_filter(const DeletedEdgeMap &deleted_edge_map)
-      : deleted_edge_map{std::addressof(deleted_edge_map)} {};
+      : deleted_edge_map{std::addressof(deleted_edge_map)} {}
   /**
    * @param e Edge to check.
    * @return true if @p e is marked as deleted
@@ -235,7 +235,7 @@ dijkstra_shortest_path(const Graph &G, Vertex s, Vertex t,
                                                         vertex_id, s))
             .visitor(make_dijkstra_visitor(
                 make_target_visitor(t, on_examine_vertex{}))));
-  } catch (target_found tf) {
+  } catch (target_found &) {
     auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
     return std::make_optional(edge_list);
   }
@@ -283,7 +283,7 @@ astar_shortest_path(const Graph &G, Vertex s, Vertex t, const WeightMap &weight,
                                      std::begin(predecessor), vertex_id, s))
                      .visitor(astar_target_visitor{t})
                      .weight_map(weight));
-  } catch (target_found &tf) {
+  } catch (target_found &) {
     auto edge_list = build_edge_list_from_dijkstra(G, s, t, predecessor);
     return std::make_optional(edge_list);
   }
@@ -594,9 +594,13 @@ template <typename Edge>
 void move_to_dnr(Edge e,
                  std::unordered_set<Edge, boost::hash<Edge>> &deleted_edges,
                  std::unordered_set<Edge, boost::hash<Edge>> &dnr_edges) {
+#ifndef NDEBUG
   auto old_size = deleted_edges.size();
+#endif
   deleted_edges.erase(e); // Reinsert e_tmp into G
+#ifndef NDEBUG
   assert(deleted_edges.size() + 1 == old_size);
+#endif
   dnr_edges.insert(e); // Mark e_tmp as do_not_remove
 }
 
