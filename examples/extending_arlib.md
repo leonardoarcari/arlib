@@ -253,4 +253,64 @@ for (auto const& e : ith_path) {
 
 #### Adding Terminator support for early stopping
 
+One of the major limitations of alternative routing heuristics is the execution time, which can easily explode when the number of alternative paths *k* is too high and the similarity threshold *theta* is too low.
+
+For this reason, it can be very handy to have the execution terminated sooner if the execution time passes some given timeout. In ARLib, this behavior is implemented by means of visitor objects, called **Terminators**. A Terminator object exposes the following interface
+
+```cpp
+struct terminator {
+  bool should_stop() const;
+};
+```
+
+and the Alternative Route Planning algorithm should call ```should_stop()``` method periodically and terminate the algorithm execution if the call returns ```true```.
+
+In ARLib, a ```timer``` Terminator is implemented to terminate the algorithm execution time after a given amount of time and it's available in ```include/arlib/terminators.hpp```.
+
+In order to add the support of a Terminator to your algorithm, it's enough to add the following to the function definition:
+
+```cpp
+/// k_shortest_paths.hpp
+
+#ifndef ARLIB_K_SHORTEST_PATHS_HPP
+#define ARLIB_K_SHORTEST_PATHS_HPP
+
+#include "arlib/terminators.hpp"
+#include "arlib/details/k_shortest_paths_impl.hpp"
+
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/graph_traits.hpp>
+
+namespace arlib {
+template <typename Graph, typename EdgeWeightMap,
+          typename MultiPredecessorMap, typename Vertex,
+          // Add Terminator template parameter defaulted to 
+          // 'arlib::always_continue'. This way, if no
+          // Terminator is passed, the algorithm continues
+          // until completion. 
+          typename Terminator = arlib::always_continue>
+void k_shortest_paths(Graph const& G, EdgeWeightMap weight, 
+                      MultiPredecessorMap &predecessors,
+                      Vertex s, Vertex t,
+                      int k, double theta,
+                      // Default argument, in case no Terminator
+                      // is passed.
+                      Terminator &&terminator = Terminator{}) {
+  /* ... */
+  
+  // Implementation main loop
+  while ( /* condition */ ) {
+    if (terminator.should_stop())
+      return;
+  }
+  
+  /* ... */
+}
+}
+
+#endif
+```
+
+In the above example, the terminating condition check has been introduced at the very beginning of the main loop of the algorithm. This is done assuming that Alternative Route Planning algorithms are designed in terms of iterative operations on the graph to build alternative paths one after the other. Therefore, that looks like a sweet spot to check if the execution should terminate, especially considering a ```timer``` Terminator which should force the heuristic to end as soon as the time has expired.
+
 ----------------------------
