@@ -1,10 +1,10 @@
-# ARLib - Alternative-Routing Library for Boost.Graph
+# ARLib - Alternative Routing Library for Boost.Graph
 | Branch | Travis CI |
 | ------ | --------- |
 | master | [![Build Status](https://travis-ci.com/leonardoarcari/arlib.svg?branch=master)](https://travis-ci.com/leonardoarcari/arlib)
 
 **ARLib** is a generic library for [Boost.Graph][boost-graph] providing several
-**Alternative-Routing** algorithms. Alternative routing, also known in the
+**Alternative Routing** algorithms. Alternative routing, also known in the
 literature as *alternative route planning* or *k-shortest paths with limited
 overlapping*, is the problem of finding a number of *good s-t* paths in a graph.
 While the problem of finding *the* shortest path between a pair of nodes has
@@ -40,6 +40,7 @@ If you want to use this library, please check the following resources
  - [Include ARLib in your CMake project](examples/include_in_cmake_project.md)
  - [Tutorial](examples/getting_started.md)
  - [Documentation]
+ - [Extending ARLib](examples/extending_arlib.md)
 
 ### Motivation
 
