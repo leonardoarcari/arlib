@@ -4,6 +4,7 @@ add_subdirectory(routing_kernels)
 set(ARLIB_HEADERS
         ${DETAILS_HEADERS}
         ${ROUTING_KERNELS_HEADERS}
+        include/arlib/arlib.hpp
         include/arlib/esx.hpp
         include/arlib/graph_types.hpp
         include/arlib/graph_utils.hpp
